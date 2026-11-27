@@ -43,6 +43,11 @@ export class ErrorEnvelopeFilter implements ExceptionFilter {
       code = exception.code;
       messageKey = exception.messageKey;
       fieldErrors = exception.fieldErrors;
+    } else if (exception instanceof HttpException && exception.getStatus() === 413) {
+      status = 422;
+      code = 'VALIDATION_FAILED';
+      messageKey = 'file.too_large';
+      fieldErrors = { file: 'too_large' };
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       code = CODE_FOR_STATUS[status] ?? (status >= 500 ? 'INTERNAL_ERROR' : 'BAD_REQUEST');

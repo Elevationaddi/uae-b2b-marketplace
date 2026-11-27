@@ -15,9 +15,13 @@ export const PAYMENT_MODES = ['disabled', 'mock', 'live'] as const;
 export const EMAIL_PROVIDERS = ['disabled', 'smtp-dev', 'live'] as const;
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
 export const LOCALES = ['en', 'ar'] as const;
+export const FILE_SCANNERS = ['disabled', 'sandbox-eicar', 'live'] as const;
 
 /** Values that appear in .env.example; they must never be accepted in production. */
 const PLACEHOLDER_PATTERN = /(change[-_ ]?me|placeholder|example|dev[-_]only|not[-_]a[-_]secret)/i;
+
+/** The key shipped in .env.example. Accepted only outside production. */
+export const DEV_EXAMPLE_MFA_KEY = 'ZGV2LW9ubHktbWZhLWtleS0zMi1ieXRlcy1sb25nISE=';
 
 const booleanFlag = z
   .enum(['true', 'false', '1', '0'])
@@ -48,9 +52,22 @@ export const rawEnvSchema = z.object({
       message: 'must be a redis:// or rediss:// URL',
     }),
 
+  /** Configurable working name until branding is approved (A06). */
+  APP_NAME: z.string().trim().min(1).max(80).default('B2B Marketplace (working name)'),
+
   SESSION_SECRET: z.string().min(1),
+  /** 32-byte key, base64, used to encrypt admin TOTP secrets at rest (AES-256-GCM). */
+  MFA_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, 'base64').length === 32, {
+      message: 'must be 32 bytes, base64 encoded',
+    }),
   WEB_ORIGIN: z.string().url(),
+  /** Admin portal origin; separate host in production (A03). */
+  ADMIN_ORIGIN: z.string().url(),
   API_ORIGIN: z.string().url(),
+  /** Express "trust proxy" setting: number of hops, or 'loopback'. */
+  TRUST_PROXY: z.string().default('loopback'),
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   WORKER_HEALTH_PORT: z.coerce.number().int().min(1).max(65535).default(4100),
 
@@ -65,9 +82,28 @@ export const rawEnvSchema = z.object({
   EMAIL_FROM: optionalString,
   SMTP_URL: optionalString,
 
+  FILE_SCANNER: z.enum(FILE_SCANNERS).default('disabled'),
+  UPLOAD_MAX_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1024)
+    .max(25 * 1024 * 1024)
+    .default(10 * 1024 * 1024),
+
+  /** Hours a buyer has to pay after quote acceptance (A05); separate from stock reservation. */
+  QUOTE_PAYMENT_WINDOW_HOURS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(24 * 30)
+    .default(72),
+
   PAYMENT_MODE: z.enum(PAYMENT_MODES).default('disabled'),
   PSP_API_KEY: optionalString,
   PSP_WEBHOOK_SECRET: optionalString,
+
+  /** Multiplies rate-limit allowances in development/test only (ignored in production). */
+  RATE_LIMIT_SCALE: z.coerce.number().min(1).max(1000).default(1),
 
   TRADING_ENABLED: booleanFlag,
   FEATURE_REAL_PAYMENTS: booleanFlag,
@@ -134,7 +170,28 @@ export function productionIssues(env: RawEnv): string[] {
     if (isWeakSecret(env[key], 8))
       issues.push(`${key} is required and must not be a placeholder in production`);
   }
-  for (const key of ['WEB_ORIGIN', 'API_ORIGIN'] as const) {
+  if (env.EMAIL_PROVIDER !== 'live') {
+    issues.push(
+      'EMAIL_PROVIDER=live is required in production (email verification is mandatory, A07)',
+    );
+  }
+  if (env.FILE_SCANNER !== 'live') {
+    issues.push('FILE_SCANNER=live is required in production (uploads must be malware scanned)');
+  }
+  if (
+    env.MFA_ENCRYPTION_KEY === DEV_EXAMPLE_MFA_KEY ||
+    PLACEHOLDER_PATTERN.test(Buffer.from(env.MFA_ENCRYPTION_KEY, 'base64').toString('latin1'))
+  ) {
+    issues.push('MFA_ENCRYPTION_KEY must be a real random key in production');
+  }
+  try {
+    if (new URL(env.ADMIN_ORIGIN).host === new URL(env.WEB_ORIGIN).host) {
+      issues.push('ADMIN_ORIGIN must be a different host from WEB_ORIGIN in production (A03)');
+    }
+  } catch {
+    /* URL validity already checked by the schema */
+  }
+  for (const key of ['WEB_ORIGIN', 'ADMIN_ORIGIN', 'API_ORIGIN'] as const) {
     if (!env[key].startsWith('https://')) issues.push(`${key} must use https in production`);
   }
   return issues;
@@ -150,6 +207,9 @@ function commonIssues(env: RawEnv): string[] {
   }
   if (env.FEATURE_REAL_PAYMENTS && env.NODE_ENV !== 'production') {
     issues.push('FEATURE_REAL_PAYMENTS may not be enabled outside production');
+  }
+  if (env.EMAIL_PROVIDER === 'smtp-dev' && !env.SMTP_URL) {
+    issues.push('SMTP_URL is required for EMAIL_PROVIDER=smtp-dev');
   }
   if (env.SESSION_SECRET.length < 16) {
     issues.push('SESSION_SECRET must be at least 16 characters');
@@ -174,7 +234,10 @@ export function parseEnv(source: Record<string, string | undefined>): AppEnv {
   return {
     ...env,
     isProduction: env.NODE_ENV === 'production',
-    sandbox: env.PAYMENT_MODE === 'mock' || env.EMAIL_PROVIDER === 'smtp-dev',
+    sandbox:
+      env.PAYMENT_MODE === 'mock' ||
+      env.EMAIL_PROVIDER === 'smtp-dev' ||
+      env.FILE_SCANNER === 'sandbox-eicar',
   };
 }
 
@@ -196,6 +259,8 @@ export function describeEnv(env: AppEnv): Record<string, string | number | boole
     REDIS_URL: stripCredentials(env.REDIS_URL),
     PAYMENT_MODE: env.PAYMENT_MODE,
     EMAIL_PROVIDER: env.EMAIL_PROVIDER,
+    FILE_SCANNER: env.FILE_SCANNER,
+    APP_NAME: env.APP_NAME,
     TRADING_ENABLED: env.TRADING_ENABLED,
     FEATURE_REAL_PAYMENTS: env.FEATURE_REAL_PAYMENTS,
     FEATURE_SUBSCRIPTIONS: env.FEATURE_SUBSCRIPTIONS,
