@@ -215,3 +215,61 @@ export async function runLicenceExpiry(
   void env;
   return { reminded, restricted };
 }
+
+export type RetentionReport = {
+  rejected_cases: number;
+  rejected_documents: number;
+  abandoned_cases: number;
+  abandoned_documents: number;
+  /** Company closure does not exist yet; reported as zero until account closure is built. */
+  closed_company_documents: number;
+  cutoffs: { rejected: string; abandoned: string; closed: string };
+  deletion_enabled: false;
+};
+
+/**
+ * Report-only retention run (A13). Counts verification documents that the provisional schedule
+ * would make eligible for deletion and records the counts in the audit log. Nothing is deleted:
+ * deletion stays disabled until the policy is legally approved (env refuses to enable it).
+ */
+export async function runRetentionReport(
+  prisma: PrismaClient,
+  env: AppEnv,
+  now = new Date(),
+): Promise<RetentionReport> {
+  const day = 86400_000;
+  const rejectedCutoff = new Date(now.getTime() - env.RETENTION_REJECTED_DOCS_DAYS * day);
+  const abandonedCutoff = new Date(now.getTime() - env.RETENTION_ABANDONED_APPLICATION_DAYS * day);
+  const closedCutoff = new Date(now.getTime() - env.RETENTION_CLOSED_COMPANY_DAYS * day);
+  const rejectedWhere = { state: 'REJECTED' as const, decidedAt: { lt: rejectedCutoff } };
+  const abandonedWhere = {
+    state: { in: ['DRAFT' as const, 'NEEDS_INFO' as const] },
+    updatedAt: { lt: abandonedCutoff },
+  };
+  const [rejectedCases, rejectedDocs, abandonedCases, abandonedDocs] = await Promise.all([
+    prisma.verificationCase.count({ where: rejectedWhere }),
+    prisma.verificationDocument.count({ where: { case: rejectedWhere } }),
+    prisma.verificationCase.count({ where: abandonedWhere }),
+    prisma.verificationDocument.count({ where: { case: abandonedWhere } }),
+  ]);
+  const report: RetentionReport = {
+    rejected_cases: rejectedCases,
+    rejected_documents: rejectedDocs,
+    abandoned_cases: abandonedCases,
+    abandoned_documents: abandonedDocs,
+    closed_company_documents: 0,
+    cutoffs: {
+      rejected: rejectedCutoff.toISOString(),
+      abandoned: abandonedCutoff.toISOString(),
+      closed: closedCutoff.toISOString(),
+    },
+    deletion_enabled: false,
+  };
+  await writeAudit(prisma, {
+    actorType: 'system',
+    action: 'retention.report',
+    resourceType: 'retention',
+    details: report,
+  });
+  return report;
+}

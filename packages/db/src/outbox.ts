@@ -13,6 +13,9 @@ export const EMAIL_TEMPLATES = [
   'licence_expired',
   'company_suspended',
   'company_reactivated',
+  'catalog_decision',
+  'listing_enforcement',
+  'storefront_enforcement',
 ] as const;
 export type EmailTemplate = (typeof EMAIL_TEMPLATES)[number];
 

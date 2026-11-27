@@ -1,4 +1,4 @@
-# API reference (Phase 1)
+# API reference (Phases 1–2)
 
 Generated from the shared zod contracts; the machine-readable source is [`openapi.json`](openapi.json) (OpenAPI 3.1).
 Regenerate with `pnpm --filter @app/contracts openapi`. A unit test fails if the file is stale, and an API
@@ -110,6 +110,115 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | `GET` | `/api/v1/admin/staff` | Platform staff and roles | admin session | no | admin.staff.manage | 200 | 401 |
 | `POST` | `/api/v1/admin/staff/{id}/roles` | Set staff roles (last super-admin protected) | admin session | yes | admin.staff.manage | 200 | 401, 403, 404, 409, 422 |
 
+## Phase 2 conventions
+- Marketplace routes accept guests. A company session cookie, when present, only changes what is shown: wholesale tiers, price filters/sorts and buyer-list state appear for email-verified users (A12). Responses are `Cache-Control: private, no-store` with `Vary: Cookie`.
+- Public visibility is decided in two SQL views (`marketplace_products`, `marketplace_suppliers`): product approved and published, seller company APPROVED with an unexpired licence, workspace active, storefront published and not hidden, category visible and not blocked. Anything else is 404.
+- Seller routes are scoped by `{ws}`; a workspace the caller does not belong to returns 404. Mutations of products, pricing and stock are refused (422) when the seller is not eligible to trade (A08, A10).
+- Optimistic concurrency: product, storefront and category updates carry `expected_version`; stale writes return 409.
+- Money is integer fils serialised as a decimal string (`"12500"` = AED 125.00).
+- Images are served through `/media/{id}` (public), `/seller/workspaces/{ws}/media/{fileId}` (owner) and `/admin/media/{id}` (admin), each re-checking access on every request.
+## Marketplace (Phase 2)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/marketplace/home` | Marketplace home (categories, featured, manufacturers, new; prices for verified viewers only) | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/categories` | Visible category tree with public product counts | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/categories/{id}` | Category with subcategories and filterable attributes | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/products` | Search approved products (filters, sort, offset cursor). Price filters/sorts require a verified viewer (422 for guests). | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/suggest` | Autocomplete over public products, suppliers and categories | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/products/{id}` | Public product detail (tiers only for verified viewers; trading actions permission-aware) | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/products/{id}/related` | Related public products | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/products/{id}/estimate` | Server-side unit price and line total for a quantity (verified viewers; not a commitment) | optional (guest allowed) | no |  | 403, 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/suppliers` | Supplier directory (published storefronts of eligible verified sellers) | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/marketplace/suppliers/{id}` | Supplier storefront | optional (guest allowed) | no |  | 404, 422, 429 |
+| `GET` | `/api/v1/media/{id}` | Public marketplace image (only while attached to public content) | optional (guest allowed) | no |  | 404, 429 |
+
+## Buyer lists (Phase 2)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/marketplace/saved/products` | Saved products | company | no | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `POST` | `/api/v1/marketplace/saved/products/{id}` | Save a public product (idempotent) | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `DELETE` | `/api/v1/marketplace/saved/products/{id}` | Remove a saved product | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `GET` | `/api/v1/marketplace/saved/suppliers` | Saved suppliers | company | no | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `POST` | `/api/v1/marketplace/saved/suppliers/{id}` | Save a public supplier (idempotent) | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `DELETE` | `/api/v1/marketplace/saved/suppliers/{id}` | Remove a saved supplier | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `GET` | `/api/v1/marketplace/compare` | Comparison list (max 4) | company | no | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `POST` | `/api/v1/marketplace/compare/{id}` | Add a public product to comparison (409 marketplace.compare_limit) | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `DELETE` | `/api/v1/marketplace/compare/{id}` | Remove from comparison | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `GET` | `/api/v1/marketplace/recent` | Recently viewed (last 30) | company | no | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `POST` | `/api/v1/marketplace/recent/{id}` | Record a product view | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `DELETE` | `/api/v1/marketplace/recent` | Clear recently viewed | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `GET` | `/api/v1/marketplace/preferences` | Marketplace preferences | company | no | email-verified account (A12) | 403, 404, 409, 422, 429 |
+| `PATCH` | `/api/v1/marketplace/preferences` | Update marketplace preferences | company | yes | email-verified account (A12) | 403, 404, 409, 422, 429 |
+
+## Seller catalog (Phase 2)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/seller/workspaces/{ws}/overview` | Seller dashboard overview (real counts) | company | no | seller.catalog.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/storefront` | Own storefront (empty draft if not created yet) | company | no | seller.catalog.read | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/seller/workspaces/{ws}/storefront` | Update storefront profile | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/storefront/publish` | Publish storefront (eligible sellers; required fields) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/storefront/unpublish` | Take storefront offline | company | yes | owner or sales role | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/storefront/media` | Upload storefront image (logo, cover, factory, warehouse, other; sanitised) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422, 429, 503 |
+| `DELETE` | `/api/v1/seller/workspaces/{ws}/storefront/media/{mediaId}` | Remove storefront image | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/products` | Own products by tab (cursor paginated) | company | no | seller.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products` | Create a draft product with its first SKU | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/products/{id}` | Product detail with working and published versions, SKUs, history and allowed actions | company | no | seller.catalog.read | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/seller/workspaces/{ws}/products/{id}` | Edit content (creates a new draft version when the live one is approved) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/media` | Upload product image (PNG/JPEG/WebP; scanned; re-encoded; max 12) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422, 429, 503 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/media/reorder` | Reorder images | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `DELETE` | `/api/v1/seller/workspaces/{ws}/products/{id}/media/{fileId}` | Remove image from the draft | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/skus` | Add a variant SKU (pending until the version is approved) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/seller/workspaces/{ws}/products/{id}/skus/{skuId}` | Update SKU (identity locked once approved; active flag is live) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `DELETE` | `/api/v1/seller/workspaces/{ws}/products/{id}/skus/{skuId}` | Delete a never-approved SKU without stock history | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/pricing` | Set live pricing: price type, MOQ, increments, tiers (validated, audited, no review) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/submit` | Submit the draft for moderation (restricted-term screening) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/withdraw` | Withdraw a pending submission back to draft | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/archive` | Archive | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/unpublish` | Unpublish (hide from buyers) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/republish` | Republish an unpublished approved listing | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/restore` | Restore an archived product | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/products/{id}/duplicate` | Duplicate as a new draft (zero stock) | company | yes | seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/inventory` | Variant stock (filters: low, out) | company | no | seller.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/inventory/{skuId}/adjust` | Atomic stock adjustment (never negative; logged with actor and reason) | company | yes | seller.inventory.ship or seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/seller/workspaces/{ws}/inventory/{skuId}` | Low-stock threshold and restock date | company | yes | seller.inventory.ship or seller.catalog.edit (trading-gated) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/inventory/{skuId}/movements` | Append-only stock movement history | company | no | seller.catalog.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/media/{fileId}` | Own marketplace image (drafts included) | company | no | seller.catalog.read | 403, 404, 409, 422 |
+
+## Admin catalog (Phase 2)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/admin/catalog/overview` | Catalog moderation overview | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/catalog/queue` | Moderation queue (pending oldest first) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/catalog/reviews/{versionId}` | Review a submitted version (diff against live version) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/catalog/reviews/{versionId}/decision` | Approve, reject or request changes (reason required unless approving) | admin | yes | admin.catalog.review | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/catalog/products` | Search all listings | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/catalog/products/{id}` | Listing detail with history | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/catalog/products/{id}/suspend` | Suspend listing immediately (reason) | admin | yes | admin.catalog.enforce | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/catalog/products/{id}/restore` | Restore a suspended listing (reason) | admin | yes | admin.catalog.enforce | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/catalog/products/{id}/remove` | Remove listing (reason; irreversible for the seller) | admin | yes | admin.catalog.enforce | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/storefronts` | Storefront oversight | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/storefronts/{id}` | Storefront detail | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/storefronts/{id}/hide` | Hide a storefront (reason) | admin | yes | admin.catalog.enforce | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/storefronts/{id}/restore` | Restore a hidden storefront (reason) | admin | yes | admin.catalog.enforce | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/categories` | All categories (including hidden/archived) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/categories` | Create category or subcategory | admin | yes | admin.categories.manage | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/categories/{id}` | Category detail with attributes | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/admin/categories/{id}` | Update category (reason required to hide, archive or change restriction) | admin | yes | admin.categories.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/categories/{id}/image` | Upload category image | admin | yes | admin.categories.manage | 403, 404, 422, 429, 503 |
+| `POST` | `/api/v1/admin/categories/{id}/attributes` | Add category attribute | admin | yes | admin.categories.manage | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/admin/category-attributes/{id}` | Update category attribute | admin | yes | admin.categories.manage | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/restricted-terms` | Restricted and prohibited terms (provisional policy, A10) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/restricted-terms` | Add restricted term | admin | yes | admin.restricted.manage | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/admin/restricted-terms/{id}` | Update restricted term | admin | yes | admin.restricted.manage | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/featured` | Featured placements (labelled; never used for ranking) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/featured` | Add featured placement (public targets only) | admin | yes | admin.featured.manage | 403, 404, 409, 422 |
+| `DELETE` | `/api/v1/admin/featured/{id}` | Remove featured placement | admin | yes | admin.featured.manage | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/media/{id}` | Any marketplace image (review) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
+
 ## Rate limits (per policy; `RATE_LIMIT_SCALE` multiplies them outside production only)
 
 | Policy | Limit |
@@ -123,3 +232,5 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | invitations per workspace | 50 per day |
 | company creation per user | 5 per day |
 | uploads per user | 60 per hour |
+| marketplace reads per IP | 600 per minute |
+| buyer list changes per user | 300 per minute |

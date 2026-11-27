@@ -161,11 +161,18 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
       icon: '◎',
       show: !!ws && verified,
     },
+    {
+      href: ws ? `/${locale}/app/seller/${ws.id}` : '',
+      label: t('seller.title'),
+      icon: '▤',
+      show: !!ws && verified && ws.kind === 'SELLER',
+    },
+    { href: `/${locale}`, label: t('mkt.title_short'), icon: '⌕', show: !!session },
     { href: `/${locale}/app/settings`, label: t('nav.settings'), icon: '⚙', show: !!session },
   ].filter((n) => n.show);
 
   const isActive = (href: string) =>
-    href === `/${locale}/app`
+    href === `/${locale}/app` || href === `/${locale}`
       ? pathname === href
       : pathname === href || pathname.startsWith(`${href}/`);
 

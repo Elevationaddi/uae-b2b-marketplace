@@ -94,11 +94,31 @@ export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode
     },
     { href: `${base}/companies`, label: t('admin.nav.companies'), cap: 'admin.companies.read' },
     { href: `${base}/users`, label: t('admin.nav.users'), cap: 'admin.users.read' },
+    { href: `${base}/catalog`, label: t('admin.nav.catalog'), cap: 'admin.catalog.read' },
+    { href: `${base}/catalog/products`, label: t('admin.nav.listings'), cap: 'admin.catalog.read' },
+    {
+      href: `${base}/catalog/storefronts`,
+      label: t('admin.nav.storefronts'),
+      cap: 'admin.catalog.read',
+    },
+    {
+      href: `${base}/catalog/categories`,
+      label: t('admin.nav.categories'),
+      cap: 'admin.catalog.read',
+    },
+    {
+      href: `${base}/catalog/restricted`,
+      label: t('admin.nav.restricted'),
+      cap: 'admin.catalog.read',
+    },
+    { href: `${base}/catalog/featured`, label: t('admin.nav.featured'), cap: 'admin.catalog.read' },
     { href: `${base}/audit`, label: t('admin.nav.audit'), cap: 'admin.audit.read' },
     { href: `${base}/staff`, label: t('admin.nav.staff'), cap: 'admin.staff.manage' },
   ].filter((n) => caps.includes(n.cap as AdminCapability));
   const isActive = (href: string) =>
-    href === base ? pathname === href : pathname.startsWith(href);
+    href === base || href === `${base}/catalog`
+      ? pathname === href || (href !== base && pathname.startsWith(`${href}/reviews`))
+      : pathname.startsWith(href);
 
   async function signOut() {
     setBusy(true);

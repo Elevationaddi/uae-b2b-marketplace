@@ -1,10 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-test('root redirects to English and shows live system status from the API', async ({ page }) => {
+test('root redirects to the English marketplace home', async ({ page }) => {
   await page.goto('/');
   await expect(page).toHaveURL(/\/en$/);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+  await expect(page.getByRole('search')).toBeVisible();
+});
+
+test('status page shows live system status from the API', async ({ page }) => {
+  await page.goto('/en/status');
   const status = page.getByTestId('status-list');
   await expect(status).toContainText('API');
   await expect(status).toContainText('Database');
@@ -12,7 +17,7 @@ test('root redirects to English and shows live system status from the API', asyn
 });
 
 test('Arabic renders right-to-left with translated content', async ({ page }) => {
-  await page.goto('/ar');
+  await page.goto('/ar/status');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
   await expect(page.getByRole('heading', { level: 2 })).toHaveText('حالة النظام');

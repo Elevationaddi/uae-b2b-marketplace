@@ -1,14 +1,120 @@
 # Implementation status
-Phases 0 and 1 are merged and approved. Phases 2–7 have no application code yet; Phase 2 awaits founder go-ahead and the decisions listed under Phase 1.
+Phases 0 and 1 are merged and approved. Phase 2 (marketplace catalog) is implemented on `phase-2-marketplace-catalog` and merged once CI is green, under the founder's standing instruction to continue without per-phase approval. Phases 3–7 have no application code yet.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
 | 0 | DONE | Merged to `main` as 08a127e (PR #1), CI run 46055408891 green | None |
 | 1 | DONE | Approved by the founder 2026-11-28; merged to `main` as 7cddb66 (PR #2); GitHub Actions green including WebKit | None |
-| 2–7 | NOT_STARTED | None | Founder go-ahead for Phase 2; Phase 2 decisions listed under Phase 1 |
+| 2 | DONE (pending CI on the PR) | Branch `phase-2-marketplace-catalog`; 164 unit/integration and 55 E2E tests pass locally | WebKit runs in CI only |
+| 3–7 | NOT_STARTED | None | Decisions listed under Phase 2 |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 2: storefronts, catalog, moderation, inventory, marketplace
+**Date:** 2026-11-27/28 (UTC). **Branch:** `phase-2-marketplace-catalog`. **Exit gate (docs/13-roadmap.md):** T07–T10, search isolation, guest vs verified access (A12), seller eligibility (A10), moderation (A11).
+
+### Delivered
+- **Buyer marketplace (A12):** home (priority categories, featured products and suppliers labelled "Featured", verified manufacturers, new arrivals, "for you" from preferences), category directory and category pages with subcategories and seller requirements, search with autocomplete (EN/AR normalised trigram search), URL-driven filters (category, fulfilment mode, supplier type, emirate, price range, MOQ, lead time, dispatch time, in stock, customisation, private/white label, samples, category attributes), sorts, grid/list view, pagination and clear-all, product detail (gallery, variants and tier table, specifications, certifications, supplier card, related products, server-side price estimate), supplier directory and storefronts. Guests see no prices and cannot use price filters/sorts (API 422). Request quotation / order buttons are visible but disabled with the reason (sign in, approved business needed, or arrives in Phase 3); no fake transaction.
+- **Buyer lists (verified users):** saved products and suppliers, compare up to 4, recently viewed (30), marketplace preferences. Items that stop being public show as "no longer available".
+- **Seller centre:** overview (live counts, eligibility, storefront state, recent decisions), storefront editor with logo/cover/factory images and publish/unpublish, product list with status tabs and search, add product, full product editor (content, category attributes, specifications, certifications, media upload/reorder/remove, SKUs, pricing with fixed/tiered/quote-only, lifecycle actions submit/withdraw/unpublish/republish/archive/restore/duplicate, history), inventory (all/low/out, receive/remove/mark unavailable/release/stock count, low-stock threshold, restock date, movement history), pricing overview. Orders, quotation requests, messages and payouts appear as "available in a later release".
+- **Moderation (A11):** every first publication is reviewed; material edits create a new version reviewed while the approved one stays live; pricing and stock changes are validated and audited without review; admins approve, reject or request changes with a reason; suspend, restore and remove listings and hide/restore storefronts with a reason; sellers are emailed every decision (sandbox email).
+- **Admin catalog:** KPI overview and review queue (state filter, search, screening flags), side-by-side review of submitted vs live version with changed fields highlighted and company/licence status, all listings with status filter and enforcement, storefronts with hide/restore, categories and subcategories (create, edit, hide, archive, restriction, requirements, image, attributes), restricted terms (BLOCK/REVIEW, provisional per A10), featured placements with schedule.
+- **Eligibility (A08, A10):** only APPROVED companies with an unexpired licence and an active seller workspace can submit, price or change stock, and their listings and storefront disappear from every public surface (search, directory, featured, saved lists, image URLs) the moment the company is suspended or the licence expires. BLOCKED categories cannot be used; REVIEW_REQUIRED categories require certifications.
+- **Retention (A13):** daily report-only worker job counts verification documents past the provisional schedule and writes a `retention.report` audit event; deletion stays impossible (config refuses to enable it).
+- **Seed:** the 12 approved launch categories (A09) with EN/AR names, subcategories and attributes; 3 fictional storefronts and sample listings (see `docs/TEST_ACCOUNTS.md`).
+
+### Routes, schema, permissions
+- 82 new API operations, documented in `docs/api/README.md` (Phase 2 sections) and `docs/api/openapi.json` (version `1.0.0-phase2`).
+- Migration `20261128000000_phase2_catalog` (18 tables, 2 views, triggers, CHECK constraints), additive only: `docs/db/phase-2-schema.md`.
+- Permission matrix for catalog actions:
+
+| Action | Owner | Sales | Warehouse | Finance | Viewer | Guest | Verified user | Admin |
+|---|---|---|---|---|---|---|---|---|
+| View own listings, storefront, inventory | Y | Y | Y | Y | Y | — | — | — |
+| Create/edit/submit listings, pricing, storefront | Y | Y | — | — | — | — | — | — |
+| Adjust stock | Y | Y | Y | — | — | — | — | — |
+| Unpublish storefront | Y | Y | — | — | — | — | — | — |
+| Browse public catalogue | Y | Y | Y | Y | Y | Y | Y | — |
+| See prices, save, compare, history | Y | Y | Y | Y | Y | — | Y | — |
+| Review listings (approve/reject/changes) | — | — | — | — | — | — | — | COMPLIANCE |
+| Suspend/remove listings, hide storefronts | — | — | — | — | — | — | — | COMPLIANCE |
+| Categories, restricted terms, featured | — | — | — | — | — | — | — | COMPLIANCE (categories and featured also SUPER_ADMIN) |
+| Read admin catalog | — | — | — | — | — | — | — | COMPLIANCE, SUPPORT, SUPER_ADMIN |
+
+Request quotation, purchase and payment stay unavailable for everyone until Phase 3; when built they require an approved buyer business (A08, A12).
+
+### Commands actually run
+| Command | Result |
+|---|---|
+| `pnpm lint` | pass (0 warnings) |
+| `pnpm format:check` | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` | pass: 164 tests, 0 failed (config 19, contracts 56, api integration 76, web 10, worker 3) |
+| `pnpm build` (production) | pass |
+| `pnpm --filter @app/contracts openapi` | regenerated; committed file unchanged afterwards |
+| `pnpm test:e2e --project=chromium --project=mobile-360` | pass: 55 passed, 1 skipped (the long seller→admin journey is desktop-only), 0 failed |
+| Screenshots (`catalog.screenshots.spec.ts`, deviceScaleFactor 2) | pass: 4 tests, 61 screenshots (EN/AR, desktop/phone, empty, not-found, signed-out and forbidden states) |
+| `pnpm audit --prod --audit-level high` | pass: no known vulnerabilities |
+| WebKit / mobile Safari | not available in this environment; run in CI |
+
+### Acceptance tests
+| Test | Covered by | Result |
+|---|---|---|
+| T07 seller listing lifecycle and moderation | `catalog.int.test.ts` (lifecycle, material edit while live, reject/resubmit), `marketplace.spec.ts` (seller creates, uploads, prices, submits; admin approves; guest finds it) | pass |
+| T08 validation (tiers, MOQ, increments, restricted terms, media, uploads) | `catalog.int.test.ts`, `money.test.ts` | pass |
+| T09/T10 server-side pricing and estimate (tiers, MOQ, increment, quote-only, guest refusal) | `catalog.int.test.ts`, `money.test.ts` | pass |
+| Tenant isolation (other seller's product, SKU, inventory, media, workspace → 404) | `catalog.int.test.ts`, `marketplace.spec.ts` | pass |
+| Seller roles (viewer read-only, warehouse stock only) | `catalog.int.test.ts` | pass |
+| Eligibility (unapproved seller, expired licence, blocked category, hidden category) | `catalog.int.test.ts` | pass |
+| Inventory concurrency (10 parallel removals, exactly the available stock succeeds, never negative) | `catalog.int.test.ts` | pass |
+| Guest vs verified access (no prices, no price filters/sorts, lists need verified email) | `catalog.int.test.ts`, `marketplace.spec.ts` | pass |
+| Admin permissions and enforcement audit | `catalog.int.test.ts` | pass |
+| EN/AR RTL, 360px mobile | `marketplace.spec.ts`, `shell.spec.ts`, screenshots | pass |
+| Retention report deletes nothing | `retention.int.test.ts` | pass |
+
+### Security review
+| Area | Control |
+|---|---|
+| Public exposure | One SQL definition of "public" (views); company contact email/phone, licence numbers, documents and bank data are never selected into public responses; storefront shows city and emirate only |
+| Tenant isolation | Seller routes resolve workspace membership on every request; product, SKU, media and inventory queries are scoped by workspace; DB triggers reject cross-company rows; cross-tenant IDs return 404 |
+| Moderation integrity | Submitted versions are frozen by trigger; versions and moderation events cannot be deleted or edited; decisions check the expected state (409 on races) |
+| Stock | Conditional `UPDATE … RETURNING` with non-negative CHECKs; stock counts use an expected version; every change writes a movement and audit entry |
+| Money | Integer fils end to end; parsing via `parseAedToFils` (no floats); totals computed server-side |
+| Media | Images re-encoded with `sharp` (strips metadata, rejects non-images and tiny images); access re-checked per request; public images only while attached to public content |
+| Search | Parameterised SQL; LIKE wildcards escaped; per-IP rate limit; offset cursor capped |
+| Caching | Marketplace responses `private, no-store`, `Vary: Cookie`, so a verified user's prices are never cached for a guest |
+| Admin | Capability-checked per route (`RequireAdmin`); every enforcement and taxonomy change is audited with a reason |
+
+### Known issues and limitations
+- WebKit/Safari E2E runs only in CI (browser download blocked here).
+- Integration and E2E tests write fictional records into the development database, so the local marketplace fills with "E2E"/"Test" listings over time; re-seed a fresh database for demos.
+- Storefronts publish without admin pre-approval (admins can hide them with a reason). docs/03-seller describes storefront moderation; this is listed as a decision below.
+- Search uses PostgreSQL trigram matching; no dedicated search engine, synonyms or typo tolerance beyond trigram similarity.
+- Prices in AED only; VAT presentation and tax classification arrive with checkout (Phase 3/4, D06).
+- Video links are shown as external links (YouTube/Vimeo allow-list), not embedded, to keep the strict CSP.
+- Arabic copy needs native-speaker review; category names were written for development.
+- Restricted-term list is provisional (A10) pending legal review.
+- No bulk product import/export yet.
+
+### Deviations and decisions changed
+- A09–A15 recorded in `docs/00-decisions.md`; implemented as approved.
+- A12 replaces the earlier "marketplace browsing requires an approved workspace" rule in docs/10-security and docs/07-api.
+- Storefront moderation (see above) is a deviation pending confirmation.
+- The old public landing/status page moved to `/[locale]/status`; `/[locale]` is now the marketplace home.
+
+### Decisions needed before Phase 3 (RFQ, cart, checkout)
+1. Confirm storefronts may publish without pre-approval (current build) or require review like products.
+2. RFQ rules: who may receive an RFQ (all eligible sellers in the category vs invited only), RFQ validity and maximum quotes per RFQ.
+3. Stock reservation at checkout: confirm 15-minute hold (D11) and whether made-to-order items reserve production capacity.
+4. Minimum order value or per-supplier minimums, if any.
+5. Delivery: who sets shipping costs (supplier-entered, platform table, or quoted per order) and which emirates are served.
+6. VAT handling and tax invoice issuer (D06): platform as agent or supplier issues the invoice.
+7. Payment provider for the sandbox integration (no live connection) and payout model, needed for Phase 4.
+8. Buyer approval thresholds and spend limits (deferred by A04).
+
+### Next gate
+Phase 2 implemented and merged under the founder's standing instruction to continue without approval. Phase 3 starts only with the decisions above where they block (RFQ rules, reservation, delivery, VAT); sandbox-only adapters.
 
 ## Phase 1: accounts, workspaces, verification
 **Date:** 2026-11-27. **Branch:** `phase-1-accounts-verification` (pull request into `main`). **Exit gate (docs/13-roadmap.md):** T01–T06; secure tenant and file boundaries.

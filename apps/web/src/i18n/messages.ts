@@ -2,6 +2,8 @@
  * Translation catalogue. Every user-facing string is a key here (docs/05-ui.md).
  * The product name is configuration (APP_NAME, decision A06), not a translation.
  */
+import { catalogAr, catalogEn } from './catalog-messages';
+
 export const LOCALES = ['en', 'ar'] as const;
 export type Locale = (typeof LOCALES)[number];
 
@@ -12,6 +14,7 @@ export function isLocale(value: string): value is Locale {
 export const DIRECTION: Record<Locale, 'ltr' | 'rtl'> = { en: 'ltr', ar: 'rtl' };
 
 const en = {
+  ...catalogEn,
   'company.uploaded': 'Document uploaded and scanned clean.',
   'company.upload_blocked':
     'The malware scan blocked this file. Remove it and upload a clean copy.',
@@ -455,6 +458,7 @@ const en = {
 type Messages = Record<keyof typeof en, string>;
 
 const ar: Messages = {
+  ...catalogAr,
   'company.uploaded': 'تم رفع المستند وفحصه وهو سليم.',
   'company.upload_blocked': 'حظر فحص البرمجيات الخبيثة هذا الملف. احذفه وارفع نسخة سليمة.',
   'admin.record_decision': 'تسجيل القرار',

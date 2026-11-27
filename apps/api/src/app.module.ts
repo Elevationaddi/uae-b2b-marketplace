@@ -29,6 +29,21 @@ import { TeamService } from './team/team.service';
 import { genRequestId } from './common/request-id';
 import { HealthController } from './health/health.controller';
 import { InfraModule } from './infra/infra.module';
+import { AdminCatalogController } from './catalog/admin-catalog.controller';
+import { AdminCatalogService } from './catalog/admin-catalog.service';
+import { BuyerListsService } from './catalog/buyer-lists.service';
+import { InventoryService } from './catalog/inventory.service';
+import {
+  BuyerListsController,
+  MarketplaceController,
+  PublicMediaController,
+} from './catalog/marketplace.controller';
+import { MarketplaceService } from './catalog/marketplace.service';
+import { MediaAccessService } from './catalog/media-access.service';
+import { MediaService } from './catalog/media.service';
+import { SellerCatalogController } from './catalog/seller-catalog.controller';
+import { SellerProductsService } from './catalog/seller-products.service';
+import { StorefrontService } from './catalog/storefront.service';
 
 /** Paths redacted from every log line (docs/10-security.md: no credentials or tokens in logs). */
 export const LOG_REDACT_PATHS = [
@@ -80,6 +95,11 @@ export class AppModule implements NestModule {
         TeamController,
         AdminAuthController,
         AdminController,
+        MarketplaceController,
+        BuyerListsController,
+        PublicMediaController,
+        SellerCatalogController,
+        AdminCatalogController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
@@ -97,6 +117,14 @@ export class AppModule implements NestModule {
         TeamService,
         MfaService,
         AdminService,
+        MediaService,
+        MediaAccessService,
+        SellerProductsService,
+        InventoryService,
+        StorefrontService,
+        MarketplaceService,
+        BuyerListsService,
+        AdminCatalogService,
       ],
     };
   }
