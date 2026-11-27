@@ -1,0 +1,26 @@
+/* Neutral placeholder identity (docs/05-ui.md). Replace when a brand is supplied. */
+:root {
+  --color-navy: #12263a;
+  --color-teal: #176b80;
+  --color-bg: #f6f8fa;
+  --color-surface: #ffffff;
+  --color-text: #172b3a;
+  --color-text-muted: #4a5e6d;
+  --color-border: #d5dde3;
+  --color-error: #b42318;
+  --color-success: #067647;
+  --color-warning-bg: #fff4e5;
+  --color-warning-text: #7a4100;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans Arabic', 'Noto Sans', Tahoma,
+    sans-serif;
+  --focus-ring: 0 0 0 3px rgba(23, 107, 128, 0.45);
+}

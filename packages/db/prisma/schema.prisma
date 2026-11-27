@@ -1,0 +1,13 @@
+// Prisma schema. Logical model: docs/06-data.md.
+// Phase 0 deliberately defines only the operational migration baseline;
+// business tables arrive with their vertical slices (Phase 1+), each through a
+// reviewed migration. Do not add unused tables to claim implementation.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
