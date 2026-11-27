@@ -3,7 +3,7 @@ Phases 1–7 have no application code yet. Phase 0 is implemented and verified l
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
-| 0 | READY_FOR_GATE_REVIEW | Local acceptance run 2026-11-27, see below; branch `phase-0-foundation` | First GitHub Actions run; founder review of the open questions below |
+| 0 | READY_FOR_GATE_REVIEW | Local acceptance run and GitHub Actions run 46055408891 (all steps green) 2026-11-27; PR #1 | Founder review of the open questions below |
 | 1–7 | NOT_STARTED | None | Phase 0 gate; Phase 1 decisions listed below |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
@@ -52,12 +52,14 @@ Environment: Linux container, Node 22.23.5, pnpm 10.28.0, Docker Compose service
 
 Integration tests run against real PostgreSQL and Redis, including a dependencies-down case (503 not_ready while liveness stays 200) and a cold-start concurrency case.
 
+### CI
+GitHub Actions run 46055408891 on PR #1 (commit d58ce8f) passed every step: frozen install, lint, format, typecheck, migration status and deploy, unit/integration tests, build, Playwright E2E, production dependency audit.
+
 ### Bugs found and fixed during Phase 0
 - API readiness reported Redis down on the first concurrent requests after start (lazy-connect race). Found by the E2E suite; fixed and covered by a cold-start integration test.
 - Web status page was being prerendered at build time, which would have shown a stale status. Now rendered per request.
 
 ### Not yet verified
-- GitHub Actions has not run yet; the workflow runs on the pull request.
 - WebKit (Safari-compatible) browser tests: not installed in this environment; docs/12-testing.md requires it before launch. Add in Phase 1.
 - `docker compose up` was verified with images fetched through a registry mirror because Docker Hub rate-limited this environment; the compose file uses the canonical Docker Hub names.
 
