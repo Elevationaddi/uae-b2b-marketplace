@@ -4,7 +4,7 @@ Phase 0 is merged. Phase 1 is implemented and verified locally; it awaits founde
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
 | 0 | DONE | Merged to `main` as 08a127e (PR #1), CI run 46055408891 green | None |
-| 1 | READY_FOR_GATE_REVIEW | Local run 2026-11-27 (commands below); Phase 1 PR; CI run pending on the PR (first run including WebKit) | Founder gate review; green CI on the final PR commit |
+| 1 | READY_FOR_GATE_REVIEW | Local run 2026-11-27 (commands below); PR #2; GitHub Actions run 46067136882 green, including WebKit | Founder gate review |
 | 2–7 | NOT_STARTED | None | Phase 1 gate; Phase 2 decisions listed under Phase 1 |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
@@ -44,7 +44,7 @@ Environment: Linux container, Node 22.23.5, pnpm 10.28.0, local PostgreSQL 16, R
 | Screenshots project (`screenshots.spec.ts`, deviceScaleFactor 2) | pass: 4 tests; 58 screenshots of every screen, EN/AR, desktop/phone, forbidden/not-found/unverified states |
 | `pnpm audit --prod --audit-level high` | pass: no known vulnerabilities (nodemailer upgraded to 10.4.1) |
 | Manual curl of host routing | admin pages/API 404 on the web origin; non-admin paths 404 on the admin origin |
-| WebKit / mobile Safari E2E | **not run locally** (browser download blocked); runs in CI on the PR |
+| WebKit / mobile Safari E2E | not run locally (browser download blocked); passed in CI run 46067136882 |
 
 ### Acceptance tests
 | Test | Covered by | Result |
@@ -61,7 +61,7 @@ Environment: Linux container, Node 22.23.5, pnpm 10.28.0, local PostgreSQL 16, R
 E2E also covers: full registration-to-approval journey, password reset single use, session revocation, unverified-email block, admin MFA enrolment and recovery-code sign-in, invitation acceptance, Arabic RTL and 360px layouts.
 
 ### CI
-`.github/workflows/ci.yml` now starts Mailpit and SeaweedFS, maps `admin.localhost`, checks OpenAPI is up to date, seeds the database and runs E2E on chromium, mobile-360, webkit and mobile-safari. The first run happens on the Phase 1 PR; results will be recorded here.
+`.github/workflows/ci.yml` now starts Mailpit and SeaweedFS, maps `admin.localhost`, checks OpenAPI is up to date, seeds the database and runs E2E on chromium, mobile-360, webkit and mobile-safari. GitHub Actions run 46067136882 on PR #2 (commit ad17d00) passed every step: unit/integration tests (121), OpenAPI check, production build, seed, and **88 E2E tests across chromium, mobile-360, webkit and mobile-safari, 0 failed**, plus the dependency audit. (The migration status dry run reports the pending migration before deploy, as intended.)
 
 ### Bugs found and fixed during Phase 1
 - Text typed before React hydration was lost; inputs and buttons are now disabled until hydrated.
@@ -88,7 +88,7 @@ E2E also covers: full registration-to-approval journey, password reset single us
 | Dependencies | `pnpm audit --prod` clean; versions pinned in `docs/DEVELOPMENT.md` |
 
 ### Known issues and limitations
-- WebKit/Safari not run locally; relies on the first CI run.
+- WebKit/Safari runs in CI only (passed there); it cannot be downloaded in this development environment.
 - T01 verified at capability level only until purchase endpoints exist (Phase 3).
 - Document downloads are streamed through the API rather than presigned URLs (simpler to authorize; revisit for large files).
 - Production cannot start yet by design: there is no live email adapter or malware scanner (sandbox adapters only, clearly labelled).
