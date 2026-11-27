@@ -9,7 +9,11 @@ import { api } from '@/lib/client';
 import { takeFragmentToken } from '@/lib/nav';
 import { useMutation } from '@/lib/use-resource';
 
-type State = { kind: 'verifying' } | { kind: 'verified' } | { kind: 'missing' } | { kind: 'failed'; error: ApiError };
+type State =
+  | { kind: 'verifying' }
+  | { kind: 'verified' }
+  | { kind: 'missing' }
+  | { kind: 'failed'; error: ApiError };
 
 export default function VerifyEmailPage() {
   const { locale } = useApp();

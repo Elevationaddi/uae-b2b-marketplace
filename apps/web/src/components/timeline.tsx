@@ -21,7 +21,13 @@ export function Timeline({
           <time dateTime={e.created_at}>{formatDubaiTime(e.created_at, locale)}</time>
           <div>
             <StatusBadge value={e.to_state} label={t(`cstatus.${e.to_state}` as MessageKey)} />{' '}
-            <span className="muted">{t(audience === 'admin' ? `admin.event_actor.${e.actor}` : `company.event_actor.${e.actor}`)}</span>
+            <span className="muted">
+              {t(
+                audience === 'admin'
+                  ? `admin.event_actor.${e.actor}`
+                  : `company.event_actor.${e.actor}`,
+              )}
+            </span>
             {e.reason ? <p className="pre-wrap">{e.reason}</p> : null}
           </div>
         </li>
@@ -29,4 +35,3 @@ export function Timeline({
     </ol>
   );
 }
-

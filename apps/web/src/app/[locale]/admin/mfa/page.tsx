@@ -3,7 +3,15 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import { AdminFrame } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
-import { Alert, ApiErrorAlert, Button, Field, PageHeader, Skeleton, useFieldError } from '@/components/ui';
+import {
+  Alert,
+  ApiErrorAlert,
+  Button,
+  Field,
+  PageHeader,
+  Skeleton,
+  useFieldError,
+} from '@/components/ui';
 import { api, type ApiError } from '@/lib/client';
 import { useMutation } from '@/lib/use-resource';
 
@@ -34,7 +42,10 @@ function Enroll({ onAlreadyEnrolled }: { onAlreadyEnrolled: () => void }) {
 
   async function confirm(e: FormEvent) {
     e.preventDefault();
-    const r = await m.run<{ recovery_codes: string[] }>('/admin/auth/mfa/enroll/confirm', { method: 'POST', body: { code } });
+    const r = await m.run<{ recovery_codes: string[] }>('/admin/auth/mfa/enroll/confirm', {
+      method: 'POST',
+      body: { code },
+    });
     if (r.ok) setCodes(r.data.recovery_codes);
   }
 
@@ -75,7 +86,10 @@ function Enroll({ onAlreadyEnrolled }: { onAlreadyEnrolled: () => void }) {
             src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(enrolment.qr_svg)}`}
           />
           <p>
-            {t('admin.mfa_secret')}: <code dir="ltr" data-testid="mfa-secret">{enrolment.secret}</code>
+            {t('admin.mfa_secret')}:{' '}
+            <code dir="ltr" data-testid="mfa-secret">
+              {enrolment.secret}
+            </code>
           </p>
           {m.error && !m.error.fieldErrors.code ? <ApiErrorAlert error={m.error} /> : null}
           <form onSubmit={confirm} noValidate className="form">
@@ -114,10 +128,12 @@ function Verify() {
     const body = useRecovery ? { recovery_code: value } : { code: value };
     const r = await m.run('/admin/auth/mfa/verify', { method: 'POST', body });
     if (r.ok) router.replace(`/${locale}/admin`);
-    else if (r.status === 401 && r.messageKey === 'auth.unauthenticated') router.replace(`/${locale}/admin/login`);
+    else if (r.status === 401 && r.messageKey === 'auth.unauthenticated')
+      router.replace(`/${locale}/admin/login`);
   }
 
-  const invalid = m.error?.messageKey === 'admin.mfa_code_invalid' || m.error?.code === 'VALIDATION_FAILED';
+  const invalid =
+    m.error?.messageKey === 'admin.mfa_code_invalid' || m.error?.code === 'VALIDATION_FAILED';
   return (
     <>
       <PageHeader title={t('admin.mfa_verify_title')} />
@@ -168,7 +184,9 @@ function Verify() {
 
 function MfaInner() {
   const params = useSearchParams();
-  const [step, setStep] = useState<'enroll' | 'verify'>(params?.get('step') === 'enroll' ? 'enroll' : 'verify');
+  const [step, setStep] = useState<'enroll' | 'verify'>(
+    params?.get('step') === 'enroll' ? 'enroll' : 'verify',
+  );
   return step === 'enroll' ? <Enroll onAlreadyEnrolled={() => setStep('verify')} /> : <Verify />;
 }
 

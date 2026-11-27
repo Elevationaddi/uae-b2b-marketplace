@@ -82,7 +82,9 @@ export default function AcceptInvitationPage() {
       <PageHeader title={t('invite.title')} />
       {state.kind === 'loading' ? <Skeleton /> : null}
       {state.kind === 'missing' ? <Alert kind="error">{t('auth.token_missing')}</Alert> : null}
-      {state.kind === 'error' ? <ApiErrorAlert error={state.error} onRetry={() => setTick((n) => n + 1)} /> : null}
+      {state.kind === 'error' ? (
+        <ApiErrorAlert error={state.error} onRetry={() => setTick((n) => n + 1)} />
+      ) : null}
       {state.kind === 'ready'
         ? (() => {
             const { preview, me, token } = state;
@@ -94,24 +96,36 @@ export default function AcceptInvitationPage() {
                 <p className="muted">{t('invite.for_email', { email: preview.email })}</p>
                 {preview.state !== 'PENDING' ? (
                   <Alert kind="warning">
-                    {t('invite.not_pending', { state: t(`team.invite_state.${preview.state}` as 'team.invite_state.PENDING') })}
+                    {t('invite.not_pending', {
+                      state: t(`team.invite_state.${preview.state}` as 'team.invite_state.PENDING'),
+                    })}
                   </Alert>
                 ) : !me ? (
                   <>
                     <p>{t('invite.sign_in_first', { email: preview.email })}</p>
                     <div className="actions">
-                      <Link className="btn btn-primary" href={`/${locale}/login?next=${encodeURIComponent(here)}`}>
+                      <Link
+                        className="btn btn-primary"
+                        href={`/${locale}/login?next=${encodeURIComponent(here)}`}
+                      >
                         {t('nav.sign_in')}
                       </Link>
-                      <Link className="btn btn-secondary" href={`/${locale}/register?next=${encodeURIComponent(here)}`}>
+                      <Link
+                        className="btn btn-secondary"
+                        href={`/${locale}/register?next=${encodeURIComponent(here)}`}
+                      >
                         {t('nav.register')}
                       </Link>
                     </div>
                   </>
                 ) : me.user.email !== preview.email ? (
-                  <Alert kind="warning">{t('invite.wrong_account', { current: me.user.email, email: preview.email })}</Alert>
+                  <Alert kind="warning">
+                    {t('invite.wrong_account', { current: me.user.email, email: preview.email })}
+                  </Alert>
                 ) : !me.user.email_verified ? (
-                  <Alert kind="warning">{t('auth.unverified_body', { email: me.user.email })}</Alert>
+                  <Alert kind="warning">
+                    {t('auth.unverified_body', { email: me.user.email })}
+                  </Alert>
                 ) : (
                   <>
                     {m.error ? <ApiErrorAlert error={m.error} /> : null}

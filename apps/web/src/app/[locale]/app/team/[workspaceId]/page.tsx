@@ -48,7 +48,9 @@ function Team({ ws }: { ws: Workspace }) {
   const t = useT();
   const isOwner = ws.role === 'OWNER';
   const members = useResource<Member[]>(`/workspaces/${ws.id}/members`);
-  const invitations = useResource<Invitation[]>(isOwner ? `/workspaces/${ws.id}/invitations` : null);
+  const invitations = useResource<Invitation[]>(
+    isOwner ? `/workspaces/${ws.id}/invitations` : null,
+  );
   const [pending, setPending] = useState<PendingAction | null>(null);
   const action = useMutation();
   const roleLabel = (r: string) => t(`role.${r}` as MessageKey);
@@ -58,7 +60,9 @@ function Team({ ws }: { ws: Workspace }) {
     if (!pending) return;
     const r =
       pending.kind === 'invite'
-        ? await action.run(`/workspaces/${ws.id}/invitations/${pending.invitation.id}`, { method: 'DELETE' })
+        ? await action.run(`/workspaces/${ws.id}/invitations/${pending.invitation.id}`, {
+            method: 'DELETE',
+          })
         : await action.run(`/memberships/${pending.member.membership_id}`, {
             method: 'PATCH',
             body: pending.kind === 'role' ? { role: pending.role } : { status: pending.status },
@@ -75,15 +79,33 @@ function Team({ ws }: { ws: Workspace }) {
     if (pending.kind === 'role')
       return {
         title: t('team.change_role'),
-        body: t('team.confirm_role', { email: pending.member.user.email, role: roleLabel(pending.role) }),
+        body: t('team.confirm_role', {
+          email: pending.member.user.email,
+          role: roleLabel(pending.role),
+        }),
         label: t('common.confirm'),
         danger: false,
       };
     if (pending.kind === 'status')
       return pending.status === 'REVOKED'
-        ? { title: t('team.revoke_access'), body: t('team.confirm_revoke', { email: pending.member.user.email }), label: t('team.revoke_access'), danger: true }
-        : { title: t('team.restore_access'), body: pending.member.user.email, label: t('team.restore_access'), danger: false };
-    return { title: t('team.revoke_invite'), body: pending.invitation.email, label: t('team.revoke_invite'), danger: true };
+        ? {
+            title: t('team.revoke_access'),
+            body: t('team.confirm_revoke', { email: pending.member.user.email }),
+            label: t('team.revoke_access'),
+            danger: true,
+          }
+        : {
+            title: t('team.restore_access'),
+            body: pending.member.user.email,
+            label: t('team.restore_access'),
+            danger: false,
+          };
+    return {
+      title: t('team.revoke_invite'),
+      body: pending.invitation.email,
+      label: t('team.revoke_invite'),
+      danger: true,
+    };
   })();
 
   return (
@@ -113,7 +135,8 @@ function Team({ ws }: { ws: Workspace }) {
                     {list.map((m) => (
                       <tr key={m.membership_id}>
                         <td>
-                          {m.user.full_name ?? '—'} {m.is_self ? <span className="tag">{t('team.you')}</span> : null}
+                          {m.user.full_name ?? '—'}{' '}
+                          {m.is_self ? <span className="tag">{t('team.you')}</span> : null}
                           <div className="muted">
                             <bdi>{m.user.email}</bdi>
                           </div>
@@ -126,7 +149,13 @@ function Team({ ws }: { ws: Workspace }) {
                               </span>
                               <select
                                 value={m.role}
-                                onChange={(e) => setPending({ kind: 'role', member: m, role: e.target.value as MembershipRole })}
+                                onChange={(e) =>
+                                  setPending({
+                                    kind: 'role',
+                                    member: m,
+                                    role: e.target.value as MembershipRole,
+                                  })
+                                }
                               >
                                 {roles.map((r) => (
                                   <option key={r} value={r}>
@@ -140,16 +169,31 @@ function Team({ ws }: { ws: Workspace }) {
                           )}
                         </td>
                         <td>
-                          <StatusBadge value={m.status} label={t(`team.member_state.${m.status}`)} />
+                          <StatusBadge
+                            value={m.status}
+                            label={t(`team.member_state.${m.status}`)}
+                          />
                         </td>
                         {isOwner ? (
                           <td>
                             {m.status === 'ACTIVE' ? (
-                              <Button type="button" variant="link" onClick={() => setPending({ kind: 'status', member: m, status: 'REVOKED' })}>
+                              <Button
+                                type="button"
+                                variant="link"
+                                onClick={() =>
+                                  setPending({ kind: 'status', member: m, status: 'REVOKED' })
+                                }
+                              >
                                 {t('team.revoke_access')}
                               </Button>
                             ) : (
-                              <Button type="button" variant="link" onClick={() => setPending({ kind: 'status', member: m, status: 'ACTIVE' })}>
+                              <Button
+                                type="button"
+                                variant="link"
+                                onClick={() =>
+                                  setPending({ kind: 'status', member: m, status: 'ACTIVE' })
+                                }
+                              >
                                 {t('team.restore_access')}
                               </Button>
                             )}
@@ -187,7 +231,11 @@ function Team({ ws }: { ws: Workspace }) {
                         <div className="doc-actions">
                           <StatusBadge value={i.state} label={t(`team.invite_state.${i.state}`)} />
                           {i.state === 'PENDING' ? (
-                            <Button type="button" variant="link" onClick={() => setPending({ kind: 'invite', invitation: i })}>
+                            <Button
+                              type="button"
+                              variant="link"
+                              onClick={() => setPending({ kind: 'invite', invitation: i })}
+                            >
                               {t('team.revoke_invite')}
                             </Button>
                           ) : null}
@@ -241,7 +289,10 @@ function InviteForm({
   async function submit(e: FormEvent) {
     e.preventDefault();
     setSentTo(null);
-    const r = await m.run(`/workspaces/${workspaceId}/invitations`, { method: 'POST', body: { email, role } });
+    const r = await m.run(`/workspaces/${workspaceId}/invitations`, {
+      method: 'POST',
+      body: { email, role },
+    });
     if (r.ok) {
       setSentTo(email.trim());
       setEmail('');
@@ -253,9 +304,19 @@ function InviteForm({
     <section className="card" aria-labelledby="invite-heading">
       <h2 id="invite-heading">{t('team.invite_title')}</h2>
       {sentTo ? <Alert kind="success">{t('team.invited', { email: sentTo })}</Alert> : null}
-      {m.error && !Object.keys(m.error.fieldErrors).length ? <ApiErrorAlert error={m.error} /> : null}
+      {m.error && !Object.keys(m.error.fieldErrors).length ? (
+        <ApiErrorAlert error={m.error} />
+      ) : null}
       <form onSubmit={submit} noValidate className="form grid-3 align-end">
-        <Field label={t('auth.email')} type="email" dir="ltr" value={email} onChange={(e) => setEmail(e.target.value)} error={fe('email')} required />
+        <Field
+          label={t('auth.email')}
+          type="email"
+          dir="ltr"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={fe('email')}
+          required
+        />
         <SelectField
           label={t('common.role')}
           value={role}

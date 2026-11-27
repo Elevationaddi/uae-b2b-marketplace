@@ -75,9 +75,12 @@ function CaseBody({ caseId }: { caseId: string }) {
             </PageHeader>
             <p className="muted">
               {t(`admin.case_kind.${c.kind}`)}
-              {c.submitted_at ? ` · ${t('admin.submitted_at')}: ${formatDubaiTime(c.submitted_at, locale)}` : ''}
+              {c.submitted_at
+                ? ` · ${t('admin.submitted_at')}: ${formatDubaiTime(c.submitted_at, locale)}`
+                : ''}
               {' · '}
-              {t('admin.assigned_to')}: {c.assigned_admin ? <bdi>{c.assigned_admin.email}</bdi> : t('admin.unassigned')}
+              {t('admin.assigned_to')}:{' '}
+              {c.assigned_admin ? <bdi>{c.assigned_admin.email}</bdi> : t('admin.unassigned')}
             </p>
             {recorded ? <Alert kind="success">{t('admin.decision_recorded')}</Alert> : null}
 
@@ -93,18 +96,34 @@ function CaseBody({ caseId }: { caseId: string }) {
                       t('company.licence_expiry'),
                       <span key="le">
                         {formatDate(c.company.licence_expiry, locale)}
-                        {c.company.licence_expired ? <> · <StatusBadge value="EXPIRED" label={t('team.invite_state.EXPIRED')} /></> : null}
+                        {c.company.licence_expired ? (
+                          <>
+                            {' '}
+                            · <StatusBadge value="EXPIRED" label={t('team.invite_state.EXPIRED')} />
+                          </>
+                        ) : null}
                       </span>,
                     ],
                     [t('company.activity'), c.company.activity],
                     [t('company.emirate'), t(`emirate.${c.company.emirate}` as MessageKey)],
-                    [t('company.trn'), c.company.trn ? <bdi key="trn">{c.company.trn}</bdi> : t('common.none')],
-                    [t('admin.contact'), <bdi key="ct">{`${c.company.contact_email} · ${c.company.contact_phone}`}</bdi>],
-                    [t('company.kinds'), c.company.kinds.map((k) => t(`kind.${k}` as MessageKey)).join(', ')],
+                    [
+                      t('company.trn'),
+                      c.company.trn ? <bdi key="trn">{c.company.trn}</bdi> : t('common.none'),
+                    ],
+                    [
+                      t('admin.contact'),
+                      <bdi key="ct">{`${c.company.contact_email} · ${c.company.contact_phone}`}</bdi>,
+                    ],
+                    [
+                      t('company.kinds'),
+                      c.company.kinds.map((k) => t(`kind.${k}` as MessageKey)).join(', '),
+                    ],
                     [t('admin.terms_version'), c.company.terms_version ?? t('common.none')],
                   ]}
                 />
-                <Link href={`/${locale}/admin/companies/${c.company.id}`}>{t('common.details')}</Link>
+                <Link href={`/${locale}/admin/companies/${c.company.id}`}>
+                  {t('common.details')}
+                </Link>
               </section>
 
               <section className="card" aria-labelledby="docs-heading">
@@ -112,7 +131,8 @@ function CaseBody({ caseId }: { caseId: string }) {
                 {c.proposed ? (
                   <Alert kind="info" title={t('company.renewal_proposed')}>
                     <p>
-                      <bdi>{c.proposed.licence_number}</bdi> · {c.proposed.licence_issuer} · {formatDate(c.proposed.licence_expiry, locale)}
+                      <bdi>{c.proposed.licence_number}</bdi> · {c.proposed.licence_issuer} ·{' '}
+                      {formatDate(c.proposed.licence_expiry, locale)}
                     </p>
                   </Alert>
                 ) : null}
@@ -126,13 +146,22 @@ function CaseBody({ caseId }: { caseId: string }) {
                           <strong>{t(`doc.${d.type}`)}</strong>
                           <div className="muted">
                             <bdi>{d.file.original_name}</bdi>
-                            {d.expires_at ? ` · ${t('company.document_expiry')}: ${formatDate(d.expires_at, locale)}` : ''}
+                            {d.expires_at
+                              ? ` · ${t('company.document_expiry')}: ${formatDate(d.expires_at, locale)}`
+                              : ''}
                           </div>
                         </div>
                         <div className="doc-actions">
-                          <StatusBadge value={d.file.scan_state} label={t(`company.scan.${d.file.scan_state}`)} />
+                          <StatusBadge
+                            value={d.file.scan_state}
+                            label={t(`company.scan.${d.file.scan_state}`)}
+                          />
                           {d.file.scan_state === 'CLEAN' ? (
-                            <a className="btn btn-link" href={`/api/v1/admin/files/${d.file.id}/download`} download>
+                            <a
+                              className="btn btn-link"
+                              href={`/api/v1/admin/files/${d.file.id}/download`}
+                              download
+                            >
                               {t('common.download')}
                             </a>
                           ) : null}
@@ -151,10 +180,13 @@ function CaseBody({ caseId }: { caseId: string }) {
                   type="button"
                   busy={start.busy}
                   onClick={async () => {
-                    const r = await start.run<CaseDetail>(`/admin/verification/${c.case_id}/start-review`, {
-                      method: 'POST',
-                      body: { expected_state: c.state },
-                    });
+                    const r = await start.run<CaseDetail>(
+                      `/admin/verification/${c.case_id}/start-review`,
+                      {
+                        method: 'POST',
+                        body: { expected_state: c.state },
+                      },
+                    );
                     if (r.ok) reload();
                   }}
                 >
@@ -178,7 +210,13 @@ function CaseBody({ caseId }: { caseId: string }) {
                     <legend>{t('admin.decision')}</legend>
                     {(['APPROVED', 'NEEDS_INFO', 'REJECTED'] as const).map((d) => (
                       <label key={d} className="check">
-                        <input type="radio" name="decision" value={d} checked={decision === d} onChange={() => setDecision(d)} />
+                        <input
+                          type="radio"
+                          name="decision"
+                          value={d}
+                          checked={decision === d}
+                          onChange={() => setDecision(d)}
+                        />
                         <span>{t(`admin.decision.${d}`)}</span>
                       </label>
                     ))}
@@ -189,7 +227,9 @@ function CaseBody({ caseId }: { caseId: string }) {
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     maxLength={2000}
-                    error={reasonMissing && reason.length > 0 ? t('field.reason_required') : undefined}
+                    error={
+                      reasonMissing && reason.length > 0 ? t('field.reason_required') : undefined
+                    }
                   />
                   <Button type="submit" disabled={reasonMissing}>
                     {t('admin.record_decision')}
@@ -212,7 +252,10 @@ function CaseBody({ caseId }: { caseId: string }) {
             <ConfirmDialog
               open={confirming}
               title={t('admin.decision')}
-              body={t('admin.confirm_decision', { decision: t(`admin.decision.${decision}`), company: c.company.display_name })}
+              body={t('admin.confirm_decision', {
+                decision: t(`admin.decision.${decision}`),
+                company: c.company.display_name,
+              })}
               confirmLabel={t('common.confirm')}
               danger={decision === 'REJECTED'}
               busy={decide.busy}
@@ -222,10 +265,13 @@ function CaseBody({ caseId }: { caseId: string }) {
                 decide.setError(null);
               }}
               onConfirm={async () => {
-                const r = await decide.run<CaseDetail>(`/admin/verification/${c.case_id}/decision`, {
-                  method: 'POST',
-                  body: { decision, reason: reason.trim() || undefined, expected_state: c.state },
-                });
+                const r = await decide.run<CaseDetail>(
+                  `/admin/verification/${c.case_id}/decision`,
+                  {
+                    method: 'POST',
+                    body: { decision, reason: reason.trim() || undefined, expected_state: c.state },
+                  },
+                );
                 if (r.ok) {
                   setConfirming(false);
                   setRecorded(true);

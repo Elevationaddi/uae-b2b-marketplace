@@ -6,7 +6,16 @@ import { Suspense, useState, type FormEvent } from 'react';
 import { AdminShell } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
 import { Resource } from '@/components/resource';
-import { Button, Empty, Field, PageHeader, Pager, SelectField, Skeleton, StatusBadge } from '@/components/ui';
+import {
+  Button,
+  Empty,
+  Field,
+  PageHeader,
+  Pager,
+  SelectField,
+  Skeleton,
+  StatusBadge,
+} from '@/components/ui';
 import { formatDate, type MessageKey } from '@/i18n/messages';
 import { useCursor, useResource } from '@/lib/use-resource';
 
@@ -57,12 +66,20 @@ function Companies() {
           go({ q: search.trim() });
         }}
       >
-        <Field label={t('admin.search_companies')} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Field
+          label={t('admin.search_companies')}
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <SelectField
           label={t('common.status')}
           value={status}
           onChange={(e) => go({ status: e.target.value })}
-          options={[{ value: '', label: t('common.all') }, ...COMPANY_STATUSES.map((s) => ({ value: s, label: t(`cstatus.${s}` as MessageKey) }))]}
+          options={[
+            { value: '', label: t('common.all') },
+            ...COMPANY_STATUSES.map((s) => ({ value: s, label: t(`cstatus.${s}` as MessageKey) })),
+          ]}
         />
         <Button type="submit" variant="secondary">
           {t('common.search')}
@@ -106,14 +123,22 @@ function Companies() {
                         </td>
                         <td>{c.kinds.map((k) => t(`kind.${k}` as MessageKey)).join(', ')}</td>
                         <td>
-                          <StatusBadge value={c.status} label={t(`cstatus.${c.status}` as MessageKey)} />
+                          <StatusBadge
+                            value={c.status}
+                            label={t(`cstatus.${c.status}` as MessageKey)}
+                          />
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <Pager hasPrev={pager.hasPrev} nextCursor={next} onFirst={pager.first} onNext={pager.next} />
+              <Pager
+                hasPrev={pager.hasPrev}
+                nextCursor={next}
+                onFirst={pager.first}
+                onNext={pager.next}
+              />
             </>
           )
         }

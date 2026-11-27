@@ -1,6 +1,11 @@
 import { publicConfigResponse, successSchema } from '@app/contracts';
 
-export type ServerConfig = { appName: string; sandbox: boolean; uploadMaxBytes: number; reachable: boolean };
+export type ServerConfig = {
+  appName: string;
+  sandbox: boolean;
+  uploadMaxBytes: number;
+  reachable: boolean;
+};
 
 const FALLBACK_NAME = 'B2B Marketplace (working name)';
 
@@ -12,7 +17,10 @@ const FALLBACK_NAME = 'B2B Marketplace (working name)';
 export async function loadServerConfig(): Promise<ServerConfig> {
   const base = process.env.API_INTERNAL_ORIGIN ?? process.env.API_ORIGIN ?? 'http://localhost:4000';
   try {
-    const res = await fetch(`${base}/api/v1/public/config`, { cache: 'no-store', signal: AbortSignal.timeout(2_000) });
+    const res = await fetch(`${base}/api/v1/public/config`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(2_000),
+    });
     const parsed = successSchema(publicConfigResponse).safeParse(await res.json());
     if (parsed.success) {
       return {
@@ -25,5 +33,10 @@ export async function loadServerConfig(): Promise<ServerConfig> {
   } catch {
     // fall through
   }
-  return { appName: process.env.APP_NAME ?? FALLBACK_NAME, sandbox: false, uploadMaxBytes: 10 * 1024 * 1024, reachable: false };
+  return {
+    appName: process.env.APP_NAME ?? FALLBACK_NAME,
+    sandbox: false,
+    uploadMaxBytes: 10 * 1024 * 1024,
+    reachable: false,
+  };
 }

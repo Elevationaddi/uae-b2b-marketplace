@@ -23,7 +23,13 @@ export function LocaleSwitch({ className }: { className?: string }) {
   const qs = search?.toString();
   const href = `/${other}${rest}${qs ? `?${qs}` : ''}${hash}`;
   return (
-    <Link href={href} hrefLang={other} lang={other} aria-label={t('locale.switch_label')} className={className ?? 'link-button'}>
+    <Link
+      href={href}
+      hrefLang={other}
+      lang={other}
+      aria-label={t('locale.switch_label')}
+      className={className ?? 'link-button'}
+    >
       {t('locale.switch')}
     </Link>
   );

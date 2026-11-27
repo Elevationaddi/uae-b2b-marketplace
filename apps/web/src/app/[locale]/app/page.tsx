@@ -20,9 +20,17 @@ function Home() {
   const name = me.user.full_name ?? me.user.email;
 
   // Group workspaces by company: one card per company, listing the caller's workspaces in it.
-  const companies = new Map<string, { id: string; name: string; status: string; ws: typeof me.workspaces }>();
+  const companies = new Map<
+    string,
+    { id: string; name: string; status: string; ws: typeof me.workspaces }
+  >();
   for (const w of me.workspaces) {
-    const c = companies.get(w.company.id) ?? { id: w.company.id, name: w.company.display_name, status: w.company.status, ws: [] };
+    const c = companies.get(w.company.id) ?? {
+      id: w.company.id,
+      name: w.company.display_name,
+      status: w.company.status,
+      ws: [],
+    };
     c.ws.push(w);
     companies.set(w.company.id, c);
   }
@@ -57,7 +65,10 @@ function Home() {
                   {c.ws.map((w) => (
                     <li key={w.id}>
                       {t(`kind.${w.kind}`)} · {t(`role.${w.role}` as MessageKey)} ·{' '}
-                      <StatusBadge value={w.status} label={t(`wstatus.${w.status}` as MessageKey)} />
+                      <StatusBadge
+                        value={w.status}
+                        label={t(`wstatus.${w.status}` as MessageKey)}
+                      />
                     </li>
                   ))}
                 </ul>

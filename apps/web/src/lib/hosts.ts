@@ -19,14 +19,24 @@ export function hostOf(origin: string): string {
   return new URL(origin).host.toLowerCase();
 }
 
-export function routeForHost(host: string, pathname: string, adminHost: string, webHost: string): HostDecision {
+export function routeForHost(
+  host: string,
+  pathname: string,
+  adminHost: string,
+  webHost: string,
+): HostDecision {
   const h = host.toLowerCase();
   const isAdminHost = h === adminHost;
-  const isAsset = pathname.startsWith('/_next/') || pathname === '/favicon.ico' || pathname === '/healthz';
+  const isAsset =
+    pathname.startsWith('/_next/') || pathname === '/favicon.ico' || pathname === '/healthz';
   if (isAsset) return { kind: 'next' };
 
   if (isAdminHost && adminHost !== webHost) {
-    if (ADMIN_PAGE_RE.test(pathname) || ADMIN_API_RE.test(pathname) || SHARED_API_RE.test(pathname)) {
+    if (
+      ADMIN_PAGE_RE.test(pathname) ||
+      ADMIN_API_RE.test(pathname) ||
+      SHARED_API_RE.test(pathname)
+    ) {
       return { kind: 'next' };
     }
     const m = LOCALE_RE.exec(pathname);

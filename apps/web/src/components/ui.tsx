@@ -31,7 +31,10 @@ export function Button({
   busy = false,
   children,
   ...rest
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'danger' | 'link'; busy?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: 'primary' | 'secondary' | 'danger' | 'link';
+  busy?: boolean;
+}) {
   const hydrated = useHydrated();
   return (
     <button
@@ -99,7 +102,8 @@ export function SelectField({
   hint,
   options,
   ...select
-}: FieldProps & SelectHTMLAttributes<HTMLSelectElement> & { options: { value: string; label: string }[] }) {
+}: FieldProps &
+  SelectHTMLAttributes<HTMLSelectElement> & { options: { value: string; label: string }[] }) {
   const id = useId();
   const hydrated = useHydrated();
   const errId = error ? `${id}-err` : undefined;
@@ -364,7 +368,12 @@ export function Pager({
       <Button type="button" variant="secondary" disabled={!hasPrev} onClick={onFirst}>
         {t('common.first_page')}
       </Button>
-      <Button type="button" variant="secondary" disabled={!nextCursor} onClick={() => nextCursor && onNext(nextCursor)}>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={!nextCursor}
+        onClick={() => nextCursor && onNext(nextCursor)}
+      >
         {t('common.next_page')}
       </Button>
     </nav>

@@ -15,7 +15,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:16.10-alpine
@@ -33,6 +33,10 @@ jobs:
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 3s --health-retries 20
+      # Local mail catcher: emails never leave the runner.
+      mail:
+        image: axllent/mailpit:v1.27
+        ports: ['1025:1025', '8025:8025']
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://marketplace:marketplace-ci@localhost:5432/marketplace
@@ -44,7 +48,14 @@ jobs:
       FILE_SCANNER: sandbox-eicar
       API_ORIGIN: http://localhost:4000
       PAYMENT_MODE: mock
-      EMAIL_PROVIDER: disabled
+      EMAIL_PROVIDER: smtp-dev
+      SMTP_URL: smtp://localhost:1025
+      STORAGE_ENDPOINT: http://localhost:8333
+      STORAGE_REGION: me-central-1
+      STORAGE_BUCKET: marketplace-private-ci
+      STORAGE_ACCESS_KEY: ci-only-access-key
+      STORAGE_SECRET_KEY: ci-only-secret-key
+      RATE_LIMIT_SCALE: '50'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -53,6 +64,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Start S3-compatible storage (SeaweedFS, private bucket)
+        run: |
+          docker run -d --name storage -p 8333:8333 chrislusf/seaweedfs:3.97 server -s3 -dir=/data -ip.bind=0.0.0.0
+          for i in $(seq 1 60); do curl -s -o /dev/null http://localhost:8333 && break; sleep 1; done
+      - name: Resolve the admin origin host (admin.localhost) for all browsers
+        run: echo "127.0.0.1 admin.localhost" | sudo tee -a /etc/hosts
       - name: Lint
         run: pnpm lint
       - name: Format check
@@ -65,11 +82,24 @@ jobs:
         run: pnpm db:migrate
       - name: Unit and integration tests
         run: pnpm test
+      - name: OpenAPI document is up to date
+        run: pnpm --filter @app/contracts openapi && git diff --exit-code docs/api/openapi.json
       - name: Build
         run: pnpm build
-      - name: Install Playwright browser
-        run: pnpm --filter @app/e2e exec playwright install --with-deps chromium
-      - name: Browser E2E
-        run: pnpm test:e2e
+        env:
+          NODE_ENV: production
+      - name: Seed fictional development data
+        run: pnpm db:seed
+      - name: Install Playwright browsers (Chromium and WebKit)
+        run: pnpm --filter @app/e2e exec playwright install --with-deps chromium webkit
+      - name: Browser E2E (Chromium, WebKit, phone layouts)
+        run: pnpm test:e2e --project=chromium --project=mobile-360 --project=webkit --project=mobile-safari
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report
+          retention-days: 7
       - name: Dependency audit (production dependencies)
         run: pnpm audit --prod --audit-level high

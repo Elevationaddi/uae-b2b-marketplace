@@ -3,7 +3,17 @@ import { useState, type FormEvent } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
 import { Resource } from '@/components/resource';
-import { Alert, Button, ConfirmDialog, Empty, Field, PageHeader, Pager, SelectField, TextArea } from '@/components/ui';
+import {
+  Alert,
+  Button,
+  ConfirmDialog,
+  Empty,
+  Field,
+  PageHeader,
+  Pager,
+  SelectField,
+  TextArea,
+} from '@/components/ui';
 import { formatDubaiTime } from '@/i18n/messages';
 import { useCursor, useMutation, useResource } from '@/lib/use-resource';
 
@@ -49,7 +59,12 @@ function Users() {
           setFilters({ ...filters, q: search.trim() });
         }}
       >
-        <Field label={t('admin.search_users')} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Field
+          label={t('admin.search_users')}
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <SelectField
           label={t('admin.account_type')}
           value={filters.account_type}
@@ -67,7 +82,9 @@ function Users() {
           {t('common.search')}
         </Button>
       </form>
-      {revoked !== null ? <Alert kind="success">{t('admin.sessions_revoked', { count: revoked })}</Alert> : null}
+      {revoked !== null ? (
+        <Alert kind="success">{t('admin.sessions_revoked', { count: revoked })}</Alert>
+      ) : null}
       <Resource state={state} reload={reload}>
         {(rows, next) =>
           rows.length === 0 ? (
@@ -113,7 +130,12 @@ function Users() {
                   </tbody>
                 </table>
               </div>
-              <Pager hasPrev={pager.hasPrev} nextCursor={next} onFirst={pager.first} onNext={pager.next} />
+              <Pager
+                hasPrev={pager.hasPrev}
+                nextCursor={next}
+                onFirst={pager.first}
+                onNext={pager.next}
+              />
             </>
           )
         }
@@ -132,7 +154,10 @@ function Users() {
         }}
         onConfirm={async () => {
           if (!target) return;
-          const r = await m.run<{ revoked: number }>(`/admin/users/${target.id}/revoke-sessions`, { method: 'POST', body: { reason } });
+          const r = await m.run<{ revoked: number }>(`/admin/users/${target.id}/revoke-sessions`, {
+            method: 'POST',
+            body: { reason },
+          });
           if (r.ok) {
             setRevoked(r.data.revoked);
             setTarget(null);
@@ -141,7 +166,14 @@ function Users() {
           }
         }}
       >
-        <TextArea label={t('common.reason')} hint={t('admin.reason_hint')} value={reason} onChange={(e) => setReason(e.target.value)} required minLength={5} />
+        <TextArea
+          label={t('common.reason')}
+          hint={t('admin.reason_hint')}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          required
+          minLength={5}
+        />
       </ConfirmDialog>
     </>
   );

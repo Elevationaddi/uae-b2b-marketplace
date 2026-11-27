@@ -27,7 +27,13 @@ export function useAdmin(): AdminMe {
  * Admin portal shell (separate origin, A03). A session that has not completed MFA is sent to
  * the MFA step; no admin data loads until the API confirms a fully authenticated admin session.
  */
-export function AdminShell({ children, require }: { children: ReactNode; require?: AdminCapability }) {
+export function AdminShell({
+  children,
+  require,
+}: {
+  children: ReactNode;
+  require?: AdminCapability;
+}) {
   const { locale } = useApp();
   const router = useRouter();
   const { state, reload } = useResource<AdminMe>('/admin/me');
@@ -35,7 +41,9 @@ export function AdminShell({ children, require }: { children: ReactNode; require
   useEffect(() => {
     if (state.status === 'error' && state.error.status === 401) {
       router.replace(
-        state.error.messageKey === 'admin.mfa_required' ? `/${locale}/admin/mfa` : `/${locale}/admin/login`,
+        state.error.messageKey === 'admin.mfa_required'
+          ? `/${locale}/admin/mfa`
+          : `/${locale}/admin/login`,
       );
     }
   }, [state, router, locale]);
@@ -49,13 +57,21 @@ export function AdminShell({ children, require }: { children: ReactNode; require
   }
   if (state.status === 'error') {
     return (
-      <AdminFrame>{state.error.status === 403 ? <Forbidden /> : <ApiErrorAlert error={state.error} onRetry={reload} />}</AdminFrame>
+      <AdminFrame>
+        {state.error.status === 403 ? (
+          <Forbidden />
+        ) : (
+          <ApiErrorAlert error={state.error} onRetry={reload} />
+        )}
+      </AdminFrame>
     );
   }
   const me = state.data;
   return (
     <AdminCtx.Provider value={me}>
-      <AdminFrame me={me}>{require && !me.capabilities.includes(require) ? <Forbidden /> : children}</AdminFrame>
+      <AdminFrame me={me}>
+        {require && !me.capabilities.includes(require) ? <Forbidden /> : children}
+      </AdminFrame>
     </AdminCtx.Provider>
   );
 }
@@ -71,13 +87,18 @@ export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode
   const base = `/${locale}/admin`;
   const nav = [
     { href: base, label: t('admin.nav.overview'), cap: 'admin.companies.read' },
-    { href: `${base}/verification`, label: t('admin.nav.verification'), cap: 'admin.verification.review' },
+    {
+      href: `${base}/verification`,
+      label: t('admin.nav.verification'),
+      cap: 'admin.verification.review',
+    },
     { href: `${base}/companies`, label: t('admin.nav.companies'), cap: 'admin.companies.read' },
     { href: `${base}/users`, label: t('admin.nav.users'), cap: 'admin.users.read' },
     { href: `${base}/audit`, label: t('admin.nav.audit'), cap: 'admin.audit.read' },
     { href: `${base}/staff`, label: t('admin.nav.staff'), cap: 'admin.staff.manage' },
   ].filter((n) => caps.includes(n.cap as AdminCapability));
-  const isActive = (href: string) => (href === base ? pathname === href : pathname.startsWith(href));
+  const isActive = (href: string) =>
+    href === base ? pathname === href : pathname.startsWith(href);
 
   async function signOut() {
     setBusy(true);

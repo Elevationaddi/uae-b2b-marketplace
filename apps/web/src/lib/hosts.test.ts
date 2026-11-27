@@ -23,8 +23,14 @@ describe('host routing (A03)', () => {
   it('allows shared endpoints and assets on the admin host and redirects its root', () => {
     expect(routeForHost(ADMIN, '/api/v1/auth/csrf', ADMIN, WEB).kind).toBe('next');
     expect(routeForHost(ADMIN, '/_next/static/x.js', ADMIN, WEB).kind).toBe('next');
-    expect(routeForHost(ADMIN, '/en', ADMIN, WEB)).toEqual({ kind: 'redirect', location: '/en/admin' });
-    expect(routeForHost(ADMIN, '/ar/', ADMIN, WEB)).toEqual({ kind: 'redirect', location: '/ar/admin' });
+    expect(routeForHost(ADMIN, '/en', ADMIN, WEB)).toEqual({
+      kind: 'redirect',
+      location: '/en/admin',
+    });
+    expect(routeForHost(ADMIN, '/ar/', ADMIN, WEB)).toEqual({
+      kind: 'redirect',
+      location: '/ar/admin',
+    });
   });
 
   it('host comparison is case-insensitive and other hosts behave like the web host', () => {

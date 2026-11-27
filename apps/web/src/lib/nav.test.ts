@@ -7,7 +7,15 @@ describe('safeNext', () => {
     expect(safeNext('ar', '/ar/invitations/accept')).toBe('/ar/invitations/accept');
   });
   it('rejects external, protocol-relative, admin and malformed targets', () => {
-    for (const bad of ['https://evil.test', '//evil.test', '/en\\evil', '/en/admin', 'javascript:alert(1)', '', null]) {
+    for (const bad of [
+      'https://evil.test',
+      '//evil.test',
+      '/en\\evil',
+      '/en/admin',
+      'javascript:alert(1)',
+      '',
+      null,
+    ]) {
       expect(safeNext('en', bad)).toBe('/en/app');
     }
   });

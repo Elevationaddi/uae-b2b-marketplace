@@ -4,7 +4,13 @@ import { Suspense, type ReactNode } from 'react';
 import { useApp, useT } from './app-context';
 import { LocaleSwitch } from './locale-switch';
 
-export function PublicShell({ children, narrow = true }: { children: ReactNode; narrow?: boolean }) {
+export function PublicShell({
+  children,
+  narrow = true,
+}: {
+  children: ReactNode;
+  narrow?: boolean;
+}) {
   const { locale, appName } = useApp();
   const t = useT();
   return (

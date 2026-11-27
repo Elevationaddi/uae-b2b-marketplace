@@ -57,11 +57,9 @@ export const rawEnvSchema = z.object({
 
   SESSION_SECRET: z.string().min(1),
   /** 32-byte key, base64, used to encrypt admin TOTP secrets at rest (AES-256-GCM). */
-  MFA_ENCRYPTION_KEY: z
-    .string()
-    .refine((v) => Buffer.from(v, 'base64').length === 32, {
-      message: 'must be 32 bytes, base64 encoded',
-    }),
+  MFA_ENCRYPTION_KEY: z.string().refine((v) => Buffer.from(v, 'base64').length === 32, {
+    message: 'must be 32 bytes, base64 encoded',
+  }),
   WEB_ORIGIN: z.string().url(),
   /** Admin portal origin; separate host in production (A03). */
   ADMIN_ORIGIN: z.string().url(),

@@ -5,7 +5,16 @@ import { useState } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
 import { Resource } from '@/components/resource';
-import { Alert, Button, ConfirmDialog, DefinitionList, Empty, PageHeader, StatusBadge, TextArea } from '@/components/ui';
+import {
+  Alert,
+  Button,
+  ConfirmDialog,
+  DefinitionList,
+  Empty,
+  PageHeader,
+  StatusBadge,
+  TextArea,
+} from '@/components/ui';
 import { formatDate, formatDubaiTime, type MessageKey } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
 
@@ -25,8 +34,19 @@ type CompanyDetail = {
   contact_email: string;
   contact_phone: string;
   created_at: string;
-  members: { membership_id: string; workspace_kind: string; role: string; status: string; user: { id: string; email: string } }[];
-  cases: { case_id: string; kind: 'INITIAL' | 'RENEWAL'; state: string; submitted_at: string | null }[];
+  members: {
+    membership_id: string;
+    workspace_kind: string;
+    role: string;
+    status: string;
+    user: { id: string; email: string };
+  }[];
+  cases: {
+    case_id: string;
+    kind: 'INITIAL' | 'RENEWAL';
+    state: string;
+    submitted_at: string | null;
+  }[];
 };
 
 function Body({ companyId }: { companyId: string }) {
@@ -70,7 +90,10 @@ function Body({ companyId }: { companyId: string }) {
                 [t('company.activity'), c.activity],
                 [t('company.emirate'), t(`emirate.${c.emirate}` as MessageKey)],
                 [t('company.trn'), c.trn ? <bdi key="trn">{c.trn}</bdi> : t('common.none')],
-                [t('admin.contact'), <bdi key="ct">{`${c.contact_email} · ${c.contact_phone}`}</bdi>],
+                [
+                  t('admin.contact'),
+                  <bdi key="ct">{`${c.contact_email} · ${c.contact_phone}`}</bdi>,
+                ],
                 [t('company.kinds'), c.kinds.map((k) => t(`kind.${k}` as MessageKey)).join(', ')],
                 [t('common.created'), formatDubaiTime(c.created_at, locale)],
               ]}
@@ -100,7 +123,10 @@ function Body({ companyId }: { companyId: string }) {
                         <td>{t(`kind.${mb.workspace_kind}` as MessageKey)}</td>
                         <td>{t(`role.${mb.role}` as MessageKey)}</td>
                         <td>
-                          <StatusBadge value={mb.status} label={t(`team.member_state.${mb.status}` as MessageKey)} />
+                          <StatusBadge
+                            value={mb.status}
+                            label={t(`team.member_state.${mb.status}` as MessageKey)}
+                          />
                         </td>
                       </tr>
                     ))}
@@ -119,11 +145,15 @@ function Body({ companyId }: { companyId: string }) {
                   <li key={vc.case_id} className="doc">
                     <div>
                       {canReview ? (
-                        <Link href={`/${locale}/admin/verification/${vc.case_id}`}>{t(`admin.case_kind.${vc.kind}`)}</Link>
+                        <Link href={`/${locale}/admin/verification/${vc.case_id}`}>
+                          {t(`admin.case_kind.${vc.kind}`)}
+                        </Link>
                       ) : (
                         t(`admin.case_kind.${vc.kind}`)
                       )}
-                      <div className="muted">{vc.submitted_at ? formatDubaiTime(vc.submitted_at, locale) : '—'}</div>
+                      <div className="muted">
+                        {vc.submitted_at ? formatDubaiTime(vc.submitted_at, locale) : '—'}
+                      </div>
                     </div>
                     <StatusBadge value={vc.state} label={t(`cstatus.${vc.state}` as MessageKey)} />
                   </li>
@@ -144,7 +174,10 @@ function Body({ companyId }: { companyId: string }) {
             }}
             onConfirm={async () => {
               if (!action) return;
-              const r = await m.run<CompanyDetail>(`/admin/companies/${c.id}/${action}`, { method: 'POST', body: { reason } });
+              const r = await m.run<CompanyDetail>(`/admin/companies/${c.id}/${action}`, {
+                method: 'POST',
+                body: { reason },
+              });
               if (r.ok) {
                 setAction(null);
                 setReason('');

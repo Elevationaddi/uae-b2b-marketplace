@@ -3,7 +3,15 @@ import Link from 'next/link';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApp, useT } from '@/components/app-context';
 import { PublicShell } from '@/components/public-shell';
-import { Alert, ApiErrorAlert, Button, Field, PageHeader, Skeleton, useFieldError } from '@/components/ui';
+import {
+  Alert,
+  ApiErrorAlert,
+  Button,
+  Field,
+  PageHeader,
+  Skeleton,
+  useFieldError,
+} from '@/components/ui';
 import { takeFragmentToken } from '@/lib/nav';
 import { useMutation } from '@/lib/use-resource';
 
@@ -20,7 +28,10 @@ export default function ResetPasswordPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const r = await m.run('/auth/password-reset/confirm', { method: 'POST', body: { token, new_password: password } });
+    const r = await m.run('/auth/password-reset/confirm', {
+      method: 'POST',
+      body: { token, new_password: password },
+    });
     if (r.ok) setDone(true);
   }
 
@@ -44,7 +55,9 @@ export default function ResetPasswordPage() {
       ) : null}
       {token && !done ? (
         <>
-          {m.error && m.error.code !== 'VALIDATION_FAILED' ? <ApiErrorAlert error={m.error} /> : null}
+          {m.error && m.error.code !== 'VALIDATION_FAILED' ? (
+            <ApiErrorAlert error={m.error} />
+          ) : null}
           {m.error?.messageKey === 'auth.token_invalid' ? (
             <>
               <ApiErrorAlert error={m.error} />

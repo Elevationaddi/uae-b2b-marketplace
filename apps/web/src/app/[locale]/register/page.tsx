@@ -3,7 +3,15 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useApp, useT } from '@/components/app-context';
 import { PublicShell } from '@/components/public-shell';
-import { Alert, ApiErrorAlert, Button, Field, PageHeader, SelectField, useFieldError } from '@/components/ui';
+import {
+  Alert,
+  ApiErrorAlert,
+  Button,
+  Field,
+  PageHeader,
+  SelectField,
+  useFieldError,
+} from '@/components/ui';
 import { useMutation } from '@/lib/use-resource';
 
 export default function RegisterPage() {
@@ -12,7 +20,12 @@ export default function RegisterPage() {
   const m = useMutation();
   const resend = useMutation();
   const fe = useFieldError(m.error);
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', locale: locale as string });
+  const [form, setForm] = useState({
+    full_name: '',
+    email: '',
+    password: '',
+    locale: locale as string,
+  });
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [resent, setResent] = useState(false);
 
@@ -38,7 +51,10 @@ export default function RegisterPage() {
             variant="secondary"
             busy={resend.busy}
             onClick={async () => {
-              const r = await resend.run('/auth/resend-verification', { method: 'POST', body: { email: sentTo } });
+              const r = await resend.run('/auth/resend-verification', {
+                method: 'POST',
+                body: { email: sentTo },
+              });
               if (r.ok) setResent(true);
             }}
           >
@@ -55,7 +71,9 @@ export default function RegisterPage() {
       <PageHeader title={t('auth.register_title')} />
       <p>{t('auth.register_intro')}</p>
       {m.error && m.error.code !== 'VALIDATION_FAILED' ? <ApiErrorAlert error={m.error} /> : null}
-      {m.error?.code === 'VALIDATION_FAILED' ? <Alert kind="error">{t('error.common.validation_failed')}</Alert> : null}
+      {m.error?.code === 'VALIDATION_FAILED' ? (
+        <Alert kind="error">{t('error.common.validation_failed')}</Alert>
+      ) : null}
       <form onSubmit={submit} noValidate className="form">
         <Field
           label={t('auth.full_name')}

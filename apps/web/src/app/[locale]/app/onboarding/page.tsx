@@ -29,7 +29,10 @@ function Onboarding() {
         busy={m.busy}
         error={m.error}
         onSubmit={async (v) => {
-          const r = await m.run<CompanyResponse>('/companies', { method: 'POST', body: { ...v, kinds } });
+          const r = await m.run<CompanyResponse>('/companies', {
+            method: 'POST',
+            body: { ...v, kinds },
+          });
           if (r.ok) {
             if (r.data.workspaces[0]) selectWorkspace(r.data.workspaces[0].id);
             router.push(`/${locale}/app/company/${r.data.id}`);
@@ -44,7 +47,9 @@ function Onboarding() {
                 <span>
                   <strong>{t(`kind.${k}`)}</strong>
                   <br />
-                  <span className="muted">{t(k === 'BUYER' ? 'company.kind_buyer_hint' : 'company.kind_seller_hint')}</span>
+                  <span className="muted">
+                    {t(k === 'BUYER' ? 'company.kind_buyer_hint' : 'company.kind_seller_hint')}
+                  </span>
                 </span>
               </label>
             ))}

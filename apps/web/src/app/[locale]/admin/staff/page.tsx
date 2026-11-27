@@ -4,7 +4,15 @@ import { useState } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useT } from '@/components/app-context';
 import { Resource } from '@/components/resource';
-import { Alert, Button, ConfirmDialog, Empty, PageHeader, StatusBadge, TextArea } from '@/components/ui';
+import {
+  Alert,
+  Button,
+  ConfirmDialog,
+  Empty,
+  PageHeader,
+  StatusBadge,
+  TextArea,
+} from '@/components/ui';
 import type { MessageKey } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
 
@@ -56,7 +64,11 @@ function StaffBody() {
                         {s.id === me.user.id ? <span className="tag">{t('team.you')}</span> : null}
                         <div className="muted">{s.full_name ?? '—'}</div>
                       </td>
-                      <td>{s.roles.length ? s.roles.map((r) => t(`adminrole.${r}` as MessageKey)).join(', ') : t('common.none')}</td>
+                      <td>
+                        {s.roles.length
+                          ? s.roles.map((r) => t(`adminrole.${r}` as MessageKey)).join(', ')
+                          : t('common.none')}
+                      </td>
                       <td>{s.mfa_enabled ? t('common.yes') : t('common.no')}</td>
                       <td>
                         <StatusBadge value={s.status} label={t(`ustatus.${s.status}`)} />
@@ -95,7 +107,10 @@ function StaffBody() {
         }}
         onConfirm={async () => {
           if (!editing) return;
-          const r = await m.run(`/admin/staff/${editing.id}/roles`, { method: 'POST', body: { roles, reason } });
+          const r = await m.run(`/admin/staff/${editing.id}/roles`, {
+            method: 'POST',
+            body: { roles, reason },
+          });
           if (r.ok) {
             setEditing(null);
             setSaved(true);
@@ -110,13 +125,22 @@ function StaffBody() {
               <input
                 type="checkbox"
                 checked={roles.includes(r)}
-                onChange={() => setRoles((cur) => (cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r]))}
+                onChange={() =>
+                  setRoles((cur) => (cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r]))
+                }
               />
               <span>{t(`adminrole.${r}` as MessageKey)}</span>
             </label>
           ))}
         </fieldset>
-        <TextArea label={t('common.reason')} hint={t('admin.reason_hint')} value={reason} onChange={(e) => setReason(e.target.value)} required minLength={5} />
+        <TextArea
+          label={t('common.reason')}
+          hint={t('admin.reason_hint')}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          required
+          minLength={5}
+        />
       </ConfirmDialog>
     </>
   );

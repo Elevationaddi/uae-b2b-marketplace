@@ -3,7 +3,12 @@ import { createContext, useCallback, useContext, type ReactNode } from 'react';
 import { t, tDynamic, type Locale, type MessageKey } from '@/i18n/messages';
 import type { ApiError } from '@/lib/client';
 
-export type AppConfig = { locale: Locale; appName: string; sandbox: boolean; uploadMaxBytes: number };
+export type AppConfig = {
+  locale: Locale;
+  appName: string;
+  sandbox: boolean;
+  uploadMaxBytes: number;
+};
 
 const AppCtx = createContext<AppConfig | null>(null);
 
@@ -21,7 +26,10 @@ export type Translate = (key: MessageKey, vars?: Record<string, string | number>
 
 export function useT(): Translate {
   const { locale } = useApp();
-  return useCallback((key: MessageKey, vars?: Record<string, string | number>) => t(locale, key, vars), [locale]);
+  return useCallback(
+    (key: MessageKey, vars?: Record<string, string | number>) => t(locale, key, vars),
+    [locale],
+  );
 }
 
 /** Translate an API message_key; unknown keys fall back to a generic message (never raw keys). */

@@ -33,8 +33,12 @@ type Overview = { current: VerificationCaseResponse | null; history: Verificatio
 type Doc = VerificationCaseResponse['documents'][number];
 
 function formatBytes(n: number, locale: Locale) {
-  const nf = new Intl.NumberFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', { maximumFractionDigits: 1 });
-  return n >= 1024 * 1024 ? `${nf.format(n / 1024 / 1024)} MB` : `${nf.format(Math.max(1, Math.round(n / 1024)))} KB`;
+  const nf = new Intl.NumberFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', {
+    maximumFractionDigits: 1,
+  });
+  return n >= 1024 * 1024
+    ? `${nf.format(n / 1024 / 1024)} MB`
+    : `${nf.format(Math.max(1, Math.round(n / 1024)))} KB`;
 }
 
 function CompanyPage({ companyId }: { companyId: string }) {
@@ -62,7 +66,12 @@ function CompanyPage({ companyId }: { companyId: string }) {
           <p className="muted">
             <strong>{t('home.next_step')}:</strong> {t(`home.next.${c.status}` as MessageKey)}
           </p>
-          <Details company={c} canManage={canManage} onSaved={company.setData} onStale={reloadAll} />
+          <Details
+            company={c}
+            canManage={canManage}
+            onSaved={company.setData}
+            onStale={reloadAll}
+          />
           <section className="card" aria-labelledby="ver-heading">
             <h2 id="ver-heading">{t('company.verification')}</h2>
             <Resource state={verification.state} reload={verification.reload}>
@@ -76,7 +85,8 @@ function CompanyPage({ companyId }: { companyId: string }) {
                       canDownload={canDownload}
                       onChange={reloadAll}
                     />
-                  ) : canManage && (c.status === 'APPROVED' || (c.status === 'SUSPENDED' && c.licence_expired)) ? (
+                  ) : canManage &&
+                    (c.status === 'APPROVED' || (c.status === 'SUSPENDED' && c.licence_expired)) ? (
                     <Renewal companyId={c.id} onStarted={reloadAll} />
                   ) : (
                     <p className="muted">{t('common.none')}</p>
@@ -88,7 +98,10 @@ function CompanyPage({ companyId }: { companyId: string }) {
                         <div key={h.id} className="history-case">
                           <p>
                             <strong>{t(`admin.case_kind.${h.kind}`)}</strong> ·{' '}
-                            <StatusBadge value={h.state} label={t(`cstatus.${h.state}` as MessageKey)} />
+                            <StatusBadge
+                              value={h.state}
+                              label={t(`cstatus.${h.state}` as MessageKey)}
+                            />
                           </p>
                           <Timeline events={h.events} />
                         </div>
@@ -104,7 +117,8 @@ function CompanyPage({ companyId }: { companyId: string }) {
             <ul className="inline-list">
               {c.workspaces.map((w) => (
                 <li key={w.id}>
-                  {t(`kind.${w.kind}`)} · <StatusBadge value={w.status} label={t(`wstatus.${w.status}` as MessageKey)} />
+                  {t(`kind.${w.kind}`)} ·{' '}
+                  <StatusBadge value={w.status} label={t(`wstatus.${w.status}` as MessageKey)} />
                 </li>
               ))}
             </ul>
@@ -184,8 +198,19 @@ function Details({
 
 function docErrors(t: Translate, fieldErrors: Record<string, string>): string[] {
   return Object.entries(fieldErrors).map(([k, code]) => {
-    const label = (DOCUMENT_TYPES as readonly string[]).includes(k) ? t(`doc.${k}` as MessageKey) : k === 'documents' ? t('company.documents') : k;
-    const msg = code === 'required' ? t('field.required') : code === 'infected' ? t('field.infected') : code === 'future' ? t('field.future') : t('field.invalid');
+    const label = (DOCUMENT_TYPES as readonly string[]).includes(k)
+      ? t(`doc.${k}` as MessageKey)
+      : k === 'documents'
+        ? t('company.documents')
+        : k;
+    const msg =
+      code === 'required'
+        ? t('field.required')
+        : code === 'infected'
+          ? t('field.infected')
+          : code === 'future'
+            ? t('field.future')
+            : t('field.invalid');
     return `${label}: ${msg}`;
   });
 }
@@ -227,7 +252,8 @@ function CurrentCase({
   return (
     <>
       <p>
-        <strong>{t(`admin.case_kind.${vc.kind}`)}</strong> · <StatusBadge value={vc.state} label={t(`cstatus.${vc.state}` as MessageKey)} />
+        <strong>{t(`admin.case_kind.${vc.kind}`)}</strong> ·{' '}
+        <StatusBadge value={vc.state} label={t(`cstatus.${vc.state}` as MessageKey)} />
         {vc.submitted_at ? (
           <span className="muted">
             {' '}
@@ -252,8 +278,16 @@ function CurrentCase({
       {submitted ? <Alert kind="success">{t('company.submitted_ok')}</Alert> : null}
 
       <h3>{t('company.documents')}</h3>
-      {canEdit ? <p>{t('company.documents_intro', { size: Math.round(uploadMaxBytes / 1024 / 1024) })}</p> : null}
-      <Documents companyId={company.id} docs={vc.documents} canEdit={canEdit} canDownload={canDownload} onChange={onChange} />
+      {canEdit ? (
+        <p>{t('company.documents_intro', { size: Math.round(uploadMaxBytes / 1024 / 1024) })}</p>
+      ) : null}
+      <Documents
+        companyId={company.id}
+        docs={vc.documents}
+        canEdit={canEdit}
+        canDownload={canDownload}
+        onChange={onChange}
+      />
       {canEdit ? <UploadForm companyId={company.id} onUploaded={onChange} /> : null}
 
       {canEdit ? (
@@ -276,7 +310,12 @@ function CurrentCase({
             </Alert>
           ) : null}
           <label className="check">
-            <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} required />
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              required
+            />
             <span>{t('company.terms_accept', { version: CURRENT_TERMS_VERSION })}</span>
           </label>
           <p className="muted">{t('company.terms_pending_note')}</p>
@@ -319,11 +358,16 @@ function Documents({
               <strong>{t(`doc.${d.type}`)}</strong>
               <div className="muted">
                 <bdi>{d.file.original_name}</bdi> · <bdi>{formatBytes(d.file.bytes, locale)}</bdi>
-                {d.expires_at ? ` · ${t('company.document_expiry')}: ${formatDate(d.expires_at, locale)}` : ''}
+                {d.expires_at
+                  ? ` · ${t('company.document_expiry')}: ${formatDate(d.expires_at, locale)}`
+                  : ''}
               </div>
             </div>
             <div className="doc-actions">
-              <StatusBadge value={d.file.scan_state} label={t(`company.scan.${d.file.scan_state}`)} />
+              <StatusBadge
+                value={d.file.scan_state}
+                label={t(`company.scan.${d.file.scan_state}`)}
+              />
               {canDownload && d.file.scan_state === 'CLEAN' ? (
                 <a className="btn btn-link" href={`/api/v1/files/${d.file.id}/download`} download>
                   {t('common.download')}
@@ -341,7 +385,9 @@ function Documents({
       <ConfirmDialog
         open={removing !== null}
         title={t('common.remove')}
-        body={removing ? `${t('company.confirm_remove_doc')} ${removing.file.original_name}` : undefined}
+        body={
+          removing ? `${t('company.confirm_remove_doc')} ${removing.file.original_name}` : undefined
+        }
         confirmLabel={t('common.remove')}
         danger
         busy={m.busy}
@@ -352,7 +398,9 @@ function Documents({
         }}
         onConfirm={async () => {
           if (!removing) return;
-          const r = await m.run(`/companies/${companyId}/documents/${removing.id}`, { method: 'DELETE' });
+          const r = await m.run(`/companies/${companyId}/documents/${removing.id}`, {
+            method: 'DELETE',
+          });
           if (r.ok) {
             setRemoving(null);
             onChange();

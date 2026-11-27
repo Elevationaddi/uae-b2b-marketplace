@@ -29,7 +29,9 @@ export default function ForgotPasswordPage() {
       ) : (
         <>
           <p>{t('auth.forgot_intro')}</p>
-          {m.error && m.error.code !== 'VALIDATION_FAILED' ? <ApiErrorAlert error={m.error} /> : null}
+          {m.error && m.error.code !== 'VALIDATION_FAILED' ? (
+            <ApiErrorAlert error={m.error} />
+          ) : null}
           <form onSubmit={submit} noValidate className="form">
             <Field
               label={t('auth.email')}

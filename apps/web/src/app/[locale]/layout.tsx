@@ -12,7 +12,11 @@ export const dynamic = 'force-dynamic';
 
 export const viewport: Viewport = { width: 'device-width', initialScale: 1 };
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   const cfg = await loadServerConfig();
@@ -45,7 +49,12 @@ export default async function LocaleLayout({
           </div>
         ) : null}
         <AppProvider
-          value={{ locale, appName: cfg.appName, sandbox: cfg.sandbox, uploadMaxBytes: cfg.uploadMaxBytes }}
+          value={{
+            locale,
+            appName: cfg.appName,
+            sandbox: cfg.sandbox,
+            uploadMaxBytes: cfg.uploadMaxBytes,
+          }}
         >
           {children}
         </AppProvider>

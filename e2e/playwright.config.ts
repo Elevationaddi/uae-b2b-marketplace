@@ -16,7 +16,12 @@ const projects: PlaywrightTestConfig['projects'] = [
   { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /screenshots/ },
   {
     name: 'mobile-360',
-    use: { ...devices['Desktop Chrome'], viewport: { width: 360, height: 740 }, isMobile: false, hasTouch: true },
+    use: {
+      ...devices['Desktop Chrome'],
+      viewport: { width: 360, height: 740 },
+      isMobile: false,
+      hasTouch: true,
+    },
     testIgnore: /screenshots/,
   },
 ];

@@ -22,7 +22,11 @@ export function useResource<T>(path: string | null, query?: RequestOptions['quer
     api<T>(path, { query: queryRef.current, signal: ctrl.signal })
       .then((r) => {
         if (ctrl.signal.aborted) return;
-        setState(r.ok ? { status: 'ready', data: r.data, nextCursor: r.nextCursor } : { status: 'error', error: r });
+        setState(
+          r.ok
+            ? { status: 'ready', data: r.data, nextCursor: r.nextCursor }
+            : { status: 'error', error: r },
+        );
       })
       .catch(() => undefined);
     return () => ctrl.abort();
@@ -31,7 +35,12 @@ export function useResource<T>(path: string | null, query?: RequestOptions['quer
 
   const reload = useCallback(() => setTick((n) => n + 1), []);
   const setData = useCallback(
-    (data: T) => setState((s) => ({ status: 'ready', data, nextCursor: s.status === 'ready' ? s.nextCursor : null })),
+    (data: T) =>
+      setState((s) => ({
+        status: 'ready',
+        data,
+        nextCursor: s.status === 'ready' ? s.nextCursor : null,
+      })),
     [],
   );
   return { state, reload, setData };
@@ -53,7 +62,7 @@ export function useCursor() {
 export function useMutation() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
-  const run = useCallback(async <T,>(path: string, opts: RequestOptions) => {
+  const run = useCallback(async <T>(path: string, opts: RequestOptions) => {
     setBusy(true);
     setError(null);
     try {

@@ -59,7 +59,9 @@ function LoginForm() {
       </p>
       <p>
         {t('auth.no_account')}{' '}
-        <Link href={`/${locale}/register${next ? `?next=${encodeURIComponent(next)}` : ''}`}>{t('nav.register')}</Link>
+        <Link href={`/${locale}/register${next ? `?next=${encodeURIComponent(next)}` : ''}`}>
+          {t('nav.register')}
+        </Link>
       </p>
     </>
   );

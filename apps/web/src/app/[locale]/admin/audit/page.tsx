@@ -53,9 +53,24 @@ function Audit() {
           });
         }}
       >
-        <Field label={t('admin.action')} dir="ltr" value={draft.action} onChange={(e) => setDraft({ ...draft, action: e.target.value })} />
-        <Field label={t('admin.resource')} dir="ltr" value={draft.resource_type} onChange={(e) => setDraft({ ...draft, resource_type: e.target.value })} />
-        <Field label={t('admin.resource_id')} dir="ltr" value={draft.resource_id} onChange={(e) => setDraft({ ...draft, resource_id: e.target.value })} />
+        <Field
+          label={t('admin.action')}
+          dir="ltr"
+          value={draft.action}
+          onChange={(e) => setDraft({ ...draft, action: e.target.value })}
+        />
+        <Field
+          label={t('admin.resource')}
+          dir="ltr"
+          value={draft.resource_type}
+          onChange={(e) => setDraft({ ...draft, resource_type: e.target.value })}
+        />
+        <Field
+          label={t('admin.resource_id')}
+          dir="ltr"
+          value={draft.resource_id}
+          onChange={(e) => setDraft({ ...draft, resource_id: e.target.value })}
+        />
         <Button type="submit" variant="secondary">
           {t('common.filter')}
         </Button>
@@ -82,7 +97,9 @@ function Audit() {
                     {rows.map((a) => (
                       <tr key={a.id}>
                         <td>
-                          <time dateTime={a.created_at}>{formatDubaiTime(a.created_at, locale)}</time>
+                          <time dateTime={a.created_at}>
+                            {formatDubaiTime(a.created_at, locale)}
+                          </time>
                         </td>
                         <td dir="ltr">
                           <code>{a.action}</code>
@@ -108,7 +125,12 @@ function Audit() {
                   </tbody>
                 </table>
               </div>
-              <Pager hasPrev={pager.hasPrev} nextCursor={next} onFirst={pager.first} onNext={pager.next} />
+              <Pager
+                hasPrev={pager.hasPrev}
+                nextCursor={next}
+                onFirst={pager.first}
+                onNext={pager.next}
+              />
             </>
           )
         }

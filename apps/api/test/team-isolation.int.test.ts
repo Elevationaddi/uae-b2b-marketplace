@@ -185,7 +185,7 @@ describe('T04: cross-company isolation', () => {
       .current;
     const fileB = vB.documents[0].file.id;
     const docB = vB.documents[0].id;
-    const wsB = companyB.workspaces[0].id;
+    const wsB = companyB.workspaces[0]!.id;
     const ownerB = (await b.get(`/workspaces/${wsB}/members`)).body.data[0].membership_id;
 
     const missing = '00000000-0000-4000-8000-000000000000';
@@ -237,7 +237,7 @@ describe('T04: cross-company isolation', () => {
   it('viewers can see the company but cannot download legal documents', async () => {
     const { client: owner } = await signedInUser(app, env, prisma, 'docown');
     const company = await companyReadyToSubmit(owner, ['BUYER']);
-    const { invitee: viewer } = await inviteAndAccept(owner, company.workspaces[0].id, 'VIEWER');
+    const { invitee: viewer } = await inviteAndAccept(owner, company.workspaces[0]!.id, 'VIEWER');
     const v = (await viewer.get(`/companies/${company.id}/verification`).expect(200)).body.data
       .current;
     const fileId = v.documents[0].file.id;

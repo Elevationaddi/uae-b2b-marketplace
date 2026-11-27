@@ -37,25 +37,54 @@ function OverviewBody() {
     <>
       <PageHeader title={t('admin.overview_title')} />
       {me.recovery_codes_remaining <= 3 ? (
-        <Alert kind="warning">{t('admin.recovery_remaining', { count: me.recovery_codes_remaining })}</Alert>
+        <Alert kind="warning">
+          {t('admin.recovery_remaining', { count: me.recovery_codes_remaining })}
+        </Alert>
       ) : null}
       <Resource state={state} reload={reload} lines={6}>
         {(o) => (
           <>
             <ul className="kpis" aria-label={t('admin.overview_title')}>
-              <Kpi label={t('admin.kpi.submitted')} value={o.verification.submitted} href={canReview ? `${base}/verification?state=SUBMITTED` : undefined} />
-              <Kpi label={t('admin.kpi.under_review')} value={o.verification.under_review} href={canReview ? `${base}/verification?state=UNDER_REVIEW` : undefined} />
-              <Kpi label={t('admin.kpi.needs_info')} value={o.verification.needs_info} href={canReview ? `${base}/verification?state=NEEDS_INFO` : undefined} />
-              <Kpi label={t('admin.kpi.approved')} value={o.companies.approved} href={`${base}/companies?status=APPROVED`} />
-              <Kpi label={t('admin.kpi.suspended')} value={o.companies.suspended} href={`${base}/companies?status=SUSPENDED`} />
-              <Kpi label={t('admin.kpi.draft')} value={o.companies.draft} href={`${base}/companies?status=DRAFT`} />
+              <Kpi
+                label={t('admin.kpi.submitted')}
+                value={o.verification.submitted}
+                href={canReview ? `${base}/verification?state=SUBMITTED` : undefined}
+              />
+              <Kpi
+                label={t('admin.kpi.under_review')}
+                value={o.verification.under_review}
+                href={canReview ? `${base}/verification?state=UNDER_REVIEW` : undefined}
+              />
+              <Kpi
+                label={t('admin.kpi.needs_info')}
+                value={o.verification.needs_info}
+                href={canReview ? `${base}/verification?state=NEEDS_INFO` : undefined}
+              />
+              <Kpi
+                label={t('admin.kpi.approved')}
+                value={o.companies.approved}
+                href={`${base}/companies?status=APPROVED`}
+              />
+              <Kpi
+                label={t('admin.kpi.suspended')}
+                value={o.companies.suspended}
+                href={`${base}/companies?status=SUSPENDED`}
+              />
+              <Kpi
+                label={t('admin.kpi.draft')}
+                value={o.companies.draft}
+                href={`${base}/companies?status=DRAFT`}
+              />
               <Kpi label={t('admin.kpi.expiring')} value={o.companies.licence_expiring_30d} />
               <Kpi label={t('admin.kpi.company_users')} value={o.users.company_users} />
               <Kpi label={t('admin.kpi.unverified')} value={o.users.unverified_email} />
             </ul>
-            <p className="muted">{t('admin.generated_at', { time: formatDubaiTime(o.generated_at, locale) })}</p>
             <p className="muted">
-              {t('admin.roles')}: {me.roles.map((r) => t(`adminrole.${r}` as MessageKey)).join(', ')}
+              {t('admin.generated_at', { time: formatDubaiTime(o.generated_at, locale) })}
+            </p>
+            <p className="muted">
+              {t('admin.roles')}:{' '}
+              {me.roles.map((r) => t(`adminrole.${r}` as MessageKey)).join(', ')}
             </p>
           </>
         )}

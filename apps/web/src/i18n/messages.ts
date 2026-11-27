@@ -13,20 +13,23 @@ export const DIRECTION: Record<Locale, 'ltr' | 'rtl'> = { en: 'ltr', ar: 'rtl' }
 
 const en = {
   'company.uploaded': 'Document uploaded and scanned clean.',
-  'company.upload_blocked': 'The malware scan blocked this file. Remove it and upload a clean copy.',
+  'company.upload_blocked':
+    'The malware scan blocked this file. Remove it and upload a clean copy.',
   'admin.record_decision': 'Record decision',
   'admin.event_actor.company': 'Company user',
   'admin.event_actor.admin': 'Compliance',
   'admin.event_actor.system': 'System',
   'common.pagination': 'Pagination',
-  'home.landing_body': 'Register your company, upload your trade licence and get verified. Buying and selling features open to verified companies as they are released.',
+  'home.landing_body':
+    'Register your company, upload your trade licence and get verified. Buying and selling features open to verified companies as they are released.',
   'admin.mfa_qr_alt': 'QR code for your authenticator app',
   'admin.open_cases': 'Open cases (submitted and under review)',
   'admin.resource_id': 'Resource ID',
   'ustatus.ACTIVE': 'Active',
   'ustatus.DISABLED': 'Disabled',
   'app.tagline': 'Verified UAE businesses sourcing from verified suppliers and manufacturers.',
-  'app.sandbox_banner': 'Sandbox environment: test adapters only. No real payments, and emails go to the local mail catcher.',
+  'app.sandbox_banner':
+    'Sandbox environment: test adapters only. No real payments, and emails go to the local mail catcher.',
   'app.skip_to_content': 'Skip to main content',
   'app.admin_portal': 'Admin portal',
 
@@ -91,7 +94,8 @@ const en = {
   'nav.account_menu': 'Account',
 
   'auth.register_title': 'Create your business account',
-  'auth.register_intro': 'Register with your work email. You will verify it before setting up your company.',
+  'auth.register_intro':
+    'Register with your work email. You will verify it before setting up your company.',
   'auth.full_name': 'Full name',
   'auth.email': 'Work email',
   'auth.password': 'Password',
@@ -101,20 +105,24 @@ const en = {
   'auth.have_account': 'Already have an account?',
   'auth.no_account': 'New here?',
   'auth.check_email_title': 'Check your email',
-  'auth.check_email_body': 'If this address can be registered, we have sent a verification link to it. The link expires in 24 hours.',
+  'auth.check_email_body':
+    'If this address can be registered, we have sent a verification link to it. The link expires in 24 hours.',
   'auth.resend_verification': 'Resend verification email',
   'auth.resent': 'If the address needs verification, a new link is on its way.',
   'auth.login_title': 'Sign in',
   'auth.login_submit': 'Sign in',
   'auth.forgot_link': 'Forgot your password?',
   'auth.forgot_title': 'Reset your password',
-  'auth.forgot_intro': 'Enter your account email and we will send a reset link if it matches an account.',
+  'auth.forgot_intro':
+    'Enter your account email and we will send a reset link if it matches an account.',
   'auth.forgot_submit': 'Send reset link',
-  'auth.forgot_sent': 'If the email matches an account, a reset link has been sent. It expires in 1 hour.',
+  'auth.forgot_sent':
+    'If the email matches an account, a reset link has been sent. It expires in 1 hour.',
   'auth.reset_title': 'Choose a new password',
   'auth.new_password': 'New password',
   'auth.reset_submit': 'Set new password',
-  'auth.reset_done': 'Your password was changed and all sessions were signed out. You can sign in now.',
+  'auth.reset_done':
+    'Your password was changed and all sessions were signed out. You can sign in now.',
   'auth.verify_title': 'Verify your email',
   'auth.verifying': 'Verifying your email address…',
   'auth.verified': 'Your email is verified. You can continue setting up your company.',
@@ -122,11 +130,13 @@ const en = {
   'auth.continue': 'Continue',
   'auth.go_to_login': 'Go to sign in',
   'auth.unverified_title': 'Verify your email to continue',
-  'auth.unverified_body': 'We sent a verification link to {email}. Company setup unlocks after you verify.',
+  'auth.unverified_body':
+    'We sent a verification link to {email}. Company setup unlocks after you verify.',
 
   'home.title': 'Welcome, {name}',
   'home.no_company_title': 'Set up your company',
-  'home.no_company_body': 'Register your company to request buyer and/or seller access. Trading is enabled after compliance approves your trade licence and documents.',
+  'home.no_company_body':
+    'Register your company to request buyer and/or seller access. Trading is enabled after compliance approves your trade licence and documents.',
   'home.create_company': 'Register a company',
   'home.your_workspaces': 'Your workspaces',
   'home.next_step': 'Next step',
@@ -134,9 +144,11 @@ const en = {
   'home.next.SUBMITTED': 'Submitted. Compliance will review your documents.',
   'home.next.UNDER_REVIEW': 'Compliance is reviewing your documents.',
   'home.next.NEEDS_INFO': 'Compliance asked for more information. Review the reason and resubmit.',
-  'home.next.REJECTED': 'Verification was rejected. Review the reason, fix the documents and resubmit.',
+  'home.next.REJECTED':
+    'Verification was rejected. Review the reason, fix the documents and resubmit.',
   'home.next.APPROVED': 'Verified. Marketplace features will appear here as they are released.',
-  'home.next.SUSPENDED': 'Trading is restricted. Existing records remain available. See the company page.',
+  'home.next.SUSPENDED':
+    'Trading is restricted. Existing records remain available. See the company page.',
   'home.open_company': 'Open company',
   'home.add_company': 'Register another company',
 
@@ -162,11 +174,13 @@ const en = {
   'company.select': 'Company',
   'company.details': 'Company details',
   'company.edit': 'Edit details',
-  'company.locked': 'Details are locked while under review or after approval. Licence changes go through renewal.',
+  'company.locked':
+    'Details are locked while under review or after approval. Licence changes go through renewal.',
   'company.licence_expired': 'Licence expired',
   'company.verification': 'Verification',
   'company.documents': 'Documents',
-  'company.documents_intro': 'Upload a clear copy of the trade licence and evidence that the account owner is an authorised representative. PDF, PNG or JPEG, up to {size} MB.',
+  'company.documents_intro':
+    'Upload a clear copy of the trade licence and evidence that the account owner is an authorised representative. PDF, PNG or JPEG, up to {size} MB.',
   'company.document_type': 'Document type',
   'company.document_expiry': 'Document expiry date',
   'company.file': 'File',
@@ -176,7 +190,8 @@ const en = {
   'company.scan.CLEAN': 'Scanned: clean',
   'company.scan.INFECTED': 'Blocked: malware detected',
   'company.scan.PENDING': 'Scanning',
-  'company.terms_accept': 'I confirm the information is accurate and I accept the platform terms (version {version}).',
+  'company.terms_accept':
+    'I confirm the information is accurate and I accept the platform terms (version {version}).',
   'company.terms_pending_note': 'Final legal terms are pending legal review.',
   'company.submit': 'Submit for verification',
   'company.resubmit': 'Resubmit for verification',
@@ -187,7 +202,8 @@ const en = {
   'company.event_actor.admin': 'Compliance',
   'company.event_actor.system': 'System',
   'company.renewal_title': 'Renew trade licence',
-  'company.renewal_intro': 'Enter the renewed licence details, then upload the renewed licence and representative evidence and submit. Your current approval stays in place until the renewal is decided, unless the licence has already expired.',
+  'company.renewal_intro':
+    'Enter the renewed licence details, then upload the renewed licence and representative evidence and submit. Your current approval stays in place until the renewal is decided, unless the licence has already expired.',
   'company.renewal_start': 'Start renewal',
   'company.renewal_proposed': 'Proposed licence',
   'company.confirm_remove_doc': 'Remove this document?',
@@ -223,8 +239,10 @@ const en = {
   'invite.accept': 'Accept invitation',
   'invite.accepted': 'You joined the workspace.',
   'invite.sign_in_first': 'Sign in or create an account with {email} to accept.',
-  'invite.wrong_account': 'You are signed in as {current}. Sign out and sign in as {email} to accept.',
-  'invite.not_pending': 'This invitation is no longer valid ({state}). Ask the owner for a new one.',
+  'invite.wrong_account':
+    'You are signed in as {current}. Sign out and sign in as {email} to accept.',
+  'invite.not_pending':
+    'This invitation is no longer valid ({state}). Ask the owner for a new one.',
 
   'settings.title': 'Account settings',
   'settings.profile': 'Profile',
@@ -243,7 +261,8 @@ const en = {
   'admin.login_title': 'Admin sign in',
   'admin.login_intro': 'Restricted to platform staff. Two-factor authentication is required.',
   'admin.mfa_enroll_title': 'Set up two-factor authentication',
-  'admin.mfa_enroll_intro': 'Scan the QR code with an authenticator app, or enter the key manually, then enter the 6-digit code.',
+  'admin.mfa_enroll_intro':
+    'Scan the QR code with an authenticator app, or enter the key manually, then enter the 6-digit code.',
   'admin.mfa_secret': 'Setup key',
   'admin.mfa_code': '6-digit code',
   'admin.mfa_confirm': 'Confirm and continue',
@@ -254,7 +273,8 @@ const en = {
   'admin.recovery_code': 'Recovery code',
   'admin.verify': 'Verify',
   'admin.recovery_title': 'Save your recovery codes',
-  'admin.recovery_intro': 'Each code works once if you lose your authenticator. Store them somewhere safe. They will not be shown again.',
+  'admin.recovery_intro':
+    'Each code works once if you lose your authenticator. Store them somewhere safe. They will not be shown again.',
   'admin.recovery_saved': 'I have saved these codes',
   'admin.recovery_remaining': 'Recovery codes remaining: {count}',
   'admin.nav.overview': 'Overview',
@@ -287,7 +307,8 @@ const en = {
   'admin.decision.APPROVED': 'Approve',
   'admin.decision.NEEDS_INFO': 'Request more information',
   'admin.decision.REJECTED': 'Reject',
-  'admin.decision_reason_hint': 'Required for rejection or information requests. The company sees this message.',
+  'admin.decision_reason_hint':
+    'Required for rejection or information requests. The company sees this message.',
   'admin.confirm_decision': 'Record decision "{decision}" for {company}?',
   'admin.decision_recorded': 'Decision recorded.',
   'admin.contact': 'Contact',
@@ -320,7 +341,8 @@ const en = {
   'admin.roles': 'Roles',
   'admin.edit_roles': 'Edit roles',
   'admin.mfa_enabled': 'MFA enrolled',
-  'admin.staff_provision_note': 'New admin accounts are created through the audited provisioning command, never by public registration.',
+  'admin.staff_provision_note':
+    'New admin accounts are created through the audited provisioning command, never by public registration.',
 
   'kind.BUYER': 'Buyer',
   'kind.SELLER': 'Seller',
@@ -392,22 +414,29 @@ const en = {
   'error.common.csrf_origin': 'The request was blocked for security reasons. Reload the page.',
   'error.common.csrf_token': 'Your security token expired. Reload the page and try again.',
   'error.common.internal_error': 'An unexpected error occurred.',
-  'error.common.network': 'Could not reach the server. Check your connection; your input is kept, so you can retry.',
-  'error.company.licence_exists': 'A company with this licence number and issuer is already registered.',
+  'error.common.network':
+    'Could not reach the server. Check your connection; your input is kept, so you can retry.',
+  'error.company.licence_exists':
+    'A company with this licence number and issuer is already registered.',
   'error.company.not_editable': 'Company details cannot be edited in the current status.',
   'error.company.licence_expiry_future': 'The licence expiry date must be in the future.',
   'error.company.renewal_required': 'The licence has expired. The company must submit a renewal.',
-  'error.verification.incomplete': 'Upload both required documents (clean) and make sure the licence is valid before submitting.',
-  'error.verification.not_editable': 'Documents cannot be changed in the current verification state.',
+  'error.verification.incomplete':
+    'Upload both required documents (clean) and make sure the licence is valid before submitting.',
+  'error.verification.not_editable':
+    'Documents cannot be changed in the current verification state.',
   'error.verification.terms_outdated': 'The terms changed. Reload the page.',
-  'error.verification.renewal_not_allowed': 'Renewal is available for approved companies, or those restricted because the licence expired.',
+  'error.verification.renewal_not_allowed':
+    'Renewal is available for approved companies, or those restricted because the licence expired.',
   'error.verification.case_open': 'A verification case is already open.',
-  'error.verification.licence_expired': 'The licence on this case has expired; it cannot be approved.',
+  'error.verification.licence_expired':
+    'The licence on this case has expired; it cannot be approved.',
   'error.file.required': 'Choose a file.',
   'error.file.type_not_allowed': 'Only PDF, PNG or JPEG files are accepted.',
   'error.file.too_large': 'The file is too large.',
   'error.file.not_clean': 'This file was blocked by the malware scan and cannot be downloaded.',
-  'error.file.scanning_unavailable': 'Uploads are unavailable because file scanning is not configured.',
+  'error.file.scanning_unavailable':
+    'Uploads are unavailable because file scanning is not configured.',
   'error.team.last_owner': 'A workspace must keep at least one owner. Add another owner first.',
   'error.team.already_member': 'This person is already a member.',
   'error.team.role_not_allowed': 'That role is not available for this workspace.',
@@ -433,14 +462,16 @@ const ar: Messages = {
   'admin.event_actor.admin': 'الامتثال',
   'admin.event_actor.system': 'النظام',
   'common.pagination': 'التنقل بين الصفحات',
-  'home.landing_body': 'سجّل شركتك وارفع رخصتك التجارية واحصل على التحقق. تُتاح ميزات الشراء والبيع للشركات المُتحقق منها عند إطلاقها.',
+  'home.landing_body':
+    'سجّل شركتك وارفع رخصتك التجارية واحصل على التحقق. تُتاح ميزات الشراء والبيع للشركات المُتحقق منها عند إطلاقها.',
   'admin.mfa_qr_alt': 'رمز QR لتطبيق المصادقة',
   'admin.open_cases': 'الحالات المفتوحة (المُرسلة وقيد المراجعة)',
   'admin.resource_id': 'معرّف المورد',
   'ustatus.ACTIVE': 'نشط',
   'ustatus.DISABLED': 'معطّل',
   'app.tagline': 'شركات إماراتية موثقة تتعامل مع موردين ومصنّعين موثقين.',
-  'app.sandbox_banner': 'بيئة تجريبية: محولات اختبار فقط. لا مدفوعات حقيقية، وتصل الرسائل إلى صندوق البريد المحلي.',
+  'app.sandbox_banner':
+    'بيئة تجريبية: محولات اختبار فقط. لا مدفوعات حقيقية، وتصل الرسائل إلى صندوق البريد المحلي.',
   'app.skip_to_content': 'تخطَّ إلى المحتوى الرئيسي',
   'app.admin_portal': 'بوابة الإدارة',
 
@@ -515,7 +546,8 @@ const ar: Messages = {
   'auth.have_account': 'لديك حساب بالفعل؟',
   'auth.no_account': 'جديد هنا؟',
   'auth.check_email_title': 'تحقق من بريدك الإلكتروني',
-  'auth.check_email_body': 'إذا كان بالإمكان تسجيل هذا العنوان، فقد أرسلنا إليه رابط تأكيد. تنتهي صلاحية الرابط خلال 24 ساعة.',
+  'auth.check_email_body':
+    'إذا كان بالإمكان تسجيل هذا العنوان، فقد أرسلنا إليه رابط تأكيد. تنتهي صلاحية الرابط خلال 24 ساعة.',
   'auth.resend_verification': 'إعادة إرسال رسالة التأكيد',
   'auth.resent': 'إذا كان العنوان بحاجة إلى تأكيد، فسيصلك رابط جديد.',
   'auth.login_title': 'تسجيل الدخول',
@@ -524,7 +556,8 @@ const ar: Messages = {
   'auth.forgot_title': 'إعادة تعيين كلمة المرور',
   'auth.forgot_intro': 'أدخل بريد حسابك وسنرسل رابط إعادة التعيين إذا كان مطابقاً لحساب.',
   'auth.forgot_submit': 'إرسال الرابط',
-  'auth.forgot_sent': 'إذا كان البريد مطابقاً لحساب، فقد أُرسل رابط إعادة التعيين. تنتهي صلاحيته خلال ساعة.',
+  'auth.forgot_sent':
+    'إذا كان البريد مطابقاً لحساب، فقد أُرسل رابط إعادة التعيين. تنتهي صلاحيته خلال ساعة.',
   'auth.reset_title': 'اختر كلمة مرور جديدة',
   'auth.new_password': 'كلمة المرور الجديدة',
   'auth.reset_submit': 'تعيين كلمة المرور',
@@ -540,7 +573,8 @@ const ar: Messages = {
 
   'home.title': 'مرحباً، {name}',
   'home.no_company_title': 'أعدّ شركتك',
-  'home.no_company_body': 'سجّل شركتك لطلب صلاحية المشتري و/أو البائع. يُفعَّل التداول بعد موافقة فريق الامتثال على الرخصة التجارية والمستندات.',
+  'home.no_company_body':
+    'سجّل شركتك لطلب صلاحية المشتري و/أو البائع. يُفعَّل التداول بعد موافقة فريق الامتثال على الرخصة التجارية والمستندات.',
   'home.create_company': 'تسجيل شركة',
   'home.your_workspaces': 'مساحات العمل',
   'home.next_step': 'الخطوة التالية',
@@ -576,11 +610,13 @@ const ar: Messages = {
   'company.select': 'الشركة',
   'company.details': 'بيانات الشركة',
   'company.edit': 'تعديل البيانات',
-  'company.locked': 'البيانات مقفلة أثناء المراجعة أو بعد الموافقة. تتم تغييرات الرخصة عبر التجديد.',
+  'company.locked':
+    'البيانات مقفلة أثناء المراجعة أو بعد الموافقة. تتم تغييرات الرخصة عبر التجديد.',
   'company.licence_expired': 'الرخصة منتهية',
   'company.verification': 'التحقق',
   'company.documents': 'المستندات',
-  'company.documents_intro': 'ارفع نسخة واضحة من الرخصة التجارية وما يثبت أن صاحب الحساب ممثل مفوّض. ملفات PDF أو PNG أو JPEG حتى {size} ميغابايت.',
+  'company.documents_intro':
+    'ارفع نسخة واضحة من الرخصة التجارية وما يثبت أن صاحب الحساب ممثل مفوّض. ملفات PDF أو PNG أو JPEG حتى {size} ميغابايت.',
   'company.document_type': 'نوع المستند',
   'company.document_expiry': 'تاريخ انتهاء المستند',
   'company.file': 'الملف',
@@ -601,7 +637,8 @@ const ar: Messages = {
   'company.event_actor.admin': 'فريق الامتثال',
   'company.event_actor.system': 'النظام',
   'company.renewal_title': 'تجديد الرخصة التجارية',
-  'company.renewal_intro': 'أدخل بيانات الرخصة المجددة، ثم ارفع الرخصة المجددة وإثبات التفويض وأرسل الطلب. تبقى موافقتك الحالية سارية حتى البت في التجديد، ما لم تكن الرخصة قد انتهت.',
+  'company.renewal_intro':
+    'أدخل بيانات الرخصة المجددة، ثم ارفع الرخصة المجددة وإثبات التفويض وأرسل الطلب. تبقى موافقتك الحالية سارية حتى البت في التجديد، ما لم تكن الرخصة قد انتهت.',
   'company.renewal_start': 'بدء التجديد',
   'company.renewal_proposed': 'الرخصة المقترحة',
   'company.confirm_remove_doc': 'هل تريد إزالة هذا المستند؟',
@@ -637,7 +674,8 @@ const ar: Messages = {
   'invite.accept': 'قبول الدعوة',
   'invite.accepted': 'انضممت إلى مساحة العمل.',
   'invite.sign_in_first': 'سجّل الدخول أو أنشئ حساباً بالبريد {email} لقبول الدعوة.',
-  'invite.wrong_account': 'أنت مسجّل باسم {current}. سجّل الخروج ثم ادخل باسم {email} لقبول الدعوة.',
+  'invite.wrong_account':
+    'أنت مسجّل باسم {current}. سجّل الخروج ثم ادخل باسم {email} لقبول الدعوة.',
   'invite.not_pending': 'هذه الدعوة لم تعد صالحة ({state}). اطلب دعوة جديدة من المالك.',
 
   'settings.title': 'إعدادات الحساب',
@@ -657,7 +695,8 @@ const ar: Messages = {
   'admin.login_title': 'دخول الإدارة',
   'admin.login_intro': 'مخصص لموظفي المنصة. المصادقة الثنائية مطلوبة.',
   'admin.mfa_enroll_title': 'إعداد المصادقة الثنائية',
-  'admin.mfa_enroll_intro': 'امسح رمز QR بتطبيق المصادقة أو أدخل المفتاح يدوياً، ثم أدخل الرمز المكوّن من 6 أرقام.',
+  'admin.mfa_enroll_intro':
+    'امسح رمز QR بتطبيق المصادقة أو أدخل المفتاح يدوياً، ثم أدخل الرمز المكوّن من 6 أرقام.',
   'admin.mfa_secret': 'مفتاح الإعداد',
   'admin.mfa_code': 'الرمز المكوّن من 6 أرقام',
   'admin.mfa_confirm': 'تأكيد ومتابعة',
@@ -668,7 +707,8 @@ const ar: Messages = {
   'admin.recovery_code': 'رمز الاسترداد',
   'admin.verify': 'تحقق',
   'admin.recovery_title': 'احفظ رموز الاسترداد',
-  'admin.recovery_intro': 'يعمل كل رمز مرة واحدة إذا فقدت تطبيق المصادقة. احفظها في مكان آمن، فلن تظهر مرة أخرى.',
+  'admin.recovery_intro':
+    'يعمل كل رمز مرة واحدة إذا فقدت تطبيق المصادقة. احفظها في مكان آمن، فلن تظهر مرة أخرى.',
   'admin.recovery_saved': 'حفظت هذه الرموز',
   'admin.recovery_remaining': 'رموز الاسترداد المتبقية: {count}',
   'admin.nav.overview': 'نظرة عامة',
@@ -734,7 +774,8 @@ const ar: Messages = {
   'admin.roles': 'الأدوار',
   'admin.edit_roles': 'تعديل الأدوار',
   'admin.mfa_enabled': 'المصادقة الثنائية مفعّلة',
-  'admin.staff_provision_note': 'تُنشأ حسابات الإدارة الجديدة عبر أمر التزويد الخاضع للتدقيق، وليس عبر التسجيل العام.',
+  'admin.staff_provision_note':
+    'تُنشأ حسابات الإدارة الجديدة عبر أمر التزويد الخاضع للتدقيق، وليس عبر التسجيل العام.',
 
   'kind.BUYER': 'مشتري',
   'kind.SELLER': 'بائع',
@@ -806,15 +847,18 @@ const ar: Messages = {
   'error.common.csrf_origin': 'تم حظر الطلب لأسباب أمنية. أعد تحميل الصفحة.',
   'error.common.csrf_token': 'انتهت صلاحية رمز الأمان. أعد تحميل الصفحة وحاول مرة أخرى.',
   'error.common.internal_error': 'حدث خطأ غير متوقع.',
-  'error.common.network': 'تعذّر الوصول إلى الخادم. تحقق من الاتصال؛ تم الاحتفاظ بمدخلاتك لتعيد المحاولة.',
+  'error.common.network':
+    'تعذّر الوصول إلى الخادم. تحقق من الاتصال؛ تم الاحتفاظ بمدخلاتك لتعيد المحاولة.',
   'error.company.licence_exists': 'توجد شركة مسجلة بنفس رقم الرخصة وجهة الإصدار.',
   'error.company.not_editable': 'لا يمكن تعديل بيانات الشركة في الحالة الحالية.',
   'error.company.licence_expiry_future': 'يجب أن يكون تاريخ انتهاء الرخصة في المستقبل.',
   'error.company.renewal_required': 'انتهت الرخصة. يجب على الشركة تقديم طلب تجديد.',
-  'error.verification.incomplete': 'ارفع المستندين المطلوبين (سليمين) وتأكد من صلاحية الرخصة قبل الإرسال.',
+  'error.verification.incomplete':
+    'ارفع المستندين المطلوبين (سليمين) وتأكد من صلاحية الرخصة قبل الإرسال.',
   'error.verification.not_editable': 'لا يمكن تغيير المستندات في حالة التحقق الحالية.',
   'error.verification.terms_outdated': 'تغيّرت الشروط. أعد تحميل الصفحة.',
-  'error.verification.renewal_not_allowed': 'التجديد متاح للشركات المعتمدة أو المقيّدة بسبب انتهاء الرخصة.',
+  'error.verification.renewal_not_allowed':
+    'التجديد متاح للشركات المعتمدة أو المقيّدة بسبب انتهاء الرخصة.',
   'error.verification.case_open': 'توجد حالة تحقق مفتوحة بالفعل.',
   'error.verification.licence_expired': 'الرخصة في هذه الحالة منتهية ولا يمكن اعتمادها.',
   'error.file.required': 'اختر ملفاً.',
@@ -848,7 +892,12 @@ export function t(locale: Locale, key: MessageKey, vars?: Record<string, string 
 }
 
 /** Translate a dynamic key (e.g. from an API message_key), with a fallback key. */
-export function tDynamic(locale: Locale, key: string, fallback: MessageKey, vars?: Record<string, string | number>): string {
+export function tDynamic(
+  locale: Locale,
+  key: string,
+  fallback: MessageKey,
+  vars?: Record<string, string | number>,
+): string {
   return key in CATALOGUE[locale] ? t(locale, key as MessageKey, vars) : t(locale, fallback, vars);
 }
 
@@ -871,7 +920,8 @@ export function formatDubaiTime(iso: string, locale: Locale): string {
 
 /** Calendar dates (YYYY-MM-DD) are shown as dates without time-zone shifting. */
 export function formatDate(isoDate: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', { dateStyle: 'medium', timeZone: 'UTC' }).format(
-    new Date(`${isoDate}T00:00:00Z`),
-  );
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(`${isoDate}T00:00:00Z`));
 }

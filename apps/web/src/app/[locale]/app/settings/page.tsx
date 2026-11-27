@@ -5,7 +5,16 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useApp, useT } from '@/components/app-context';
 import { Resource } from '@/components/resource';
 import { AppShell, useSession } from '@/components/session';
-import { Alert, ApiErrorAlert, Button, ConfirmDialog, Field, PageHeader, SelectField, useFieldError } from '@/components/ui';
+import {
+  Alert,
+  ApiErrorAlert,
+  Button,
+  ConfirmDialog,
+  Field,
+  PageHeader,
+  SelectField,
+  useFieldError,
+} from '@/components/ui';
 import { formatDubaiTime } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
 
@@ -33,7 +42,10 @@ function Profile() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     setSaved(false);
-    const r = await m.run<MeResponse>('/me', { method: 'PATCH', body: { full_name: name, locale: lang } });
+    const r = await m.run<MeResponse>('/me', {
+      method: 'PATCH',
+      body: { full_name: name, locale: lang },
+    });
     if (r.ok) {
       setSaved(true);
       reload();
@@ -45,10 +57,18 @@ function Profile() {
     <section className="card" aria-labelledby="profile-heading">
       <h2 id="profile-heading">{t('settings.profile')}</h2>
       {saved ? <Alert kind="success">{t('common.saved')}</Alert> : null}
-      {m.error && !Object.keys(m.error.fieldErrors).length ? <ApiErrorAlert error={m.error} /> : null}
+      {m.error && !Object.keys(m.error.fieldErrors).length ? (
+        <ApiErrorAlert error={m.error} />
+      ) : null}
       <form onSubmit={submit} className="form" noValidate>
         <Field label={t('auth.email')} value={me.user.email} readOnly dir="ltr" />
-        <Field label={t('auth.full_name')} value={name} onChange={(e) => setName(e.target.value)} error={fe('full_name')} autoComplete="name" />
+        <Field
+          label={t('auth.full_name')}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          error={fe('full_name')}
+          autoComplete="name"
+        />
         <SelectField
           label={t('settings.language')}
           value={lang}
@@ -88,7 +108,9 @@ function Password({ onChanged }: { onChanged: () => void }) {
     <section className="card" aria-labelledby="pw-heading">
       <h2 id="pw-heading">{t('settings.password')}</h2>
       {done ? <Alert kind="success">{t('settings.password_changed')}</Alert> : null}
-      {m.error && !Object.keys(m.error.fieldErrors).length ? <ApiErrorAlert error={m.error} /> : null}
+      {m.error && !Object.keys(m.error.fieldErrors).length ? (
+        <ApiErrorAlert error={m.error} />
+      ) : null}
       <form onSubmit={submit} className="form" noValidate>
         <input type="text" name="username" autoComplete="username" hidden readOnly />
         <Field
@@ -140,7 +162,13 @@ function Sessions({ tick }: { tick: number }) {
               {list.map((s) => (
                 <li key={s.id} className="doc">
                   <div>
-                    <strong>{s.user_agent ? <bdi>{s.user_agent.slice(0, 90)}</bdi> : t('settings.unknown_device')}</strong>
+                    <strong>
+                      {s.user_agent ? (
+                        <bdi>{s.user_agent.slice(0, 90)}</bdi>
+                      ) : (
+                        t('settings.unknown_device')
+                      )}
+                    </strong>
                     {s.current ? <span className="tag">{t('settings.this_device')}</span> : null}
                     <div className="muted">
                       {t('settings.last_seen')}: {formatDubaiTime(s.last_seen_at, locale)}

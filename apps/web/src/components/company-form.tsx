@@ -54,7 +54,8 @@ export function CompanyForm({
   const t = useT();
   const fe = useFieldError(error);
   const [v, setV] = useState(initial);
-  const set = (k: keyof CompanyFormValues) => (e: { target: { value: string } }) => setV({ ...v, [k]: e.target.value });
+  const set = (k: keyof CompanyFormValues) => (e: { target: { value: string } }) =>
+    setV({ ...v, [k]: e.target.value });
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -69,8 +70,20 @@ export function CompanyForm({
         <ApiErrorAlert error={error} />
       ) : null}
       <div className="grid-2">
-        <Field label={t('company.legal_name')} value={v.legal_name} onChange={set('legal_name')} error={fe('legal_name')} required />
-        <Field label={t('company.display_name')} value={v.display_name} onChange={set('display_name')} error={fe('display_name')} required />
+        <Field
+          label={t('company.legal_name')}
+          value={v.legal_name}
+          onChange={set('legal_name')}
+          error={fe('legal_name')}
+          required
+        />
+        <Field
+          label={t('company.display_name')}
+          value={v.display_name}
+          onChange={set('display_name')}
+          error={fe('display_name')}
+          required
+        />
         <Field
           label={t('company.licence_number')}
           dir="ltr"
@@ -79,7 +92,13 @@ export function CompanyForm({
           error={fe('licence_number')}
           required
         />
-        <Field label={t('company.licence_issuer')} value={v.licence_issuer} onChange={set('licence_issuer')} error={fe('licence_issuer')} required />
+        <Field
+          label={t('company.licence_issuer')}
+          value={v.licence_issuer}
+          onChange={set('licence_issuer')}
+          error={fe('licence_issuer')}
+          required
+        />
         <Field
           label={t('company.licence_expiry')}
           type="date"
@@ -95,7 +114,13 @@ export function CompanyForm({
           error={fe('emirate')}
           options={EMIRATES.map((e) => ({ value: e, label: t(`emirate.${e}`) }))}
         />
-        <Field label={t('company.activity')} value={v.activity} onChange={set('activity')} error={fe('activity')} required />
+        <Field
+          label={t('company.activity')}
+          value={v.activity}
+          onChange={set('activity')}
+          error={fe('activity')}
+          required
+        />
         <Field
           label={t('company.trn')}
           optional

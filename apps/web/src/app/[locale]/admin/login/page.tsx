@@ -16,8 +16,14 @@ export default function AdminLoginPage() {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    const r = await m.run<{ mfa: 'ENROLL_REQUIRED' | 'VERIFY_REQUIRED' }>('/admin/auth/login', { method: 'POST', body: form });
-    if (r.ok) router.replace(`/${locale}/admin/mfa?step=${r.data.mfa === 'ENROLL_REQUIRED' ? 'enroll' : 'verify'}`);
+    const r = await m.run<{ mfa: 'ENROLL_REQUIRED' | 'VERIFY_REQUIRED' }>('/admin/auth/login', {
+      method: 'POST',
+      body: form,
+    });
+    if (r.ok)
+      router.replace(
+        `/${locale}/admin/mfa?step=${r.data.mfa === 'ENROLL_REQUIRED' ? 'enroll' : 'verify'}`,
+      );
   }
 
   return (

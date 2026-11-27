@@ -2,7 +2,16 @@
 import type { MeResponse } from '@app/contracts';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  Suspense,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { api } from '@/lib/client';
 import { useMutation, useResource } from '@/lib/use-resource';
 import { useApp, useT } from './app-context';
@@ -44,7 +53,13 @@ function writeStored(id: string) {
 }
 
 /** Company-user shell: loads the session from the API; redirects to sign-in when there is none. */
-export function AppShell({ children, allowUnverified = false }: { children: ReactNode; allowUnverified?: boolean }) {
+export function AppShell({
+  children,
+  allowUnverified = false,
+}: {
+  children: ReactNode;
+  allowUnverified?: boolean;
+}) {
   const { locale } = useApp();
   const router = useRouter();
   const pathname = usePathname();
@@ -87,7 +102,11 @@ export function AppShell({ children, allowUnverified = false }: { children: Reac
   return (
     <SessionCtx.Provider value={value}>
       <Frame session={value!}>
-        {value!.me.user.email_verified || allowUnverified ? children : <UnverifiedNotice email={value!.me.user.email} />}
+        {value!.me.user.email_verified || allowUnverified ? (
+          children
+        ) : (
+          <UnverifiedNotice email={value!.me.user.email} />
+        )}
       </Frame>
     </SessionCtx.Provider>
   );
@@ -130,13 +149,25 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
 
   const nav = [
     { href: `/${locale}/app`, label: t('nav.home'), icon: '⌂', show: true },
-    { href: ws ? `/${locale}/app/company/${ws.company.id}` : '', label: t('nav.company'), icon: '▣', show: !!ws && verified },
-    { href: ws ? `/${locale}/app/team/${ws.id}` : '', label: t('nav.team'), icon: '◎', show: !!ws && verified },
+    {
+      href: ws ? `/${locale}/app/company/${ws.company.id}` : '',
+      label: t('nav.company'),
+      icon: '▣',
+      show: !!ws && verified,
+    },
+    {
+      href: ws ? `/${locale}/app/team/${ws.id}` : '',
+      label: t('nav.team'),
+      icon: '◎',
+      show: !!ws && verified,
+    },
     { href: `/${locale}/app/settings`, label: t('nav.settings'), icon: '⚙', show: !!session },
   ].filter((n) => n.show);
 
   const isActive = (href: string) =>
-    href === `/${locale}/app` ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+    href === `/${locale}/app`
+      ? pathname === href
+      : pathname === href || pathname.startsWith(`${href}/`);
 
   async function signOut() {
     setSigningOut(true);
@@ -172,7 +203,8 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
               >
                 {session.me.workspaces.map((w) => (
                   <option key={w.id} value={w.id}>
-                    {w.company.display_name} · {t(w.kind === 'BUYER' ? 'kind.BUYER' : 'kind.SELLER')}
+                    {w.company.display_name} ·{' '}
+                    {t(w.kind === 'BUYER' ? 'kind.BUYER' : 'kind.SELLER')}
                   </option>
                 ))}
               </select>
@@ -182,7 +214,13 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
             <LocaleSwitch />
           </Suspense>
           {session ? (
-            <Button type="button" variant="link" className="on-dark" onClick={signOut} busy={signingOut}>
+            <Button
+              type="button"
+              variant="link"
+              className="on-dark"
+              onClick={signOut}
+              busy={signingOut}
+            >
               {t('nav.sign_out')}
             </Button>
           ) : null}

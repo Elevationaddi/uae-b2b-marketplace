@@ -36,7 +36,9 @@ let csrfInFlight: Promise<string | null> | null = null;
 
 async function fetchCsrf(): Promise<string | null> {
   csrfInFlight ??= fetch('/api/v1/auth/csrf', { credentials: 'same-origin', cache: 'no-store' })
-    .then(async (r) => (r.ok ? ((await r.json()) as { data: { csrf_token: string } }).data.csrf_token : null))
+    .then(async (r) =>
+      r.ok ? ((await r.json()) as { data: { csrf_token: string } }).data.csrf_token : null,
+    )
     .catch(() => null)
     .finally(() => {
       csrfInFlight = null;
@@ -63,12 +65,17 @@ export type RequestOptions = {
 function withQuery(path: string, query: RequestOptions['query']): string {
   if (!query) return path;
   const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
+  for (const [k, v] of Object.entries(query))
+    if (v !== undefined && v !== null && v !== '') qs.set(k, String(v));
   const s = qs.toString();
   return s ? `${path}?${s}` : path;
 }
 
-async function send<T>(path: string, opts: RequestOptions, retried: boolean): Promise<ApiResult<T>> {
+async function send<T>(
+  path: string,
+  opts: RequestOptions,
+  retried: boolean,
+): Promise<ApiResult<T>> {
   const method = opts.method ?? 'GET';
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (method !== 'GET') {
@@ -106,12 +113,22 @@ async function send<T>(path: string, opts: RequestOptions, retried: boolean): Pr
     const j = json as { data: T; meta?: { next_cursor?: string | null } };
     return { ok: true, status: res.status, data: j.data, nextCursor: j.meta?.next_cursor ?? null };
   }
-  const err = (json as { error?: { code?: string; message_key?: string; field_errors?: Record<string, string>; request_id?: string } } | null)?.error;
+  const err = (
+    json as {
+      error?: {
+        code?: string;
+        message_key?: string;
+        field_errors?: Record<string, string>;
+        request_id?: string;
+      };
+    } | null
+  )?.error;
   const result: ApiError = {
     ok: false,
     status: res.status,
     code: err?.code ?? (res.status === 404 ? 'NOT_FOUND' : 'INTERNAL_ERROR'),
-    messageKey: err?.message_key ?? (res.status === 404 ? 'common.not_found' : 'common.internal_error'),
+    messageKey:
+      err?.message_key ?? (res.status === 404 ? 'common.not_found' : 'common.internal_error'),
     fieldErrors: err?.field_errors ?? {},
     requestId: err?.request_id ?? requestId,
   };
