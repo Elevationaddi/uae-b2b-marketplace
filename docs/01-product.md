@@ -23,6 +23,6 @@ flowchart TD
  K --> L[Provider settlement or resolution]
 ```
 
-Business onboarding: verify email, create company, select buyer/seller or both, supply legal name, licence number/issuer/expiry, activity, emirate, address, contact, representative evidence, accept versioned terms; submit. Draft and rejected applicants can edit and resubmit; under review read-only except requested information. Approval enables trading for approved workspace. Suspension blocks new trading while existing orders and support remain accessible to authorized members.
+Business onboarding: verify email (mandatory, A07), create company, select buyer/seller or both, supply legal name, licence number/issuer/expiry, activity, emirate, address, contact, representative evidence, accept versioned terms; submit. Draft and rejected applicants can edit and resubmit; under review read-only except requested information. Approval enables trading for approved workspace. Suspension blocks new trading while existing orders and support remain accessible to authorized members.
 
 Success measures: verified companies, monthly active buyers/sellers, RFQ response and conversion, paid GMV net of refunds (define separately from revenue), order delivery, dispute rate, repeat purchases, net platform fee revenue. Metrics use server events and explicitly labeled date ranges.
