@@ -1,7 +1,9 @@
 // Prisma schema. Logical model: docs/06-data.md.
-// Phase 0 deliberately defines only the operational migration baseline;
-// business tables arrive with their vertical slices (Phase 1+), each through a
-// reviewed migration. Do not add unused tables to claim implementation.
+// Tables are added with their vertical slices through reviewed migrations.
+// Phase 1: identity, sessions, companies, workspaces, memberships, invitations,
+// verification, private files, admin roles/MFA, audit log and outbox.
+// Conventions: UUID ids, timestamptz (UTC), snake_case table/column names,
+// RESTRICT on historical foreign keys.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,4 +12,407 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum AccountType {
+  COMPANY
+  PLATFORM_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum Locale {
+  en
+  ar
+}
+
+enum SessionScope {
+  COMPANY
+  ADMIN
+}
+
+enum TokenPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum CompanyStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_INFO
+  REJECTED
+  APPROVED
+  SUSPENDED
+}
+
+enum SuspensionKind {
+  LICENCE_EXPIRED
+  COMPLIANCE
+}
+
+enum Emirate {
+  ABU_DHABI
+  DUBAI
+  SHARJAH
+  AJMAN
+  UMM_AL_QUWAIN
+  RAS_AL_KHAIMAH
+  FUJAIRAH
+}
+
+enum WorkspaceKind {
+  BUYER
+  SELLER
+}
+
+enum WorkspaceStatus {
+  PENDING
+  ACTIVE
+  RESTRICTED
+}
+
+enum MembershipRole {
+  OWNER
+  PROCUREMENT
+  VIEWER
+  SALES
+  WAREHOUSE
+  FINANCE
+}
+
+enum MembershipStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum VerificationKind {
+  INITIAL
+  RENEWAL
+}
+
+enum VerificationState {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  NEEDS_INFO
+  REJECTED
+  APPROVED
+  CLOSED
+}
+
+enum DocumentType {
+  TRADE_LICENCE
+  AUTHORIZED_REPRESENTATIVE
+  OTHER
+}
+
+enum ScanState {
+  PENDING
+  CLEAN
+  INFECTED
+}
+
+enum FileVisibility {
+  PRIVATE
+}
+
+enum AdminRole {
+  COMPLIANCE
+  SUPPORT
+  FINANCE
+  FINANCE_APPROVER
+  SUPER_ADMIN
+}
+
+enum OutboxState {
+  PENDING
+  DONE
+  DEAD
+}
+
+model User {
+  id              String      @id @default(uuid()) @db.Uuid
+  /// Stored lower-cased and trimmed; unique.
+  email           String      @unique
+  passwordHash    String?     @map("password_hash")
+  emailVerifiedAt DateTime?   @map("email_verified_at") @db.Timestamptz(3)
+  locale          Locale      @default(en)
+  status          UserStatus  @default(ACTIVE)
+  accountType     AccountType @default(COMPANY) @map("account_type")
+  fullName        String?     @map("full_name")
+  mfaEnabled      Boolean     @default(false) @map("mfa_enabled")
+  /// AES-256-GCM encrypted TOTP secret (iv.tag.ciphertext, base64url). Never returned by the API.
+  mfaSecretEnc    String?     @map("mfa_secret_enc")
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions         Session[]
+  tokens           UserToken[]
+  recoveryCodes    MfaRecoveryCode[]
+  memberships      Membership[]
+  adminMemberships AdminMembership[]
+
+  @@map("users")
+}
+
+model Session {
+  id            String       @id @default(uuid()) @db.Uuid
+  userId        String       @map("user_id") @db.Uuid
+  tokenHash     String       @unique @map("token_hash")
+  scope         SessionScope
+  expiresAt     DateTime     @map("expires_at") @db.Timestamptz(3)
+  lastSeenAt    DateTime     @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  mfaVerifiedAt DateTime?    @map("mfa_verified_at") @db.Timestamptz(3)
+  revokedAt     DateTime?    @map("revoked_at") @db.Timestamptz(3)
+  ip            String?
+  userAgent     String?      @map("user_agent")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, expiresAt])
+  @@map("sessions")
+}
+
+model UserToken {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  purpose   TokenPurpose
+  tokenHash String       @unique @map("token_hash")
+  expiresAt DateTime     @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?    @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, purpose])
+  @@map("user_tokens")
+}
+
+model MfaRecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @unique @map("code_hash")
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@map("mfa_recovery_codes")
+}
+
+model Company {
+  id                  String        @id @default(uuid()) @db.Uuid
+  legalName           String        @map("legal_name")
+  displayName         String        @map("display_name")
+  licenceNumber       String        @map("licence_number")
+  licenceIssuer       String        @map("licence_issuer")
+  licenceExpiry       DateTime      @map("licence_expiry") @db.Date
+  activity            String
+  emirate             Emirate
+  trn                 String?
+  status              CompanyStatus @default(DRAFT)
+  suspensionKind      SuspensionKind? @map("suspension_kind")
+  /// Last 30-day licence expiry reminder sent for this expiry date (dedupe).
+  licenceReminderFor  DateTime?     @map("licence_reminder_for") @db.Date
+  contactEmail        String        @map("contact_email")
+  contactPhone        String        @map("contact_phone")
+  termsVersion        String?       @map("terms_version")
+  termsAcceptedAt     DateTime?     @map("terms_accepted_at") @db.Timestamptz(3)
+  /// Optimistic concurrency token; incremented on every update.
+  version             Int           @default(1)
+  createdById         String        @map("created_by_id") @db.Uuid
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspaces        Workspace[]
+  verificationCases VerificationCase[]
+  files             File[]
+
+  @@unique([licenceIssuer, licenceNumber])
+  @@index([status, licenceExpiry])
+  @@map("companies")
+}
+
+model Workspace {
+  id        String          @id @default(uuid()) @db.Uuid
+  companyId String          @map("company_id") @db.Uuid
+  kind      WorkspaceKind
+  status    WorkspaceStatus @default(PENDING)
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  memberships Membership[]
+  invitations Invitation[]
+
+  @@unique([companyId, kind])
+  @@map("workspaces")
+}
+
+model Membership {
+  id          String           @id @default(uuid()) @db.Uuid
+  workspaceId String           @map("workspace_id") @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  role        MembershipRole
+  status      MembershipStatus @default(ACTIVE)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Invitation {
+  id          String         @id @default(uuid()) @db.Uuid
+  workspaceId String         @map("workspace_id") @db.Uuid
+  email       String
+  role        MembershipRole
+  tokenHash   String         @unique @map("token_hash")
+  expiresAt   DateTime       @map("expires_at") @db.Timestamptz(3)
+  acceptedAt  DateTime?      @map("accepted_at") @db.Timestamptz(3)
+  revokedAt   DateTime?      @map("revoked_at") @db.Timestamptz(3)
+  invitedById String         @map("invited_by_id") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Restrict)
+
+  @@index([workspaceId, email])
+  @@map("invitations")
+}
+
+model VerificationCase {
+  id              String            @id @default(uuid()) @db.Uuid
+  companyId       String            @map("company_id") @db.Uuid
+  kind            VerificationKind  @default(INITIAL)
+  state           VerificationState @default(DRAFT)
+  assignedAdminId String?           @map("assigned_admin_id") @db.Uuid
+  submittedAt     DateTime?         @map("submitted_at") @db.Timestamptz(3)
+  decidedAt       DateTime?         @map("decided_at") @db.Timestamptz(3)
+  reason          String?
+  /// Renewal only: proposed licence fields applied to the company on approval.
+  proposed        Json?
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  company   Company                 @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  documents VerificationDocument[]
+  events    VerificationCaseEvent[]
+
+  // "One active case per company" is enforced by a partial unique index in the migration.
+  @@index([companyId, state])
+  @@index([state, submittedAt])
+  @@map("verification_cases")
+}
+
+model VerificationCaseEvent {
+  id        String             @id @default(uuid()) @db.Uuid
+  caseId    String             @map("case_id") @db.Uuid
+  actorId   String?            @map("actor_id") @db.Uuid
+  fromState VerificationState? @map("from_state")
+  toState   VerificationState  @map("to_state")
+  reason    String?
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  case VerificationCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+
+  @@index([caseId, createdAt])
+  @@map("verification_case_events")
+}
+
+model File {
+  id             String         @id @default(uuid()) @db.Uuid
+  ownerCompanyId String?        @map("owner_company_id") @db.Uuid
+  uploaderId     String         @map("uploader_id") @db.Uuid
+  objectKey      String         @unique @map("object_key")
+  originalName   String         @map("original_name")
+  mime           String
+  bytes          Int
+  sha256         String
+  scanState      ScanState      @default(PENDING) @map("scan_state")
+  visibility     FileVisibility @default(PRIVATE)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  ownerCompany          Company?               @relation(fields: [ownerCompanyId], references: [id], onDelete: Restrict)
+  verificationDocuments VerificationDocument[]
+
+  @@index([ownerCompanyId])
+  @@map("files")
+}
+
+model VerificationDocument {
+  id        String       @id @default(uuid()) @db.Uuid
+  caseId    String       @map("case_id") @db.Uuid
+  fileId    String       @map("file_id") @db.Uuid
+  type      DocumentType
+  expiresAt DateTime?    @map("expires_at") @db.Date
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  case VerificationCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  file File             @relation(fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@index([caseId])
+  @@map("verification_documents")
+}
+
+model AdminMembership {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  role      AdminRole
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, role])
+  @@map("admin_memberships")
+}
+
+/// Append-only. UPDATE and DELETE are rejected by a database trigger.
+model AuditEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  actorId      String?  @map("actor_id") @db.Uuid
+  actorType    String   @map("actor_type")
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  companyId    String?  @map("company_id") @db.Uuid
+  reason       String?
+  redactedDiff Json?    @map("redacted_diff")
+  requestId    String?  @map("request_id")
+  ip           String?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([resourceType, resourceId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([createdAt])
+  @@map("audit_events")
+}
+
+model OutboxEvent {
+  id            String      @id @default(uuid()) @db.Uuid
+  eventType     String      @map("event_type")
+  aggregateId   String?     @map("aggregate_id")
+  /// Cleared (redacted) after successful delivery because it can carry one-time links.
+  payload       Json
+  state         OutboxState @default(PENDING)
+  attempts      Int         @default(0)
+  lastError     String?     @map("last_error")
+  nextAttemptAt DateTime    @default(now()) @map("next_attempt_at") @db.Timestamptz(3)
+  dedupeKey     String?     @unique @map("dedupe_key")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  processedAt   DateTime?   @map("processed_at") @db.Timestamptz(3)
+
+  @@index([state, nextAttemptAt])
+  @@map("outbox")
 }

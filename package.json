@@ -16,10 +16,11 @@
     "db:migrate": "pnpm --filter @app/db run db:migrate",
     "db:migrate:dev": "pnpm --filter @app/db run db:migrate:dev",
     "db:migrate:status": "pnpm --filter @app/db run db:migrate:status",
-    "db:seed": "pnpm --filter @app/db run db:seed",
+    "db:seed": "pnpm --filter @app/api run db:seed",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "build:packages": "pnpm --filter './packages/*' run build"
+    "build:packages": "pnpm --filter './packages/*' run build",
+    "dev:totp": "pnpm --silent --filter @app/api run dev:totp"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

@@ -1,5 +1,5 @@
 # Platform administration
-Base `/admin`, dedicated admin authentication and MFA, no public registration. Admin roles assigned through audited privileged process. Never provide impersonation or unrestricted database editing.
+Base `/admin` on a separate admin origin in production (A03), dedicated admin authentication with mandatory TOTP MFA and recovery codes (A02), no public registration. Admin roles assigned through audited privileged process. Never provide impersonation or unrestricted database editing.
 
 | Route | Content | Actions and safeguards |
 |---|---|---|

@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
-    "build": "next build",
-    "start": "next start --port 3000",
+    "dev": "node ../../scripts/with-env.mjs --except NODE_ENV next dev --port 3000",
+    "build": "node ../../scripts/with-env.mjs --except NODE_ENV next build",
+    "start": "node ../../scripts/with-env.mjs --except NODE_ENV next start --port 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

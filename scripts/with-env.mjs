@@ -9,9 +9,21 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const envFile = resolve(root, '.env');
-if (existsSync(envFile)) process.loadEnvFile(envFile);
+let argv = process.argv.slice(2);
+// `--except NAME[,NAME]` leaves those variables out (e.g. NODE_ENV for `next build`, which
+// must run as production regardless of the local development .env).
+let except = [];
+if (argv[0] === '--except') {
+  except = (argv[1] ?? '').split(',').filter(Boolean);
+  argv = argv.slice(2);
+}
+if (existsSync(envFile)) {
+  const before = new Set(Object.keys(process.env));
+  process.loadEnvFile(envFile);
+  for (const name of except) if (!before.has(name)) delete process.env[name];
+}
 
-const [cmd, ...args] = process.argv.slice(2);
+const [cmd, ...args] = argv;
 if (!cmd) {
   console.error('usage: with-env.mjs <command> [...args]');
   process.exit(2);

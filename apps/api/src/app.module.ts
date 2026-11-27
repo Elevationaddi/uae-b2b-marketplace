@@ -1,8 +1,31 @@
-import { Module, type DynamicModule } from '@nestjs/common';
+import {
+  Module,
+  type DynamicModule,
+  type MiddlewareConsumer,
+  type NestModule,
+} from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import type { AppEnv } from '@app/config';
 import { LoggerModule } from 'nestjs-pino';
+import { AdminAuthController } from './admin/admin-auth.controller';
+import { AdminController } from './admin/admin.controller';
+import { AdminService } from './admin/admin.service';
+import { MfaService } from './admin/mfa.service';
+import { AuthController } from './auth/auth.controller';
+import { AuthService } from './auth/auth.service';
+import { AdminAuthGuard, CompanyAuthGuard } from './auth/guards';
+import { PasswordService } from './auth/password.service';
+import { SessionService } from './auth/session.service';
+import { UserTokenService } from './auth/tokens.service';
+import { CsrfMiddleware } from './common/csrf.middleware';
 import { ErrorEnvelopeFilter } from './common/error.filter';
+import { RateLimitService } from './common/rate-limit.service';
+import { CompaniesController } from './companies/companies.controller';
+import { CompaniesService } from './companies/companies.service';
+import { ScannerService } from './files/scanner.service';
+import { StorageService } from './files/storage.service';
+import { TeamController } from './team/team.controller';
+import { TeamService } from './team/team.service';
 import { genRequestId } from './common/request-id';
 import { HealthController } from './health/health.controller';
 import { InfraModule } from './infra/infra.module';
@@ -20,7 +43,11 @@ export const LOG_REDACT_PATHS = [
 ];
 
 @Module({})
-export class AppModule {
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(CsrfMiddleware).forRoutes('*');
+  }
+
   static forRoot(env: AppEnv): DynamicModule {
     return {
       module: AppModule,
@@ -46,8 +73,31 @@ export class AppModule {
           },
         }),
       ],
-      controllers: [HealthController],
-      providers: [{ provide: APP_FILTER, useClass: ErrorEnvelopeFilter }],
+      controllers: [
+        HealthController,
+        AuthController,
+        CompaniesController,
+        TeamController,
+        AdminAuthController,
+        AdminController,
+      ],
+      providers: [
+        { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
+        CsrfMiddleware,
+        RateLimitService,
+        PasswordService,
+        SessionService,
+        UserTokenService,
+        AuthService,
+        CompanyAuthGuard,
+        AdminAuthGuard,
+        StorageService,
+        ScannerService,
+        CompaniesService,
+        TeamService,
+        MfaService,
+        AdminService,
+      ],
     };
   }
 }

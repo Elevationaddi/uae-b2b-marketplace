@@ -1,13 +1,124 @@
 # Implementation status
-Phases 1–7 have no application code yet. Phase 0 is implemented and verified locally; it awaits founder gate review.
+Phase 0 is merged. Phase 1 is implemented and verified locally; it awaits founder gate review. Phases 2–7 have no application code yet.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
-| 0 | READY_FOR_GATE_REVIEW | Local acceptance run and GitHub Actions run 46055408891 (all steps green) 2026-11-27; PR #1 | Founder review of the open questions below |
-| 1–7 | NOT_STARTED | None | Phase 0 gate; Phase 1 decisions listed below |
+| 0 | DONE | Merged to `main` as 08a127e (PR #1), CI run 46055408891 green | None |
+| 1 | READY_FOR_GATE_REVIEW | Local run 2026-11-27 (commands below); PR #2; GitHub Actions run 46067136882 green, including WebKit | Founder gate review |
+| 2–7 | NOT_STARTED | None | Phase 1 gate; Phase 2 decisions listed under Phase 1 |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 1: accounts, workspaces, verification
+**Date:** 2026-11-27. **Branch:** `phase-1-accounts-verification` (pull request into `main`). **Exit gate (docs/13-roadmap.md):** T01–T06; secure tenant and file boundaries.
+
+### Delivered
+- **Identity (A01, A07):** registration, email verification (mandatory before any company action), login, logout, forgot/reset password, profile and locale, password change, session list with per-session and "all other" revocation.
+- **Company workspaces:** onboarding with legal details (licence number, issuer, expiry, emirate, TRN, activity, contacts), BUYER and/or SELLER workspaces, workspace switcher.
+- **Team and RBAC (A04):** invitations by email (one-time token), accept flow for new and existing users, role change, revoke/restore, last-owner protection with row locking, full role matrix in `packages/contracts/src/permissions.ts` used by both API enforcement and UI capability hiding.
+- **Verification (A08):** licence and representative document upload to private storage, magic-byte type checks, sandbox malware scanner (EICAR test string, infected files never stored), submission with terms acceptance, admin queue, start review, approve / needs-info / reject with reason, resubmission, full case timeline for company and admin.
+- **Licence expiry and renewal:** worker job flags expired licences and removes trading capabilities while keeping read access (T35); renewal cases with proposed new licence details, approved by compliance.
+- **Admin (A02, A03):** separate admin origin (`admin.localhost:3000` locally) with its own cookie (`asid`, SameSite Strict) and session table; host-routing middleware hides admin pages and API from the company origin and vice versa; admins provisioned only by CLI (`admin:create`), never by registration; mandatory TOTP enrolment with QR and recovery codes; overview KPIs from live queries, verification queue and case review, companies (search, suspend/reactivate with reason), users (revoke sessions), audit log with filters, staff role management (super-admin only).
+- **Audit:** append-only `audit_log` (database triggers block UPDATE/DELETE, T32) for every security and verification action, with secret redaction.
+- **EN/AR and responsive:** every screen in English and Arabic with RTL via logical CSS properties, mobile bottom navigation at ≤720px, tables collapse to cards on phones; every screen has loading, empty, error (with request reference and retry), forbidden and not-found states.
+- **OpenAPI:** generated from the shared zod contracts (`pnpm --filter @app/contracts openapi` writes `docs/api/openapi.json`); a unit test fails if the committed file is stale and an API integration test fails if any Express route is missing from the document.
+- **WebKit:** Playwright `webkit` and `mobile-safari` projects added; they run in CI (the WebKit download is blocked by this environment's network policy).
+
+### Routes, schema, accounts
+- 55 API operations: see `docs/api/README.md` (method, path, auth, CSRF, required capability, status codes) and `docs/api/openapi.json`.
+- Migration `20261127200000_phase1_identity_verification` (17 tables, triggers, constraints): see `docs/db/phase-1-schema.md`, including rollback notes. No destructive change to the baseline.
+- Development accounts for every company and admin role: `docs/TEST_ACCOUNTS.md` (seed refuses to run in production).
+
+### Commands actually run
+Environment: Linux container, Node 22.23.5, pnpm 10.28.0, local PostgreSQL 16, Redis 7, SeaweedFS, Mailpit. `RATE_LIMIT_SCALE=50` in the local `.env` and in CI so E2E does not trip auth rate limits (production default is 1).
+
+| Command | Result |
+|---|---|
+| `pnpm lint` | pass (0 warnings) |
+| `pnpm format:check` | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` | pass: 121 tests, 0 failed (config 17, contracts 29, api integration 63, web 10, worker 2) |
+| `NODE_ENV=production pnpm build` | pass |
+| `pnpm test:e2e` (chromium + mobile-360) | pass: 44 tests, 0 failed, re-run after the final CSP change |
+| Screenshots project (`screenshots.spec.ts`, deviceScaleFactor 2) | pass: 4 tests; 58 screenshots of every screen, EN/AR, desktop/phone, forbidden/not-found/unverified states |
+| `pnpm audit --prod --audit-level high` | pass: no known vulnerabilities (nodemailer upgraded to 10.4.1) |
+| Manual curl of host routing | admin pages/API 404 on the web origin; non-admin paths 404 on the admin origin |
+| WebKit / mobile Safari E2E | not run locally (browser download blocked); passed in CI run 46067136882 |
+
+### Acceptance tests
+| Test | Covered by | Result |
+|---|---|---|
+| T01 unverified purchase | `companies.int.test.ts` (no `buyer.purchase` capability before approval), `access-control.spec.ts` | pass at capability level; purchase endpoints arrive in Phase 3, where T01 must be re-run end to end |
+| T02 clean docs approved | `companies.int.test.ts`, `verification-journey.spec.ts` | pass |
+| T03 missing/infected licence | `companies.int.test.ts` (two cases) | pass |
+| T04 cross-company ID guessing | `team-isolation.int.test.ts`, `access-control.spec.ts` (404 on company, case, document and workspace IDs) | pass |
+| T05 revoked membership, old session | `team-isolation.int.test.ts` | pass |
+| T06 last owner removal | `team-isolation.int.test.ts`, including a concurrent mutual-revoke race; `team.spec.ts` | pass |
+| T32 audit edit attempt (early) | `admin-security.int.test.ts` | pass |
+| T35 licence expiry (early) | `companies.int.test.ts` | pass |
+
+E2E also covers: full registration-to-approval journey, password reset single use, session revocation, unverified-email block, admin MFA enrolment and recovery-code sign-in, invitation acceptance, Arabic RTL and 360px layouts.
+
+### CI
+`.github/workflows/ci.yml` now starts Mailpit and SeaweedFS, maps `admin.localhost`, checks OpenAPI is up to date, seeds the database and runs E2E on chromium, mobile-360, webkit and mobile-safari. GitHub Actions run 46067136882 on PR #2 (commit ad17d00) passed every step: unit/integration tests (121), OpenAPI check, production build, seed, and **88 E2E tests across chromium, mobile-360, webkit and mobile-safari, 0 failed**, plus the dependency audit. (The migration status dry run reports the pending migration before deploy, as intended.)
+
+### Bugs found and fixed during Phase 1
+- Text typed before React hydration was lost; inputs and buttons are now disabled until hydrated.
+- The mobile bottom navigation covered the last button on long pages (CSS specificity); fixed.
+- Uploading an infected file showed "Saved."; it now says the file was blocked.
+- `NODE_ENV=development` from `.env` leaked into `next build`; the env loader now excludes it for web scripts.
+- Four high-severity nodemailer advisories; upgraded.
+
+### Security review
+| Area | Control |
+|---|---|
+| Passwords | Argon2id (`argon2` library, 64 MiB, t=3); minimum length enforced by shared contracts; generic login errors |
+| Sessions | Opaque random tokens, only SHA-256 hashes stored in PostgreSQL; rotation on login and privilege change; idle and absolute expiry; revocation takes effect on the next request |
+| Cookies | `__Host-` prefix, Secure, HttpOnly; SameSite Lax (company), Strict (admin); admin and company cookies never shared |
+| CSRF | Origin/Referer check plus double-submit token on every state-changing request |
+| Rate limiting | Redis-backed limits on login, registration, reset, verification resend, invitation and MFA (table in `docs/api/README.md`) |
+| Recovery tokens | One-time, hashed at rest, short expiry, delivered in the URL fragment (not sent to servers or logs) and stripped from history |
+| Admin MFA | TOTP (`otplib`) with replay protection, secrets AES-256-GCM encrypted at rest, hashed single-use recovery codes, QR rendered as an image so it cannot run script |
+| Admin separation | Separate origin, cookie, session table and CSRF scope; middleware blocks cross-host routes; database trigger stops admin accounts holding company memberships; no public admin registration |
+| Tenant isolation | Every query scoped by membership; cross-tenant IDs return 404 (T04); role and company never taken from the client |
+| Files | Private bucket; magic-byte sniffing; sandbox malware scan before storage; downloads streamed only after an authorization check, with `Content-Disposition: attachment`, `nosniff`, `private, no-store` and a restrictive CSP |
+| Audit | Append-only by trigger; actor, IP, request ID, reason; secrets redacted |
+| Web | CSP (`default-src 'self'`, `frame-ancestors 'none'`), COOP, no-store on API responses, open-redirect-safe `next` parameter, no `window.confirm` |
+| Dependencies | `pnpm audit --prod` clean; versions pinned in `docs/DEVELOPMENT.md` |
+
+### Known issues and limitations
+- WebKit/Safari runs in CI only (passed there); it cannot be downloaded in this development environment.
+- T01 verified at capability level only until purchase endpoints exist (Phase 3).
+- Document downloads are streamed through the API rather than presigned URLs (simpler to authorize; revisit for large files).
+- Production cannot start yet by design: there is no live email adapter or malware scanner (sandbox adapters only, clearly labelled).
+- CSP still needs `'unsafe-inline'` for scripts (Next.js inline bootstrap); nonces can be added later.
+- A pending invitation token is kept per browser tab (sessionStorage); opening the link in another tab after sign-up requires clicking it again.
+- Notifications are email only; no in-app notifications or compliance queue alerts yet (Phase 6).
+- Seeded admin TOTP secrets are fixed for development; the seed refuses production.
+- Terms version is `dev-1` pending legal text (D15).
+- Arabic copy needs native-speaker review.
+- `API_INTERNAL_ORIGIN` is fixed at web build time; `TRUST_PROXY` must be set correctly behind a production load balancer for rate limits and audit IPs.
+- No account deletion, data export or admin "disable user" action yet.
+- Admin lists have search and status filters but no column filters or detail drawers.
+
+### Deviations and decisions changed
+- A01–A08 approved by the founder and recorded in `docs/00-decisions.md`; no D01–D15 entry changed.
+- OpenAPI is generated from the contracts package rather than NestJS decorators, so the web client and the spec share one schema source.
+- `RATE_LIMIT_SCALE` env variable added (development and test only; ignored in production).
+
+### Decisions needed before Phase 2
+1. Launch categories and restricted/prohibited items (D14).
+2. Seller eligibility rules beyond an approved licence (D02).
+3. Catalog moderation policy: pre-approval of listings or post-publication review.
+4. Whether buyer browsing of the marketplace requires an approved company or only a verified account.
+5. Document retention period after rejection or account closure (D09).
+6. Hosting region for production storage and database (D12).
+7. Production email provider and malware scanner (needed before any production deployment, not before Phase 2 development).
+8. Legal terms text (D15) and brand name (A06 makes it configurable).
+
+### Next gate
+Founder reviews this phase, the screenshots and the decisions above, and approves starting Phase 2 (seller storefront, catalog, moderation, inventory, buyer marketplace and directory; T07–T10 plus search isolation).
 
 ## Phase 0: foundation
 **Date:** 2026-11-27. **Branch:** `phase-0-foundation` (pull request into `main`). **Exit gate (docs/13-roadmap.md):** clean install/build/lint/typecheck, DB connection, documented commands.

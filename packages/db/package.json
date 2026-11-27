@@ -13,8 +13,7 @@
     "test": "echo 'db: covered by api integration tests'",
     "db:migrate": "node ../../scripts/with-env.mjs prisma migrate deploy",
     "db:migrate:dev": "node ../../scripts/with-env.mjs prisma migrate dev",
-    "db:migrate:status": "node ../../scripts/with-env.mjs prisma migrate status",
-    "db:seed": "node ../../scripts/with-env.mjs tsx prisma/seed.ts"
+    "db:migrate:status": "node ../../scripts/with-env.mjs prisma migrate status"
   },
   "dependencies": {
     "@prisma/client": "6.19.3"

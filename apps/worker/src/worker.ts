@@ -3,16 +3,21 @@ import type { AppEnv } from '@app/config';
 import { createPrismaClient, pingDatabase, type PrismaClient } from '@app/db';
 import { Queue, Worker, type ConnectionOptions } from 'bullmq';
 import pino, { type Logger } from 'pino';
+import { createMailer, dispatchOutbox, runLicenceExpiry } from './jobs';
 
 /**
  * Redis-backed background worker (docs/11-integrations.md).
  *
- * Phase 0 runs a single real job: a "system.heartbeat" repeatable job that proves
- * the enqueue -> claim -> process loop works through Redis. Business jobs
- * (outbox dispatch, reservation/RFQ expiry, reconciliation) arrive with their phases.
+ * Jobs (repeatable, via BullMQ job schedulers):
+ * - system.heartbeat: proves the Redis queue loop and DB connectivity (readiness).
+ * - outbox.dispatch: delivers transactional emails from the outbox table (every 2 s).
+ * - licence.expiry: licence reminders and expiry restriction (hourly; idempotent).
+ * Reservation/RFQ expiry and reconciliation jobs arrive with their phases.
  */
 export const SYSTEM_QUEUE = 'system';
 export const HEARTBEAT_JOB = 'system.heartbeat';
+export const OUTBOX_JOB = 'outbox.dispatch';
+export const LICENCE_JOB = 'licence.expiry';
 const HEARTBEAT_EVERY_MS = 60_000;
 const HEARTBEAT_STALE_MS = 3 * HEARTBEAT_EVERY_MS;
 
@@ -38,7 +43,7 @@ function redisConnection(url: string): ConnectionOptions {
 
 export async function startWorker(
   env: AppEnv,
-  opts: { port?: number; heartbeatEveryMs?: number; logger?: Logger } = {},
+  opts: { port?: number; heartbeatEveryMs?: number; outboxEveryMs?: number; logger?: Logger } = {},
 ): Promise<RunningWorker> {
   const log =
     opts.logger ??
@@ -53,20 +58,45 @@ export async function startWorker(
   const connection = redisConnection(env.REDIS_URL);
   const prisma: PrismaClient = createPrismaClient(env.DATABASE_URL);
   const queue = new Queue(SYSTEM_QUEUE, { connection });
+  const mailer = createMailer(env);
   let lastHeartbeat: Date | null = null;
   const startedAt = Date.now();
 
   const worker = new Worker(
     SYSTEM_QUEUE,
     async (job) => {
-      if (job.name !== HEARTBEAT_JOB) throw new Error(`No handler for job ${job.name}`);
-      await pingDatabase(prisma);
-      lastHeartbeat = new Date();
-      return { at: lastHeartbeat.toISOString() };
+      switch (job.name) {
+        case HEARTBEAT_JOB:
+          await pingDatabase(prisma);
+          lastHeartbeat = new Date();
+          return { at: lastHeartbeat.toISOString() };
+        case OUTBOX_JOB:
+          return { delivered: await dispatchOutbox(prisma, mailer, env, log) };
+        case LICENCE_JOB: {
+          const res = await runLicenceExpiry(prisma, env);
+          if (res.reminded || res.restricted) log.info(res, 'licence expiry run');
+          return res;
+        }
+        default:
+          throw new Error(`No handler for job ${job.name}`);
+      }
     },
-    { connection, concurrency: 1 },
+    { connection, concurrency: 2 },
   );
   worker.on('failed', (job, err) => log.error({ job: job?.name, err: err.message }, 'job failed'));
+  const oneShot = { removeOnComplete: true, removeOnFail: 100 };
+  await queue.upsertJobScheduler(
+    'outbox',
+    { every: opts.outboxEveryMs ?? 2_000 },
+    { name: OUTBOX_JOB, opts: oneShot },
+  );
+  await queue.upsertJobScheduler(
+    'licence-expiry',
+    { every: 3600_000 },
+    { name: LICENCE_JOB, opts: oneShot },
+  );
+  // Run the licence check once at startup too, so a restart never delays restriction by an hour.
+  await queue.add(LICENCE_JOB, {}, oneShot);
   worker.on('error', (err) => log.error({ err: err.message }, 'worker error'));
 
   const every = opts.heartbeatEveryMs ?? HEARTBEAT_EVERY_MS;
