@@ -1,11 +1,11 @@
 # Implementation status
-Phase 0 is merged. Phase 1 is implemented and verified locally; it awaits founder gate review. Phases 2–7 have no application code yet.
+Phases 0 and 1 are merged and approved. Phases 2–7 have no application code yet; Phase 2 awaits founder go-ahead and the decisions listed under Phase 1.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
 | 0 | DONE | Merged to `main` as 08a127e (PR #1), CI run 46055408891 green | None |
-| 1 | READY_FOR_GATE_REVIEW | Local run 2026-11-27 (commands below); PR #2; GitHub Actions run 46067136882 green, including WebKit | Founder gate review |
-| 2–7 | NOT_STARTED | None | Phase 1 gate; Phase 2 decisions listed under Phase 1 |
+| 1 | DONE | Approved by the founder 2026-11-28; merged to `main` as 7cddb66 (PR #2); GitHub Actions green including WebKit | None |
+| 2–7 | NOT_STARTED | None | Founder go-ahead for Phase 2; Phase 2 decisions listed under Phase 1 |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
@@ -118,7 +118,7 @@ E2E also covers: full registration-to-approval journey, password reset single us
 8. Legal terms text (D15) and brand name (A06 makes it configurable).
 
 ### Next gate
-Founder reviews this phase, the screenshots and the decisions above, and approves starting Phase 2 (seller storefront, catalog, moderation, inventory, buyer marketplace and directory; T07–T10 plus search isolation).
+Phase 1 approved and merged 2026-11-28. Next: founder answers the decisions above and approves starting Phase 2 (seller storefront, catalog, moderation, inventory, buyer marketplace and directory; T07–T10 plus search isolation).
 
 ## Phase 0: foundation
 **Date:** 2026-11-27. **Branch:** `phase-0-foundation` (pull request into `main`). **Exit gate (docs/13-roadmap.md):** clean install/build/lint/typecheck, DB connection, documented commands.
