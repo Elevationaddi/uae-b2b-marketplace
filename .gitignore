@@ -12,3 +12,4 @@ test-results/
 .turbo/
 *.log
 .DS_Store
+screenshots-out/

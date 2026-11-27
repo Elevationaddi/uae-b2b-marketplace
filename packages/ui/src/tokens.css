@@ -11,6 +11,11 @@
   --color-success: #067647;
   --color-warning-bg: #fff4e5;
   --color-warning-text: #7a4100;
+  --color-error-bg: #fef3f2;
+  --color-success-bg: #ecfdf3;
+  --color-info-bg: #eff8ff;
+  --color-info-text: #175cd3;
+  --color-neutral-bg: #eef2f5;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

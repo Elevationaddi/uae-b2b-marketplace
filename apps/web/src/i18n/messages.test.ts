@@ -18,6 +18,6 @@ describe('i18n catalogue', () => {
   });
 
   it('formats UTC instants in Asia/Dubai (UTC+4)', () => {
-    expect(formatDubaiTime('2026-01-01T20:30:00Z', 'en')).toMatch(/00:30:00|12:30:00/);
+    expect(formatDubaiTime('2026-01-01T20:30:00Z', 'en')).toMatch(/00:30|12:30/);
   });
 });

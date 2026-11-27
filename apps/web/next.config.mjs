@@ -4,17 +4,36 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
 ];
+
+/**
+ * The browser only ever talks to the web origin. /api/v1/* is proxied to the API so that
+ * session cookies stay first-party and host-only (A03). The destination is resolved when the
+ * app is built, so API_INTERNAL_ORIGIN must be set at build time in deployed environments.
+ */
+const apiOrigin = (
+  process.env.API_INTERNAL_ORIGIN ??
+  process.env.API_ORIGIN ??
+  'http://localhost:4000'
+).replace(/\/$/, '');
 
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['@app/contracts'],
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // Authenticated pages and API responses must never be cached by shared caches.
+      { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'no-store' }] },
+    ];
   },
   async redirects() {
     return [{ source: '/', destination: '/en', permanent: false }];
+  },
+  async rewrites() {
+    return [{ source: '/api/v1/:path*', destination: `${apiOrigin}/api/v1/:path*` }];
   },
 };
 
