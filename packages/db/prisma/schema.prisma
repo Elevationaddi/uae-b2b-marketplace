@@ -342,6 +342,7 @@ model Company {
   workspaces        Workspace[]
   verificationCases VerificationCase[]
   files             File[]
+  products          Product[]
 
   @@unique([licenceIssuer, licenceNumber])
   @@index([status, licenceExpiry])
@@ -670,6 +671,7 @@ model Product {
   updatedAt              DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspace        Workspace        @relation(fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+  company          Company          @relation(fields: [companyId], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "products_company_fk")
   publishedVersion ProductVersion?  @relation("PublishedVersion", fields: [publishedVersionId], references: [id], onDelete: Restrict)
   workingVersion   ProductVersion?  @relation("WorkingVersion", fields: [workingVersionId], references: [id], onDelete: Restrict)
   versions         ProductVersion[] @relation("ProductVersions")

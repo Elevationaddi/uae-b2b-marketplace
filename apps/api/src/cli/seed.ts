@@ -24,6 +24,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { encryptSecret } from '../common/crypto';
 
+import { seedCatalog } from './seed-catalog';
 import { DEV_ADMIN_TOTP, DEV_PASSWORD } from './seed-secrets';
 
 const file = resolve(__dirname, '../../../../.env');
@@ -302,6 +303,30 @@ async function main() {
     ownerName: 'Saeed Draft-Owner',
     members: [],
   });
+  await company({
+    legal: 'Gulf Weave Textiles Factory LLC (Fictional)',
+    display: 'Gulf Weave Textiles',
+    licence: 'DEV-500005',
+    emirate: 'DUBAI',
+    activity: 'Garment and uniform manufacturing',
+    status: 'APPROVED',
+    kinds: ['SELLER'],
+    owner: 'seller.owner@gulf-weave.test',
+    ownerName: 'Rashid Textile-Owner',
+    members: [],
+  });
+  await company({
+    legal: 'Emirates Pantry Foods Trading LLC (Fictional)',
+    display: 'Emirates Pantry Foods',
+    licence: 'DEV-600006',
+    emirate: 'ABU_DHABI',
+    activity: 'Foodstuff distribution',
+    status: 'APPROVED',
+    kinds: ['SELLER'],
+    owner: 'seller.owner@emirates-pantry.test',
+    ownerName: 'Huda Food-Owner',
+    members: [],
+  });
   await user(prisma, hash, 'unverified@example.test', 'Unverified Person', { verified: false });
 
   const admins: [string, string, AdminRole][] = [
@@ -333,6 +358,13 @@ async function main() {
     update: {},
     create: { userId: fresh.id, role: 'COMPLIANCE' },
   });
+
+  const owners: Record<string, string> = {
+    'DEV-200002': 'seller.owner@desert-pack.test',
+    'DEV-500005': 'seller.owner@gulf-weave.test',
+    'DEV-600006': 'seller.owner@emirates-pantry.test',
+  };
+  await seedCatalog(prisma, s3, env, (licence) => owners[licence]!);
 
   console.log('[seed] Development data ready. Accounts are listed in docs/TEST_ACCOUNTS.md.');
   await prisma.$disconnect();

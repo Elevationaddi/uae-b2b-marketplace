@@ -129,4 +129,52 @@ export const TEMPLATES: Record<EmailTemplate, { en: Render; ar: Render }> = {
       text: `تمت إعادة تفعيل ${v.company}.`,
     }),
   },
+  catalog_decision: {
+    en: (v, app) => {
+      const d = { APPROVED: 'approved', REJECTED: 'rejected', CHANGES_REQUESTED: 'returned for changes' }[v.decision ?? ''] ?? 'reviewed';
+      return {
+        subject: `${app}: listing ${d} - ${v.product}`,
+        text: `Your listing "${v.product}" (${v.company}) was ${d}.${v.reason ? `\n\nReason: ${v.reason}` : ''}\n\nOpen your seller dashboard to see details.`,
+      };
+    },
+    ar: (v, app) => {
+      const d = { APPROVED: 'تمت الموافقة على', REJECTED: 'تم رفض', CHANGES_REQUESTED: 'طُلبت تعديلات على' }[v.decision ?? ''] ?? 'تمت مراجعة';
+      return {
+        subject: `${app}: ${d} المنتج - ${v.product}`,
+        text: `${d} منتجك "${v.product}" (${v.company}).${v.reason ? `\n\nالسبب: ${v.reason}` : ''}\n\nافتح لوحة البائع لمعرفة التفاصيل.`,
+      };
+    },
+  },
+  listing_enforcement: {
+    en: (v, app) => {
+      const d = { suspend: 'suspended', restore: 'restored', remove: 'removed' }[v.action ?? ''] ?? 'updated';
+      return {
+        subject: `${app}: listing ${d} - ${v.product}`,
+        text: `Your listing "${v.product}" (${v.company}) was ${d} by the marketplace team.\n\nReason: ${v.reason}`,
+      };
+    },
+    ar: (v, app) => {
+      const d = { suspend: 'تم إيقاف', restore: 'تمت استعادة', remove: 'تمت إزالة' }[v.action ?? ''] ?? 'تم تحديث';
+      return {
+        subject: `${app}: ${d} المنتج - ${v.product}`,
+        text: `${d} منتجك "${v.product}" (${v.company}) من قبل فريق السوق.\n\nالسبب: ${v.reason}`,
+      };
+    },
+  },
+  storefront_enforcement: {
+    en: (v, app) => {
+      const d = v.action === 'hide' ? 'hidden' : 'restored';
+      return {
+        subject: `${app}: storefront ${d} - ${v.company}`,
+        text: `The storefront of ${v.company} was ${d} by the marketplace team.\n\nReason: ${v.reason}`,
+      };
+    },
+    ar: (v, app) => {
+      const d = v.action === 'hide' ? 'إخفاء' : 'استعادة';
+      return {
+        subject: `${app}: ${d} واجهة المتجر - ${v.company}`,
+        text: `تم ${d} واجهة متجر ${v.company} من قبل فريق السوق.\n\nالسبب: ${v.reason}`,
+      };
+    },
+  },
 };

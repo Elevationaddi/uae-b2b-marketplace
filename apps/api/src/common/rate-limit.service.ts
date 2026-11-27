@@ -19,6 +19,8 @@ const POLICIES = {
   invitation_workspace: { points: 50, duration: 24 * 60 * 60 },
   company_create_user: { points: 5, duration: 24 * 60 * 60 },
   upload_user: { points: 60, duration: 60 * 60 },
+  search_ip: { points: 600, duration: 60 },
+  lists_user: { points: 300, duration: 60 },
 } as const;
 export type RateLimitPolicy = keyof typeof POLICIES;
 

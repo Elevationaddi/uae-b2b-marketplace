@@ -169,3 +169,16 @@ describe('describeEnv', () => {
     expect(JSON.stringify(out)).not.toContain(dev.SESSION_SECRET);
   });
 });
+
+describe('retention (A13, provisional)', () => {
+  it('defaults to report-only with 90/90/180 days', () => {
+    const e = parseEnv(dev);
+    expect(e.RETENTION_REJECTED_DOCS_DAYS).toBe(90);
+    expect(e.RETENTION_ABANDONED_APPLICATION_DAYS).toBe(90);
+    expect(e.RETENTION_CLOSED_COMPANY_DAYS).toBe(180);
+    expect(e.RETENTION_DELETION_ENABLED).toBe(false);
+  });
+  it('refuses to enable irreversible deletion until legally approved', () => {
+    expect(() => parseEnv({ ...dev, RETENTION_DELETION_ENABLED: 'true' })).toThrow(EnvValidationError);
+  });
+});
