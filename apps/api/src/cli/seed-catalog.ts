@@ -715,7 +715,9 @@ export async function seedCatalog(
   env: AppEnv,
   ownerEmailFor: (licence: string) => string,
 ) {
-  if ((await prisma.category.count()) > 0) {
+  // Keyed on a seeded slug, not on "any category": integration tests create their own
+  // categories in the same database before the seed runs in CI.
+  if (await prisma.category.findUnique({ where: { slug: CATEGORIES[0]!.slug } })) {
     console.log('[seed] Catalog already present; skipping catalog seed.');
     return;
   }
