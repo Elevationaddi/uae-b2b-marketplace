@@ -118,6 +118,115 @@ enum ScanState {
 
 enum FileVisibility {
   PRIVATE
+  /// Separate media bucket; served publicly only while attached to approved, visible content.
+  MEDIA
+}
+
+enum FilePurpose {
+  VERIFICATION_DOCUMENT
+  PRODUCT_IMAGE
+  STOREFRONT_IMAGE
+  CATEGORY_IMAGE
+}
+
+enum CategoryRestriction {
+  OPEN
+  REVIEW_REQUIRED
+  BLOCKED
+}
+
+enum AttributeType {
+  TEXT
+  NUMBER
+  SELECT
+  BOOLEAN
+}
+
+enum BusinessType {
+  MANUFACTURER
+  FACTORY
+  WHOLESALER
+  DISTRIBUTOR
+  IMPORTER
+  AUTHORIZED_DISTRIBUTOR
+  TRADING_COMPANY
+}
+
+enum StorefrontStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum StorefrontMediaKind {
+  LOGO
+  COVER
+  FACTORY
+  WAREHOUSE
+  OTHER
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  UNPUBLISHED
+  SUSPENDED
+  ARCHIVED
+  REMOVED
+}
+
+enum VersionState {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  CHANGES_REQUESTED
+  SUPERSEDED
+  WITHDRAWN
+}
+
+enum FulfilmentMode {
+  READY_STOCK
+  MADE_TO_ORDER
+}
+
+enum PriceType {
+  FIXED
+  TIERED
+  QUOTE_ONLY
+}
+
+enum QuantityUnit {
+  PIECE
+  CARTON
+  BOX
+  PACK
+  SET
+  PAIR
+  ROLL
+  DOZEN
+}
+
+enum StockMovementKind {
+  RECEIVE
+  REMOVE
+  MARK_UNAVAILABLE
+  RELEASE_UNAVAILABLE
+  SET_ON_HAND
+}
+
+enum RestrictedAction {
+  BLOCK
+  REVIEW
+}
+
+enum FeaturedKind {
+  PRODUCT
+  SUPPLIER
+}
+
+enum ListingView {
+  GRID
+  LIST
 }
 
 enum AdminRole {
@@ -207,28 +316,28 @@ model MfaRecoveryCode {
 }
 
 model Company {
-  id                  String        @id @default(uuid()) @db.Uuid
-  legalName           String        @map("legal_name")
-  displayName         String        @map("display_name")
-  licenceNumber       String        @map("licence_number")
-  licenceIssuer       String        @map("licence_issuer")
-  licenceExpiry       DateTime      @map("licence_expiry") @db.Date
-  activity            String
-  emirate             Emirate
-  trn                 String?
-  status              CompanyStatus @default(DRAFT)
-  suspensionKind      SuspensionKind? @map("suspension_kind")
+  id                 String          @id @default(uuid()) @db.Uuid
+  legalName          String          @map("legal_name")
+  displayName        String          @map("display_name")
+  licenceNumber      String          @map("licence_number")
+  licenceIssuer      String          @map("licence_issuer")
+  licenceExpiry      DateTime        @map("licence_expiry") @db.Date
+  activity           String
+  emirate            Emirate
+  trn                String?
+  status             CompanyStatus   @default(DRAFT)
+  suspensionKind     SuspensionKind? @map("suspension_kind")
   /// Last 30-day licence expiry reminder sent for this expiry date (dedupe).
-  licenceReminderFor  DateTime?     @map("licence_reminder_for") @db.Date
-  contactEmail        String        @map("contact_email")
-  contactPhone        String        @map("contact_phone")
-  termsVersion        String?       @map("terms_version")
-  termsAcceptedAt     DateTime?     @map("terms_accepted_at") @db.Timestamptz(3)
+  licenceReminderFor DateTime?       @map("licence_reminder_for") @db.Date
+  contactEmail       String          @map("contact_email")
+  contactPhone       String          @map("contact_phone")
+  termsVersion       String?         @map("terms_version")
+  termsAcceptedAt    DateTime?       @map("terms_accepted_at") @db.Timestamptz(3)
   /// Optimistic concurrency token; incremented on every update.
-  version             Int           @default(1)
-  createdById         String        @map("created_by_id") @db.Uuid
-  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  version            Int             @default(1)
+  createdById        String          @map("created_by_id") @db.Uuid
+  createdAt          DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspaces        Workspace[]
   verificationCases VerificationCase[]
@@ -250,6 +359,8 @@ model Workspace {
   company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
   memberships Membership[]
   invitations Invitation[]
+  storefront  Storefront?
+  products    Product[]
 
   @@unique([companyId, kind])
   @@map("workspaces")
@@ -340,6 +451,9 @@ model File {
   sha256         String
   scanState      ScanState      @default(PENDING) @map("scan_state")
   visibility     FileVisibility @default(PRIVATE)
+  purpose        FilePurpose    @default(VERIFICATION_DOCUMENT)
+  width          Int?
+  height         Int?
   createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
 
   ownerCompany          Company?               @relation(fields: [ownerCompanyId], references: [id], onDelete: Restrict)
@@ -415,4 +529,404 @@ model OutboxEvent {
 
   @@index([state, nextAttemptAt])
   @@map("outbox")
+}
+
+// ---------------------------------------------------------------------------------------------
+// Phase 2: catalog, storefronts, inventory, moderation, buyer lists (docs/06-data.md, A09–A12).
+// Money: BigInt fils (AED). Quantities: whole units (Int) for the MVP unit set.
+// ---------------------------------------------------------------------------------------------
+
+/// Two-level tree (top-level category -> subcategory), enforced by trigger. Managed in admin (A09).
+model Category {
+  id             String              @id @default(uuid()) @db.Uuid
+  parentId       String?             @map("parent_id") @db.Uuid
+  slug           String              @unique
+  nameEn         String              @map("name_en")
+  nameAr         String              @map("name_ar")
+  descriptionEn  String?             @map("description_en")
+  descriptionAr  String?             @map("description_ar")
+  imageFileId    String?             @map("image_file_id") @db.Uuid
+  position       Int                 @default(0)
+  visible        Boolean             @default(true)
+  /// Priority category for supplier acquisition (A09).
+  priority       Boolean             @default(false)
+  restriction    CategoryRestriction @default(OPEN)
+  /// Category-specific documentation / requirements shown to sellers (A10).
+  requirementsEn String?             @map("requirements_en")
+  requirementsAr String?             @map("requirements_ar")
+  archivedAt     DateTime?           @map("archived_at") @db.Timestamptz(3)
+  version        Int                 @default(1)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  parent     Category?           @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children   Category[]          @relation("CategoryTree")
+  attributes CategoryAttribute[]
+  versions   ProductVersion[]
+
+  @@index([parentId, position])
+  @@map("categories")
+}
+
+model CategoryAttribute {
+  id         String        @id @default(uuid()) @db.Uuid
+  categoryId String        @map("category_id") @db.Uuid
+  key        String
+  labelEn    String        @map("label_en")
+  labelAr    String        @map("label_ar")
+  type       AttributeType
+  /// SELECT only: [{ value, label_en, label_ar }].
+  options    Json          @default("[]")
+  unit       String?
+  required   Boolean       @default(false)
+  filterable Boolean       @default(false)
+  position   Int           @default(0)
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([categoryId, key])
+  @@map("category_attributes")
+}
+
+/// Supplier storefront (one per seller workspace). Public only while published, not hidden by an
+/// admin, and the company is approved with a valid licence.
+model Storefront {
+  id                    String           @id @default(uuid()) @db.Uuid
+  sellerWorkspaceId     String           @unique @map("seller_workspace_id") @db.Uuid
+  companyId             String           @map("company_id") @db.Uuid
+  status                StorefrontStatus @default(DRAFT)
+  businessType          BusinessType?    @map("business_type")
+  descriptionEn         String?          @map("description_en")
+  descriptionAr         String?          @map("description_ar")
+  yearEstablished       Int?             @map("year_established")
+  city                  String?
+  specializationEn      String?          @map("specialization_en")
+  specializationAr      String?          @map("specialization_ar")
+  capabilitiesEn        String?          @map("capabilities_en")
+  capabilitiesAr        String?          @map("capabilities_ar")
+  productionCapacity    String?          @map("production_capacity")
+  customizationServices Boolean          @default(false) @map("customization_services")
+  privateLabel          Boolean          @default(false) @map("private_label")
+  whiteLabel            Boolean          @default(false) @map("white_label")
+  samplesAvailable      Boolean          @default(false) @map("samples_available")
+  fulfilmentEn          String?          @map("fulfilment_en")
+  fulfilmentAr          String?          @map("fulfilment_ar")
+  /// [{ name, issuer, valid_until? }] supplier-declared; shown as declared, not platform-verified.
+  certifications        Json             @default("[]")
+  publishedAt           DateTime?        @map("published_at") @db.Timestamptz(3)
+  adminHiddenAt         DateTime?        @map("admin_hidden_at") @db.Timestamptz(3)
+  adminHiddenReason     String?          @map("admin_hidden_reason")
+  version               Int              @default(1)
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspace Workspace         @relation(fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+  media     StorefrontMedia[]
+
+  @@index([status])
+  @@map("storefronts")
+}
+
+model StorefrontMedia {
+  id           String              @id @default(uuid()) @db.Uuid
+  storefrontId String              @map("storefront_id") @db.Uuid
+  fileId       String              @map("file_id") @db.Uuid
+  kind         StorefrontMediaKind
+  position     Int                 @default(0)
+  captionEn    String?             @map("caption_en")
+  captionAr    String?             @map("caption_ar")
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  storefront Storefront @relation(fields: [storefrontId], references: [id], onDelete: Cascade)
+
+  @@index([storefrontId, kind, position])
+  @@map("storefront_media")
+}
+
+/// A listing. Content lives in moderated product_versions; pricing, stock and availability are
+/// live, validated and audited (A11). Public visibility is defined once, in the
+/// marketplace_products view.
+model Product {
+  id                     String         @id @default(uuid()) @db.Uuid
+  sellerWorkspaceId      String         @map("seller_workspace_id") @db.Uuid
+  companyId              String         @map("company_id") @db.Uuid
+  status                 ProductStatus  @default(DRAFT)
+  statusBeforeSuspension ProductStatus? @map("status_before_suspension")
+  statusReason           String?        @map("status_reason")
+  priceType              PriceType      @default(FIXED) @map("price_type")
+  publishedVersionId     String?        @unique @map("published_version_id") @db.Uuid
+  workingVersionId       String?        @unique @map("working_version_id") @db.Uuid
+  /// Denormalised from live pricing for filtering/sorting (refreshed in the same transaction).
+  minPriceFils           BigInt?        @map("min_price_fils")
+  minMoq                 Int?           @map("min_moq")
+  version                Int            @default(1)
+  createdById            String         @map("created_by_id") @db.Uuid
+  firstPublishedAt       DateTime?      @map("first_published_at") @db.Timestamptz(3)
+  publishedAt            DateTime?      @map("published_at") @db.Timestamptz(3)
+  createdAt              DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  workspace        Workspace        @relation(fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+  publishedVersion ProductVersion?  @relation("PublishedVersion", fields: [publishedVersionId], references: [id], onDelete: Restrict)
+  workingVersion   ProductVersion?  @relation("WorkingVersion", fields: [workingVersionId], references: [id], onDelete: Restrict)
+  versions         ProductVersion[] @relation("ProductVersions")
+  skus             Sku[]
+
+  @@index([sellerWorkspaceId, status])
+  @@index([status, publishedAt])
+  @@map("products")
+}
+
+/// Moderated listing content. A submitted version is the moderation case (queue = PENDING_REVIEW).
+/// Approved/superseded/rejected content is immutable (trigger).
+model ProductVersion {
+  id                  String         @id @default(uuid()) @db.Uuid
+  productId           String         @map("product_id") @db.Uuid
+  version             Int
+  state               VersionState   @default(DRAFT)
+  titleEn             String         @map("title_en")
+  titleAr             String?        @map("title_ar")
+  descriptionEn       String         @default("") @map("description_en")
+  descriptionAr       String?        @map("description_ar")
+  categoryId          String         @map("category_id") @db.Uuid
+  mode                FulfilmentMode @default(READY_STOCK)
+  attributes          Json           @default("{}")
+  /// [{ label_en, label_ar?, value }]
+  specifications      Json           @default("[]")
+  materials           String?
+  dimensions          String?
+  countryOfOrigin     String?        @map("country_of_origin")
+  leadTimeMinDays     Int?           @map("lead_time_min_days")
+  leadTimeMaxDays     Int?           @map("lead_time_max_days")
+  fulfilmentDays      Int?           @map("fulfilment_days")
+  customManufacturing Boolean        @default(false) @map("custom_manufacturing")
+  privateLabel        Boolean        @default(false) @map("private_label")
+  whiteLabel          Boolean        @default(false) @map("white_label")
+  samplesAvailable    Boolean        @default(false) @map("samples_available")
+  sampleNote          String?        @map("sample_note")
+  /// [{ name, issuer, number?, valid_until? }] supplier-declared.
+  certifications      Json           @default("[]")
+  videoUrl            String?        @map("video_url")
+  /// Generated column (mkt_normalize of titles/descriptions); read-only.
+  searchText          String?        @map("search_text")
+  /// Automatic moderation flags, e.g. restricted-term matches: [{ kind, term, field }].
+  autoFlags           Json           @default("[]") @map("auto_flags")
+  createdById         String         @map("created_by_id") @db.Uuid
+  submittedAt         DateTime?      @map("submitted_at") @db.Timestamptz(3)
+  submittedById       String?        @map("submitted_by_id") @db.Uuid
+  decidedAt           DateTime?      @map("decided_at") @db.Timestamptz(3)
+  decidedById         String?        @map("decided_by_id") @db.Uuid
+  decisionReason      String?        @map("decision_reason")
+  createdAt           DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  product      Product        @relation("ProductVersions", fields: [productId], references: [id], onDelete: Restrict)
+  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media        ProductMedia[]
+  publishedFor Product?       @relation("PublishedVersion")
+  workingFor   Product?       @relation("WorkingVersion")
+
+  @@unique([productId, version])
+  @@index([state, submittedAt])
+  @@map("product_versions")
+}
+
+model ProductMedia {
+  id               String   @id @default(uuid()) @db.Uuid
+  productVersionId String   @map("product_version_id") @db.Uuid
+  fileId           String   @map("file_id") @db.Uuid
+  /// Unique per version via a DEFERRABLE constraint in the migration (allows reordering).
+  position         Int
+  altEn            String?  @map("alt_en")
+  altAr            String?  @map("alt_ar")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  version ProductVersion @relation(fields: [productVersionId], references: [id], onDelete: Cascade)
+
+  @@index([productVersionId, position])
+  @@index([fileId])
+  @@map("product_media")
+}
+
+/// Sellable variant. Identity (code, variant attributes, unit) is fixed once approved; a SKU added
+/// to a published product stays pending (approved_at null) until its version is approved.
+model Sku {
+  id                String       @id @default(uuid()) @db.Uuid
+  productId         String       @map("product_id") @db.Uuid
+  sellerWorkspaceId String       @map("seller_workspace_id") @db.Uuid
+  code              String
+  /// { attribute: value } e.g. { "colour": "Blue", "size": "M" }
+  variantAttributes Json         @default("{}") @map("variant_attributes")
+  unit              QuantityUnit @default(PIECE)
+  moq               Int          @default(1)
+  orderIncrement    Int          @default(1) @map("order_increment")
+  active            Boolean      @default(true)
+  approvedAt        DateTime?    @map("approved_at") @db.Timestamptz(3)
+  lowStockThreshold Int          @default(0) @map("low_stock_threshold")
+  restockAt         DateTime?    @map("restock_at") @db.Date
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Restrict)
+  tiers     PriceTier[]
+  inventory Inventory?
+  movements StockMovement[]
+
+  @@unique([sellerWorkspaceId, code])
+  @@index([productId])
+  @@map("skus")
+}
+
+model PriceTier {
+  id            String   @id @default(uuid()) @db.Uuid
+  skuId         String   @map("sku_id") @db.Uuid
+  minQty        Int      @map("min_qty")
+  unitPriceFils BigInt   @map("unit_price_fils")
+  currency      String   @default("AED")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  sku Sku @relation(fields: [skuId], references: [id], onDelete: Cascade)
+
+  @@unique([skuId, minQty])
+  @@map("price_tiers")
+}
+
+/// available = on_hand - reserved - unavailable (never negative; CHECK constraints).
+model Inventory {
+  id          String   @id @default(uuid()) @db.Uuid
+  skuId       String   @unique @map("sku_id") @db.Uuid
+  onHand      Int      @default(0) @map("on_hand")
+  reserved    Int      @default(0)
+  unavailable Int      @default(0)
+  sold        Int      @default(0)
+  version     Int      @default(1)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sku Sku @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+  @@map("inventory")
+}
+
+/// Append-only stock ledger (trigger).
+model StockMovement {
+  id               String            @id @default(uuid()) @db.Uuid
+  skuId            String            @map("sku_id") @db.Uuid
+  actorId          String?           @map("actor_id") @db.Uuid
+  kind             StockMovementKind
+  deltaOnHand      Int               @map("delta_on_hand")
+  deltaReserved    Int               @default(0) @map("delta_reserved")
+  deltaUnavailable Int               @default(0) @map("delta_unavailable")
+  onHandAfter      Int               @map("on_hand_after")
+  reservedAfter    Int               @map("reserved_after")
+  unavailableAfter Int               @map("unavailable_after")
+  reason           String
+  referenceId      String?           @map("reference_id")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  sku Sku @relation(fields: [skuId], references: [id], onDelete: Restrict)
+
+  @@index([skuId, createdAt])
+  @@map("stock_movements")
+}
+
+/// Append-only moderation and enforcement history for listings and storefronts (trigger).
+model ModerationEvent {
+  id               String   @id @default(uuid()) @db.Uuid
+  productId        String?  @map("product_id") @db.Uuid
+  productVersionId String?  @map("product_version_id") @db.Uuid
+  storefrontId     String?  @map("storefront_id") @db.Uuid
+  actorId          String?  @map("actor_id") @db.Uuid
+  actorType        String   @map("actor_type")
+  action           String
+  fromState        String?  @map("from_state")
+  toState          String?  @map("to_state")
+  reason           String?
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([productId, createdAt])
+  @@index([storefrontId, createdAt])
+  @@map("moderation_events")
+}
+
+/// Provisional restricted-product rules (final policy needs legal/compliance approval, D14).
+model RestrictedTerm {
+  id          String           @id @default(uuid()) @db.Uuid
+  term        String
+  /// mkt_normalize(term), maintained by the API.
+  normalized  String
+  action      RestrictedAction
+  categoryId  String?          @map("category_id") @db.Uuid
+  note        String?
+  active      Boolean          @default(true)
+  createdById String?          @map("created_by_id") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([active])
+  @@map("restricted_terms")
+}
+
+/// Saved products / suppliers, per user (A12). Exactly one target (CHECK).
+model SavedItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  productId    String?  @map("product_id") @db.Uuid
+  storefrontId String?  @map("storefront_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, createdAt])
+  @@map("saved_items")
+}
+
+model ComparisonItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([userId, productId])
+  @@map("comparison_items")
+}
+
+model RecentlyViewed {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  viewedAt  DateTime @default(now()) @map("viewed_at") @db.Timestamptz(3)
+
+  @@unique([userId, productId])
+  @@index([userId, viewedAt])
+  @@map("recently_viewed")
+}
+
+model MarketplacePreference {
+  userId      String      @id @map("user_id") @db.Uuid
+  categoryIds Json        @default("[]") @map("category_ids")
+  emirates    Json        @default("[]")
+  defaultView ListingView @default(GRID) @map("default_view")
+  defaultSort String      @default("relevance") @map("default_sort")
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("marketplace_preferences")
+}
+
+/// Admin-curated featured placements, always labelled "Featured" and never used for search ranking.
+model FeaturedListing {
+  id           String       @id @default(uuid()) @db.Uuid
+  kind         FeaturedKind
+  productId    String?      @map("product_id") @db.Uuid
+  storefrontId String?      @map("storefront_id") @db.Uuid
+  position     Int          @default(0)
+  startsAt     DateTime?    @map("starts_at") @db.Timestamptz(3)
+  endsAt       DateTime?    @map("ends_at") @db.Timestamptz(3)
+  reason       String
+  createdById  String       @map("created_by_id") @db.Uuid
+  removedAt    DateTime?    @map("removed_at") @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([kind, removedAt, position])
+  @@map("featured_listings")
 }

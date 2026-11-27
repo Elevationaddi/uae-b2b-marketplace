@@ -72,6 +72,10 @@ export const rawEnvSchema = z.object({
   STORAGE_ENDPOINT: optionalString,
   STORAGE_REGION: z.string().default('me-central-1'),
   STORAGE_BUCKET: optionalString,
+  /** Separate bucket for marketplace media (product/storefront/category images), kept apart from
+   * private verification documents. Defaults to "<STORAGE_BUCKET>-media". Never public-read:
+   * the API serves an image only while it is attached to approved, visible content. */
+  STORAGE_MEDIA_BUCKET: optionalString,
   STORAGE_ACCESS_KEY: optionalString,
   STORAGE_SECRET_KEY: optionalString,
 
@@ -99,6 +103,13 @@ export const rawEnvSchema = z.object({
   PAYMENT_MODE: z.enum(PAYMENT_MODES).default('disabled'),
   PSP_API_KEY: optionalString,
   PSP_WEBHOOK_SECRET: optionalString,
+
+  /** Provisional retention defaults (A13). Report-only until the policy is legally approved. */
+  RETENTION_REJECTED_DOCS_DAYS: z.coerce.number().int().min(1).max(3650).default(90),
+  RETENTION_ABANDONED_APPLICATION_DAYS: z.coerce.number().int().min(1).max(3650).default(90),
+  RETENTION_CLOSED_COMPANY_DAYS: z.coerce.number().int().min(1).max(3650).default(180),
+  /** Irreversible deletion of retained documents. Refused until legal approval (A13). */
+  RETENTION_DELETION_ENABLED: booleanFlag,
 
   /** Multiplies rate-limit allowances in development/test only (ignored in production). */
   RATE_LIMIT_SCALE: z.coerce.number().min(1).max(1000).default(1),
@@ -201,6 +212,11 @@ function commonIssues(env: RawEnv): string[] {
   if (env.PAYMENT_MODE === 'live' && env.NODE_ENV !== 'production') {
     issues.push(
       'PAYMENT_MODE=live is only permitted with NODE_ENV=production and approved launch gates',
+    );
+  }
+  if (env.RETENTION_DELETION_ENABLED) {
+    issues.push(
+      'RETENTION_DELETION_ENABLED is refused: the retention schedule is provisional until legally approved (A13)',
     );
   }
   if (env.FEATURE_REAL_PAYMENTS && env.NODE_ENV !== 'production') {

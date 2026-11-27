@@ -32,7 +32,8 @@ export const CAPABILITIES = [
   'buyer.purchase', // RFQ, cart, pay
   'buyer.orders.read',
   'buyer.orders.act', // receipt, dispute, review
-  'seller.catalog.edit', // catalog and quotes
+  'seller.catalog.read', // view own listings, storefront, inventory (read-only roles included)
+  'seller.catalog.edit', // catalog, storefront, pricing and quotes
   'seller.inventory.ship',
   'seller.orders.read',
   'seller.finance',
@@ -64,6 +65,7 @@ const MATRIX: Record<WorkspaceKind, Partial<Record<MembershipRole, readonly Capa
   },
   SELLER: {
     OWNER: [
+      'seller.catalog.read',
       'seller.catalog.edit',
       'seller.inventory.ship',
       'seller.orders.read',
@@ -72,12 +74,21 @@ const MATRIX: Record<WorkspaceKind, Partial<Record<MembershipRole, readonly Capa
       'messaging',
       'legal_documents.read',
     ],
-    SALES: ['seller.catalog.edit', 'seller.orders.read', 'messaging'],
-    WAREHOUSE: ['seller.inventory.ship', 'seller.orders.read'],
-    FINANCE: ['seller.orders.read', 'seller.finance'],
-    VIEWER: ['seller.orders.read'],
+    SALES: ['seller.catalog.read', 'seller.catalog.edit', 'seller.orders.read', 'messaging'],
+    WAREHOUSE: ['seller.catalog.read', 'seller.inventory.ship', 'seller.orders.read'],
+    FINANCE: ['seller.catalog.read', 'seller.orders.read', 'seller.finance'],
+    VIEWER: ['seller.catalog.read', 'seller.orders.read'],
   },
 };
+
+/**
+ * Marketplace access by viewer tier (A12), enforced server-side:
+ * - guest: approved public listings and storefronts, no wholesale prices;
+ * - verified (email-verified signed-in user): wholesale prices, saved items, comparison, history;
+ * - trading (approved ACTIVE buyer workspace with buyer.purchase): RFQ, cart, checkout (Phases 3–4).
+ */
+export const VIEWER_TIERS = ['guest', 'verified'] as const;
+export type ViewerTier = (typeof VIEWER_TIERS)[number];
 
 /** Capabilities that additionally require an ACTIVE workspace of an APPROVED company (A08). */
 export const TRADING_CAPABILITIES: readonly Capability[] = [
@@ -134,6 +145,12 @@ export const ADMIN_CAPABILITIES = [
   'admin.users.revoke_sessions',
   'admin.audit.read',
   'admin.staff.manage',
+  'admin.catalog.read',
+  'admin.catalog.review',
+  'admin.catalog.enforce',
+  'admin.categories.manage',
+  'admin.restricted.manage',
+  'admin.featured.manage',
 ] as const;
 export type AdminCapability = (typeof ADMIN_CAPABILITIES)[number];
 
@@ -145,8 +162,14 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.users.read',
     'admin.users.revoke_sessions',
     'admin.audit.read',
+    'admin.catalog.read',
+    'admin.catalog.review',
+    'admin.catalog.enforce',
+    'admin.categories.manage',
+    'admin.restricted.manage',
+    'admin.featured.manage',
   ],
-  SUPPORT: ['admin.companies.read', 'admin.users.read'],
+  SUPPORT: ['admin.companies.read', 'admin.users.read', 'admin.catalog.read'],
   FINANCE: ['admin.companies.read'],
   FINANCE_APPROVER: ['admin.companies.read'],
   // Super-admin manages roles/config/system; no implicit compliance or financial approval.
@@ -156,6 +179,9 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.users.revoke_sessions',
     'admin.audit.read',
     'admin.staff.manage',
+    'admin.catalog.read',
+    'admin.categories.manage',
+    'admin.featured.manage',
   ],
 };
 
