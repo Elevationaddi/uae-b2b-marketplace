@@ -1,6 +1,8 @@
 # UAE B2B Marketplace — development package
 Version 1.0 | Proposed implementation baseline | 27 November 2026
 
+**Working with the code:** see `docs/DEVELOPMENT.md` for setup and commands, and `docs/IMPLEMENTATION_STATUS.md` for progress.
+
 Copy the contents of this directory into the root of your project repository (not into a nested folder). Start Claude Code from that root. The original storyboard is in `reference/`. These documents are specifications, not a working application or legal advice.
 
 Start with `CLAUDE.md`, then `docs/00-decisions.md` and `docs/13-roadmap.md`. Implement phase by phase; do not deploy production or enable real money until the launch gates are signed off. The architecture assumes a responsive web application first, native mobile later; change this in the decision register if desired.

@@ -1,0 +1,8 @@
+pnpm-lock.yaml
+docs/
+reference/
+CLAUDE.md
+README.md
+**/dist
+**/.next
+**/prisma/migrations

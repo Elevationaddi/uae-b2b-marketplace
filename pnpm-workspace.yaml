@@ -1,0 +1,20 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'e2e'
+
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - 'prisma'
+  - 'esbuild'
+  - 'sharp'
+  - '@swc/core'
+  - 'msgpackr-extract'
+
+# Security overrides for vulnerable transitive dependencies (pnpm audit, 2026-11-27).
+overrides:
+  multer: '2.5.0'
+  postcss: '8.5.34'
+  effect: '3.22.5'
+  deepmerge-ts: '8.0.2'
