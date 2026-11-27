@@ -17,9 +17,18 @@ fictional. Never reuse these credentials anywhere else.
 | `seller.warehouse@desert-pack.test` | Desert Packaging | Seller · Warehouse |
 | `seller.finance@desert-pack.test` | Desert Packaging | Seller · Finance |
 | `seller.viewer@desert-pack.test` | Desert Packaging | Seller · Viewer |
+| `seller.owner@gulf-weave.test` | Gulf Weave Textiles (APPROVED, storefront and listings) | Seller · Owner |
+| `seller.owner@emirates-pantry.test` | Emirates Pantry Foods (APPROVED, storefront and listings) | Seller · Owner |
 | `dual.owner@oasis-textiles.test` | Oasis Textiles (SUBMITTED, sample PDFs uploaded) | Buyer · Owner and Seller · Owner |
 | `draft.owner@palm-office.test` | Palm Office (DRAFT) | Buyer · Owner |
 | `unverified@example.test` | none (email not verified) | — |
+
+## Marketplace data (Phase 2)
+The seed adds the 12 launch categories (A09) with subcategories and attributes, provisional restricted terms, three
+published storefronts (Desert Packaging, Gulf Weave Textiles, Emirates Pantry Foods) and sample listings, including one
+pending review (Rigid Gift Box), one rejected (Plain Crew-Neck T-Shirt), out-of-stock and low-stock SKUs and featured
+placements. Images are generated placeholders marked "Sample image - fictional development data".
+Guests see listings without prices; any email-verified account sees tiers; review the queue as `compliance@admin.test`.
 
 ## Platform admins — admin origin http://admin.localhost:3000/en/admin
 

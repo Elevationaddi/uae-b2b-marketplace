@@ -277,6 +277,14 @@ const TONE: Record<string, 'ok' | 'warn' | 'bad' | 'neutral' | 'info'> = {
   SUSPENDED: 'bad',
   INFECTED: 'bad',
   DISABLED: 'bad',
+  PUBLISHED: 'ok',
+  PENDING_REVIEW: 'info',
+  CHANGES_REQUESTED: 'warn',
+  UNPUBLISHED: 'neutral',
+  ARCHIVED: 'neutral',
+  SUPERSEDED: 'neutral',
+  WITHDRAWN: 'neutral',
+  REMOVED: 'bad',
 };
 
 /** Status shown as text plus colour, never colour alone (docs/05-ui.md). */

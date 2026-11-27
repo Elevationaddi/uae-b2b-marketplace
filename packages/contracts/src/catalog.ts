@@ -357,8 +357,8 @@ export const productUpdateRequest = z
   .strict()
   .refine(
     (v) =>
-      v.lead_time_min_days == null ||
-      v.lead_time_max_days == null ||
+      typeof v.lead_time_min_days !== 'number' ||
+      typeof v.lead_time_max_days !== 'number' ||
       v.lead_time_max_days >= v.lead_time_min_days,
     { message: 'lead_time_range', path: ['lead_time_max_days'] },
   );
@@ -1024,7 +1024,12 @@ export const compareRow = z.object({
       fulfilment_days: z.number().int().nullable(),
       certifications: z.array(z.string()),
       attributes: z.array(
-        z.object({ key: z.string(), label_en: z.string(), label_ar: z.string(), value: z.string() }),
+        z.object({
+          key: z.string(),
+          label_en: z.string(),
+          label_ar: z.string(),
+          value: z.string(),
+        }),
       ),
     })
     .nullable(),

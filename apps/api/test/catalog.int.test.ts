@@ -28,7 +28,9 @@ let parentCategoryId: string;
 
 const tag = () => `Zq${randomBytes(4).toString('hex')}`;
 const png = (w = 400, h = 300, color = '#3366cc') =>
-  sharp({ create: { width: w, height: h, channels: 3, background: color } }).png().toBuffer();
+  sharp({ create: { width: w, height: h, channels: 3, background: color } })
+    .png()
+    .toBuffer();
 
 async function approvedSeller() {
   const { client, email } = await signedInUser(app, env, prisma, 'seller');
@@ -47,12 +49,27 @@ type Detail = {
   version: number;
   status: string;
   public: boolean;
-  skus: { id: string; code: string; approved: boolean; inventory: { version: number; available: number } }[];
-  working_version: { id: string; state: string; title_en: string; media: { file_id: string; url: string }[] } | null;
+  skus: {
+    id: string;
+    code: string;
+    approved: boolean;
+    inventory: { version: number; available: number };
+  }[];
+  working_version: {
+    id: string;
+    state: string;
+    title_en: string;
+    media: { file_id: string; url: string }[];
+  } | null;
   published_version: { id: string; title_en: string } | null;
 };
 
-async function draftProduct(seller: Client, ws: string, title: string, opts: { price?: boolean } = {}) {
+async function draftProduct(
+  seller: Client,
+  ws: string,
+  title: string,
+  opts: { price?: boolean } = {},
+) {
   let d: Detail = (
     await seller
       .post(`/seller/workspaces/${ws}/products`, {
@@ -74,7 +91,11 @@ async function draftProduct(seller: Client, ws: string, title: string, opts: { p
   ).body.data;
   d = (
     await seller
-      .upload(`/seller/workspaces/${ws}/products/${d.id}/media`, { alt_en: 'Front' }, { name: 'a.png', content: await png(), type: 'image/png' })
+      .upload(
+        `/seller/workspaces/${ws}/products/${d.id}/media`,
+        { alt_en: 'Front' },
+        { name: 'a.png', content: await png(), type: 'image/png' },
+      )
       .expect(201)
   ).body.data;
   if (opts.price !== false) {
@@ -103,12 +124,20 @@ async function draftProduct(seller: Client, ws: string, title: string, opts: { p
 
 async function publishedProduct(seller: Client, ws: string, title: string) {
   let d = await draftProduct(seller, ws, title);
-  d = (await seller.post(`/seller/workspaces/${ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(200)).body.data;
+  d = (
+    await seller
+      .post(`/seller/workspaces/${ws}/products/${d.id}/submit`, { expected_version: d.version })
+      .expect(200)
+  ).body.data;
   expect(d.working_version!.state).toBe('PENDING_REVIEW');
   await compliance
-    .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'APPROVED', expected_state: 'PENDING_REVIEW' })
+    .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+      decision: 'APPROVED',
+      expected_state: 'PENDING_REVIEW',
+    })
     .expect(200);
-  return (await seller.get(`/seller/workspaces/${ws}/products/${d.id}`).expect(200)).body.data as Detail;
+  return (await seller.get(`/seller/workspaces/${ws}/products/${d.id}`).expect(200)).body
+    .data as Detail;
 }
 
 async function searchIds(c: Client | null, q: string) {
@@ -126,12 +155,19 @@ beforeAll(async () => {
   support = (await loggedInAdmin(app, env, prisma, ['SUPPORT'])).client;
   const slug = `test-${randomBytes(4).toString('hex')}`;
   const parent = (
-    await compliance.post('/admin/categories', { slug, name_en: 'Test Parent', name_ar: 'فئة اختبار' }).expect(201)
+    await compliance
+      .post('/admin/categories', { slug, name_en: 'Test Parent', name_ar: 'فئة اختبار' })
+      .expect(201)
   ).body.data;
   parentCategoryId = parent.id;
   const sub = (
     await compliance
-      .post('/admin/categories', { slug: `${slug}-sub`, parent_id: parent.id, name_en: 'Test Sub', name_ar: 'فرعية' })
+      .post('/admin/categories', {
+        slug: `${slug}-sub`,
+        parent_id: parent.id,
+        name_en: 'Test Sub',
+        name_ar: 'فرعية',
+      })
       .expect(201)
   ).body.data;
   categoryId = sub.id;
@@ -148,7 +184,11 @@ describe('T07/T08 listing lifecycle and moderation', () => {
     const t = tag();
     let d = await draftProduct(s.client, s.ws, `Carton ${t}`);
     const fileUrl = d.working_version!.media[0]!.file_id;
-    d = (await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(200)).body.data;
+    d = (
+      await s.client
+        .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+        .expect(200)
+    ).body.data;
 
     // Pending: not in search, suggest, detail or public media.
     expect(await searchIds(null, t)).toEqual([]);
@@ -160,10 +200,18 @@ describe('T07/T08 listing lifecycle and moderation', () => {
     // Seller still sees own image through the seller route.
     await s.client.get(`/seller/workspaces/${s.ws}/media/${fileUrl}`).expect(200);
     // Draft edits are locked while pending.
-    await s.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { title_en: 'x y z', expected_version: d.version }).expect(409);
+    await s.client
+      .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+        title_en: 'x y z',
+        expected_version: d.version,
+      })
+      .expect(409);
 
     await compliance
-      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'APPROVED', expected_state: 'PENDING_REVIEW' })
+      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+        decision: 'APPROVED',
+        expected_state: 'PENDING_REVIEW',
+      })
       .expect(200);
     expect(await searchIds(null, t)).toEqual([d.id]);
     await guest.get(`/media/${fileUrl}`).expect(200);
@@ -192,17 +240,31 @@ describe('T07/T08 listing lifecycle and moderation', () => {
     let d = await publishedProduct(s.client, s.ws, `Original ${t}`);
     const guest = await new Client(app, env.WEB_ORIGIN).init();
     d = (
-      await s.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { title_en: `Renamed ${t}`, expected_version: d.version }).expect(200)
+      await s.client
+        .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+          title_en: `Renamed ${t}`,
+          expected_version: d.version,
+        })
+        .expect(200)
     ).body.data;
     expect(d.published_version!.title_en).toBe(`Original ${t}`);
     expect(d.working_version!.state).toBe('DRAFT');
-    d = (await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(200)).body.data;
-    const review = (await compliance.get(`/admin/catalog/reviews/${d.working_version!.id}`).expect(200)).body.data;
+    d = (
+      await s.client
+        .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+        .expect(200)
+    ).body.data;
+    const review = (
+      await compliance.get(`/admin/catalog/reviews/${d.working_version!.id}`).expect(200)
+    ).body.data;
     expect(review.changed_fields).toContain('title_en');
 
     // Reason required to reject.
     await compliance
-      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'REJECTED', expected_state: 'PENDING_REVIEW' })
+      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+        decision: 'REJECTED',
+        expected_state: 'PENDING_REVIEW',
+      })
       .expect(422);
     await compliance
       .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
@@ -211,28 +273,48 @@ describe('T07/T08 listing lifecycle and moderation', () => {
         expected_state: 'PENDING_REVIEW',
       })
       .expect(200);
-    expect((await guest.get(`/marketplace/products/${d.id}`).expect(200)).body.data.title_en).toBe(`Original ${t}`);
+    expect((await guest.get(`/marketplace/products/${d.id}`).expect(200)).body.data.title_en).toBe(
+      `Original ${t}`,
+    );
     d = (await s.client.get(`/seller/workspaces/${s.ws}/products/${d.id}`).expect(200)).body.data;
     expect(d.working_version!.state).toBe('REJECTED');
 
     // Resubmit: editing a rejected version creates a new draft.
     d = (
-      await s.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { title_en: `Better ${t}`, expected_version: d.version }).expect(200)
+      await s.client
+        .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+          title_en: `Better ${t}`,
+          expected_version: d.version,
+        })
+        .expect(200)
     ).body.data;
-    d = (await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(200)).body.data;
+    d = (
+      await s.client
+        .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+        .expect(200)
+    ).body.data;
     await compliance
-      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'APPROVED', expected_state: 'PENDING_REVIEW' })
+      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+        decision: 'APPROVED',
+        expected_state: 'PENDING_REVIEW',
+      })
       .expect(200);
-    expect((await guest.get(`/marketplace/products/${d.id}`).expect(200)).body.data.title_en).toBe(`Better ${t}`);
+    expect((await guest.get(`/marketplace/products/${d.id}`).expect(200)).body.data.title_en).toBe(
+      `Better ${t}`,
+    );
     // Decision emails are queued for the seller.
-    const emails = await prisma.outboxEvent.count({ where: { eventType: 'email.catalog_decision', payload: { path: ['to'], equals: s.email } } });
+    const emails = await prisma.outboxEvent.count({
+      where: { eventType: 'email.catalog_decision', payload: { path: ['to'], equals: s.email } },
+    });
     expect(emails).toBeGreaterThanOrEqual(3);
   });
 
   it('submission validates content and pricing; restricted terms block submission', async () => {
     const s = await approvedSeller();
     let d = await draftProduct(s.client, s.ws, `Unpriced ${tag()}`, { price: false });
-    const r = await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(422);
+    const r = await s.client
+      .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+      .expect(422);
     expect(r.body.error.message_key).toBe('catalog.submission_incomplete');
     expect(r.body.error.field_errors.pricing).toBe('invalid');
 
@@ -241,7 +323,17 @@ describe('T07/T08 listing lifecycle and moderation', () => {
       .post(`/seller/workspaces/${s.ws}/products/${d.id}/pricing`, {
         price_type: 'TIERED',
         expected_version: d.version,
-        skus: [{ sku_id: d.skus[0]!.id, moq: 10, order_increment: 5, tiers: [{ min_qty: 10, unit_price_fils: '100' }, { min_qty: 10, unit_price_fils: '200' }] }],
+        skus: [
+          {
+            sku_id: d.skus[0]!.id,
+            moq: 10,
+            order_increment: 5,
+            tiers: [
+              { min_qty: 10, unit_price_fils: '100' },
+              { min_qty: 10, unit_price_fils: '200' },
+            ],
+          },
+        ],
       })
       .expect(422);
     expect(bad.body.error.message_key).toBe('catalog.pricing_invalid');
@@ -249,14 +341,23 @@ describe('T07/T08 listing lifecycle and moderation', () => {
       .post(`/seller/workspaces/${s.ws}/products/${d.id}/pricing`, {
         price_type: 'FIXED',
         expected_version: d.version,
-        skus: [{ sku_id: d.skus[0]!.id, moq: 10, order_increment: 5, tiers: [{ min_qty: 10, unit_price_fils: '12.50' }] }],
+        skus: [
+          {
+            sku_id: d.skus[0]!.id,
+            moq: 10,
+            order_increment: 5,
+            tiers: [{ min_qty: 10, unit_price_fils: '12.50' }],
+          },
+        ],
       })
       .expect(422);
 
     const term = `banned${randomBytes(3).toString('hex')}`;
     await compliance.post('/admin/restricted-terms', { term, action: 'BLOCK' }).expect(201);
     d = await draftProduct(s.client, s.ws, `Nice ${term} thing`);
-    const blocked = await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(422);
+    const blocked = await s.client
+      .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+      .expect(422);
     expect(blocked.body.error.message_key).toBe('catalog.restricted_term');
   });
 });
@@ -267,11 +368,19 @@ describe('T09/T10 server-side quantity pricing', () => {
     const d = await publishedProduct(s.client, s.ws, `Priced ${tag()}`);
     const sku = d.skus[0]!.id;
     const buyer = await verifiedBuyer();
-    const est = (q: number) => buyer.get(`/marketplace/products/${d.id}/estimate?sku_id=${sku}&quantity=${q}`);
+    const est = (q: number) =>
+      buyer.get(`/marketplace/products/${d.id}/estimate?sku_id=${sku}&quantity=${q}`);
     expect((await est(5).expect(422)).body.error.field_errors.quantity).toBe('moq');
     expect((await est(12).expect(422)).body.error.field_errors.quantity).toBe('increment');
-    expect((await est(15).expect(200)).body.data).toMatchObject({ unit_price_fils: '1250', line_total_fils: '18750', tier_min_qty: 10 });
-    expect((await est(100).expect(200)).body.data).toMatchObject({ unit_price_fils: '1000', line_total_fils: '100000' });
+    expect((await est(15).expect(200)).body.data).toMatchObject({
+      unit_price_fils: '1250',
+      line_total_fils: '18750',
+      tier_min_qty: 10,
+    });
+    expect((await est(100).expect(200)).body.data).toMatchObject({
+      unit_price_fils: '1000',
+      line_total_fils: '100000',
+    });
     const guest = await new Client(app, env.WEB_ORIGIN).init();
     await guest.get(`/marketplace/products/${d.id}/estimate?sku_id=${sku}&quantity=15`).expect(403);
     // Guests cannot filter or sort by price (no inference of hidden prices).
@@ -289,8 +398,19 @@ describe('tenant isolation and permissions', () => {
     const fileId = d.working_version!.media[0]!.file_id;
     await b.client.get(`/seller/workspaces/${a.ws}/products/${d.id}`).expect(404);
     await b.client.get(`/seller/workspaces/${b.ws}/products/${d.id}`).expect(404);
-    await b.client.patch(`/seller/workspaces/${b.ws}/products/${d.id}`, { title_en: 'hijack', expected_version: 1 }).expect(404);
-    await b.client.post(`/seller/workspaces/${b.ws}/inventory/${d.skus[0]!.id}/adjust`, { kind: 'RECEIVE', quantity: 5, reason: 'nope' }).expect(404);
+    await b.client
+      .patch(`/seller/workspaces/${b.ws}/products/${d.id}`, {
+        title_en: 'hijack',
+        expected_version: 1,
+      })
+      .expect(404);
+    await b.client
+      .post(`/seller/workspaces/${b.ws}/inventory/${d.skus[0]!.id}/adjust`, {
+        kind: 'RECEIVE',
+        quantity: 5,
+        reason: 'nope',
+      })
+      .expect(404);
     await b.client.get(`/seller/workspaces/${b.ws}/media/${fileId}`).expect(404);
     await b.client.get(`/seller/workspaces/${a.ws}/media/${fileId}`).expect(404);
     const buyer = await verifiedBuyer();
@@ -311,10 +431,32 @@ describe('tenant isolation and permissions', () => {
       await prisma.membership.create({ data: { workspaceId: s.ws, userId: u.id, role } });
     }
     await viewer.client.get(`/seller/workspaces/${s.ws}/products/${d.id}`).expect(200);
-    await viewer.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { title_en: 'nope nope', expected_version: d.version }).expect(403);
-    await viewer.client.post(`/seller/workspaces/${s.ws}/inventory/${d.skus[0]!.id}/adjust`, { kind: 'RECEIVE', quantity: 5, reason: 'nope' }).expect(403);
-    await wh.client.post(`/seller/workspaces/${s.ws}/inventory/${d.skus[0]!.id}/adjust`, { kind: 'RECEIVE', quantity: 5, reason: 'delivery' }).expect(200);
-    await wh.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { title_en: 'nope nope', expected_version: d.version }).expect(403);
+    await viewer.client
+      .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+        title_en: 'nope nope',
+        expected_version: d.version,
+      })
+      .expect(403);
+    await viewer.client
+      .post(`/seller/workspaces/${s.ws}/inventory/${d.skus[0]!.id}/adjust`, {
+        kind: 'RECEIVE',
+        quantity: 5,
+        reason: 'nope',
+      })
+      .expect(403);
+    await wh.client
+      .post(`/seller/workspaces/${s.ws}/inventory/${d.skus[0]!.id}/adjust`, {
+        kind: 'RECEIVE',
+        quantity: 5,
+        reason: 'delivery',
+      })
+      .expect(200);
+    await wh.client
+      .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+        title_en: 'nope nope',
+        expected_version: d.version,
+      })
+      .expect(403);
   });
 
   it('an unapproved seller cannot list; an expired licence hides listings and blocks editing', async () => {
@@ -322,7 +464,11 @@ describe('tenant isolation and permissions', () => {
     const company = await companyReadyToSubmit(client, ['SELLER']);
     const ws = company.workspaces.find((w) => w.kind === 'SELLER')!.id;
     const r = await client
-      .post(`/seller/workspaces/${ws}/products`, { title_en: 'Too early', category_id: categoryId, sku_code: 'EARLY-1' })
+      .post(`/seller/workspaces/${ws}/products`, {
+        title_en: 'Too early',
+        category_id: categoryId,
+        sku_code: 'EARLY-1',
+      })
       .expect(403);
     expect(r.body.error.message_key).toBe('catalog.company_not_approved');
 
@@ -330,11 +476,19 @@ describe('tenant isolation and permissions', () => {
     const t = tag();
     const d = await publishedProduct(s.client, s.ws, `Expiring ${t}`);
     expect(await searchIds(null, t)).toEqual([d.id]);
-    await prisma.company.update({ where: { id: s.companyId }, data: { licenceExpiry: new Date('2020-01-01') } });
+    await prisma.company.update({
+      where: { id: s.companyId },
+      data: { licenceExpiry: new Date('2020-01-01') },
+    });
     expect(await searchIds(null, t)).toEqual([]);
     const guest = await new Client(app, env.WEB_ORIGIN).init();
     await guest.get(`/marketplace/products/${d.id}`).expect(404);
-    const e = await s.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { title_en: 'still mine', expected_version: d.version }).expect(403);
+    const e = await s.client
+      .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+        title_en: 'still mine',
+        expected_version: d.version,
+      })
+      .expect(403);
     expect(e.body.error.message_key).toBe('catalog.licence_expired');
     // Read access stays (the seller can see why).
     const ov = (await s.client.get(`/seller/workspaces/${s.ws}/overview`).expect(200)).body.data;
@@ -348,21 +502,48 @@ describe('inventory', () => {
     const d = await draftProduct(s.client, s.ws, `Stock ${tag()}`);
     const sku = d.skus[0]!.id;
     const base = `/seller/workspaces/${s.ws}/inventory/${sku}`;
-    await s.client.post(`${base}/adjust`, { kind: 'RECEIVE', quantity: 10, reason: 'Opening stock' }).expect(200);
-    await s.client.post(`${base}/adjust`, { kind: 'REMOVE', quantity: 11, reason: 'Too many' }).expect(422);
+    await s.client
+      .post(`${base}/adjust`, { kind: 'RECEIVE', quantity: 10, reason: 'Opening stock' })
+      .expect(200);
+    await s.client
+      .post(`${base}/adjust`, { kind: 'REMOVE', quantity: 11, reason: 'Too many' })
+      .expect(422);
     // 10 concurrent removals of 3 from 10 units: at most 3 succeed.
     const results = await Promise.all(
-      Array.from({ length: 10 }, () => s.client.post(`${base}/adjust`, { kind: 'REMOVE', quantity: 3, reason: 'Damaged' })),
+      Array.from({ length: 10 }, () =>
+        s.client.post(`${base}/adjust`, { kind: 'REMOVE', quantity: 3, reason: 'Damaged' }),
+      ),
     );
     expect(results.filter((r) => r.status === 200)).toHaveLength(3);
     const inv = await prisma.inventory.findUniqueOrThrow({ where: { skuId: sku } });
     expect(inv.onHand).toBe(1);
-    await s.client.post(`${base}/adjust`, { kind: 'MARK_UNAVAILABLE', quantity: 2, reason: 'QC hold' }).expect(422);
-    await s.client.post(`${base}/adjust`, { kind: 'SET_ON_HAND', quantity: 50, reason: 'Count', expected_version: inv.version - 1 }).expect(409);
-    await s.client.post(`${base}/adjust`, { kind: 'SET_ON_HAND', quantity: 50, reason: 'Count', expected_version: inv.version }).expect(200);
+    await s.client
+      .post(`${base}/adjust`, { kind: 'MARK_UNAVAILABLE', quantity: 2, reason: 'QC hold' })
+      .expect(422);
+    await s.client
+      .post(`${base}/adjust`, {
+        kind: 'SET_ON_HAND',
+        quantity: 50,
+        reason: 'Count',
+        expected_version: inv.version - 1,
+      })
+      .expect(409);
+    await s.client
+      .post(`${base}/adjust`, {
+        kind: 'SET_ON_HAND',
+        quantity: 50,
+        reason: 'Count',
+        expected_version: inv.version,
+      })
+      .expect(200);
     const mv = (await s.client.get(`${base}/movements`).expect(200)).body.data;
     expect(mv).toHaveLength(5);
-    expect(mv[0]).toMatchObject({ kind: 'SET_ON_HAND', on_hand_after: 50, delta_on_hand: 49, reason: 'Count' });
+    expect(mv[0]).toMatchObject({
+      kind: 'SET_ON_HAND',
+      on_hand_after: 50,
+      delta_on_hand: 49,
+      reason: 'Count',
+    });
     // The ledger is append-only at the database level.
     await expect(prisma.stockMovement.deleteMany({ where: { skuId: sku } })).rejects.toThrow();
   });
@@ -373,29 +554,54 @@ describe('admin catalog permissions and enforcement', () => {
     const s = await approvedSeller();
     const t = tag();
     let d = await draftProduct(s.client, s.ws, `Enforce ${t}`);
-    d = (await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(200)).body.data;
+    d = (
+      await s.client
+        .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+        .expect(200)
+    ).body.data;
     await support.get('/admin/catalog/queue').expect(200);
     await support
-      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'APPROVED', expected_state: 'PENDING_REVIEW' })
+      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+        decision: 'APPROVED',
+        expected_state: 'PENDING_REVIEW',
+      })
       .expect(403);
-    await support.post('/admin/categories', { slug: `x-${t.toLowerCase()}`, name_en: 'Nope', name_ar: 'لا' }).expect(403);
+    await support
+      .post('/admin/categories', { slug: `x-${t.toLowerCase()}`, name_en: 'Nope', name_ar: 'لا' })
+      .expect(403);
     // Company sessions cannot reach admin routes at all.
     await s.client.get('/admin/catalog/queue').expect(401);
     await compliance
-      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'APPROVED', expected_state: 'PENDING_REVIEW' })
+      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+        decision: 'APPROVED',
+        expected_state: 'PENDING_REVIEW',
+      })
       .expect(200);
     expect(await searchIds(null, t)).toEqual([d.id]);
     await compliance.post(`/admin/catalog/products/${d.id}/suspend`, { reason: 'x' }).expect(422);
-    await support.post(`/admin/catalog/products/${d.id}/suspend`, { reason: 'Suspected counterfeit' }).expect(403);
-    await compliance.post(`/admin/catalog/products/${d.id}/suspend`, { reason: 'Suspected counterfeit' }).expect(200);
+    await support
+      .post(`/admin/catalog/products/${d.id}/suspend`, { reason: 'Suspected counterfeit' })
+      .expect(403);
+    await compliance
+      .post(`/admin/catalog/products/${d.id}/suspend`, { reason: 'Suspected counterfeit' })
+      .expect(200);
     expect(await searchIds(null, t)).toEqual([]);
-    const seen = (await s.client.get(`/seller/workspaces/${s.ws}/products/${d.id}`).expect(200)).body.data;
+    const seen = (await s.client.get(`/seller/workspaces/${s.ws}/products/${d.id}`).expect(200))
+      .body.data;
     expect(seen.status).toBe('SUSPENDED');
     expect(seen.status_reason).toBe('Suspected counterfeit');
-    await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/republish`, { expected_version: seen.version }).expect(409);
-    await compliance.post(`/admin/catalog/products/${d.id}/restore`, { reason: 'Documents verified' }).expect(200);
+    await s.client
+      .post(`/seller/workspaces/${s.ws}/products/${d.id}/republish`, {
+        expected_version: seen.version,
+      })
+      .expect(409);
+    await compliance
+      .post(`/admin/catalog/products/${d.id}/restore`, { reason: 'Documents verified' })
+      .expect(200);
     expect(await searchIds(null, t)).toEqual([d.id]);
-    const audit = await prisma.auditEvent.count({ where: { resourceId: d.id, action: { startsWith: 'catalog.product_' } } });
+    const audit = await prisma.auditEvent.count({
+      where: { resourceId: d.id, action: { startsWith: 'catalog.product_' } },
+    });
     expect(audit).toBe(2);
   });
 
@@ -403,18 +609,48 @@ describe('admin catalog permissions and enforcement', () => {
     const s = await approvedSeller();
     const t = tag();
     const slug = `hide-${randomBytes(4).toString('hex')}`;
-    const parent = (await compliance.post('/admin/categories', { slug, name_en: 'Hideable', name_ar: 'مخفية' }).expect(201)).body.data;
+    const parent = (
+      await compliance
+        .post('/admin/categories', { slug, name_en: 'Hideable', name_ar: 'مخفية' })
+        .expect(201)
+    ).body.data;
     let d = await draftProduct(s.client, s.ws, `Cat ${t}`);
-    d = (await s.client.patch(`/seller/workspaces/${s.ws}/products/${d.id}`, { category_id: parent.id, expected_version: d.version }).expect(200)).body.data;
-    d = (await s.client.post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version }).expect(200)).body.data;
+    d = (
+      await s.client
+        .patch(`/seller/workspaces/${s.ws}/products/${d.id}`, {
+          category_id: parent.id,
+          expected_version: d.version,
+        })
+        .expect(200)
+    ).body.data;
+    d = (
+      await s.client
+        .post(`/seller/workspaces/${s.ws}/products/${d.id}/submit`, { expected_version: d.version })
+        .expect(200)
+    ).body.data;
     await compliance
-      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, { decision: 'APPROVED', expected_state: 'PENDING_REVIEW' })
+      .post(`/admin/catalog/reviews/${d.working_version!.id}/decision`, {
+        decision: 'APPROVED',
+        expected_state: 'PENDING_REVIEW',
+      })
       .expect(200);
     expect(await searchIds(null, t)).toEqual([d.id]);
-    await compliance.patch(`/admin/categories/${parent.id}`, { visible: false, expected_version: parent.version }).expect(422);
-    await compliance.patch(`/admin/categories/${parent.id}`, { visible: false, reason: 'Pending legal review', expected_version: parent.version }).expect(200);
+    await compliance
+      .patch(`/admin/categories/${parent.id}`, { visible: false, expected_version: parent.version })
+      .expect(422);
+    await compliance
+      .patch(`/admin/categories/${parent.id}`, {
+        visible: false,
+        reason: 'Pending legal review',
+        expected_version: parent.version,
+      })
+      .expect(200);
     expect(await searchIds(null, t)).toEqual([]);
-    const cats = (await (await new Client(app, env.WEB_ORIGIN).init()).get('/marketplace/categories').expect(200)).body.data as { id: string }[];
+    const cats = (
+      await (await new Client(app, env.WEB_ORIGIN).init())
+        .get('/marketplace/categories')
+        .expect(200)
+    ).body.data as { id: string }[];
     expect(cats.find((c) => c.id === parent.id)).toBeUndefined();
   });
 });
@@ -433,7 +669,8 @@ describe('storefronts and buyer lists', () => {
         .expect(200)
     ).body.data;
     expect(sf.public).toBe(false);
-    const pub = (await s.client.post(`/seller/workspaces/${s.ws}/storefront/publish`).expect(200)).body.data;
+    const pub = (await s.client.post(`/seller/workspaces/${s.ws}/storefront/publish`).expect(200))
+      .body.data;
     expect(pub.public).toBe(true);
     const guest = await new Client(app, env.WEB_ORIGIN).init();
     const detail = (await guest.get(`/marketplace/suppliers/${pub.id}`).expect(200)).body.data;
@@ -447,7 +684,9 @@ describe('storefronts and buyer lists', () => {
     await buyer.post(`/marketplace/saved/suppliers/${pub.id}`).expect(200);
     expect((await buyer.get('/marketplace/saved/suppliers').expect(200)).body.data).toHaveLength(1);
 
-    await compliance.post(`/admin/storefronts/${pub.id}/hide`, { reason: 'Misleading claims' }).expect(200);
+    await compliance
+      .post(`/admin/storefronts/${pub.id}/hide`, { reason: 'Misleading claims' })
+      .expect(200);
     await guest.get(`/marketplace/suppliers/${pub.id}`).expect(404);
     const saved = (await buyer.get('/marketplace/saved/suppliers').expect(200)).body.data;
     expect(saved[0].supplier).toBeNull();
@@ -468,11 +707,19 @@ describe('storefronts and buyer lists', () => {
     const s = await approvedSeller();
     const d = await draftProduct(s.client, s.ws, `Upload ${tag()}`, { price: false });
     const r = await s.client
-      .upload(`/seller/workspaces/${s.ws}/products/${d.id}/media`, {}, { name: 'a.pdf', content: Buffer.from('%PDF-1.4\n%%EOF\n') })
+      .upload(
+        `/seller/workspaces/${s.ws}/products/${d.id}/media`,
+        {},
+        { name: 'a.pdf', content: Buffer.from('%PDF-1.4\n%%EOF\n') },
+      )
       .expect(422);
     expect(r.body.error.message_key).toBe('file.image_type_not_allowed');
     const tiny = await s.client
-      .upload(`/seller/workspaces/${s.ws}/products/${d.id}/media`, {}, { name: 't.png', content: await png(50, 50), type: 'image/png' })
+      .upload(
+        `/seller/workspaces/${s.ws}/products/${d.id}/media`,
+        {},
+        { name: 't.png', content: await png(50, 50), type: 'image/png' },
+      )
       .expect(422);
     expect(tiny.body.error.message_key).toBe('file.image_too_small');
   });
@@ -487,7 +734,8 @@ describe('public category and supplier listings never include non-public records
     const publicInCat = await prisma.$queryRaw<{ n: number }[]>`
       SELECT count(*)::int AS n FROM marketplace_products WHERE category_id = ${categoryId}::uuid`;
     expect(cat.product_count).toBe(publicInCat[0]!.n);
-    const parent = (await guest.get(`/marketplace/categories/${parentCategoryId}`).expect(200)).body.data;
+    const parent = (await guest.get(`/marketplace/categories/${parentCategoryId}`).expect(200)).body
+      .data;
     expect(parent.children.map((c: { id: string }) => c.id)).toContain(categoryId);
   });
 });

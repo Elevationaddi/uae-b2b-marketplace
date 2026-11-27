@@ -27,7 +27,13 @@ import { NEWEST_FIRST, beforeCursor, decodeCursor, page } from '../common/pagina
 import type { RequestMeta } from '../common/request-context';
 import { PRISMA } from '../infra/tokens';
 import { assertUuid, sellerEligibility } from './access';
-import { isPublicProduct, isUniqueViolation, lockProduct, moderationEvent, refreshListingStats } from './listing';
+import {
+  isPublicProduct,
+  isUniqueViolation,
+  lockProduct,
+  moderationEvent,
+  refreshListingStats,
+} from './listing';
 import {
   PRODUCT_INCLUDE,
   baseProductDetail,
@@ -81,7 +87,16 @@ export class AdminCatalogService {
     private readonly media: MediaService,
   ) {}
 
-  private audit(tx: Tx, admin: User, action: string, type: string, id: string, companyId: string | null, meta: RequestMeta, details?: Record<string, unknown>) {
+  private audit(
+    tx: Tx,
+    admin: User,
+    action: string,
+    type: string,
+    id: string,
+    companyId: string | null,
+    meta: RequestMeta,
+    details?: Record<string, unknown>,
+  ) {
     return writeAudit(tx, {
       actorId: admin.id,
       actorType: 'admin',
@@ -98,18 +113,30 @@ export class AdminCatalogService {
   // ------------------------------------------------------------------ overview
 
   async overview() {
-    const [pendingNew, pendingUpd, flagged, pub, suspended, sup, hidden, cats, blocked, oldest] = await Promise.all([
-      this.prisma.productVersion.count({ where: { state: 'PENDING_REVIEW', product: { publishedVersionId: null } } }),
-      this.prisma.productVersion.count({ where: { state: 'PENDING_REVIEW', product: { publishedVersionId: { not: null } } } }),
-      this.prisma.productVersion.count({ where: { state: 'PENDING_REVIEW', NOT: { autoFlags: { equals: [] } } } }),
-      this.prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM marketplace_products`,
-      this.prisma.product.count({ where: { status: 'SUSPENDED' } }),
-      this.prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM marketplace_suppliers`,
-      this.prisma.storefront.count({ where: { adminHiddenAt: { not: null } } }),
-      this.prisma.category.count({ where: { archivedAt: null } }),
-      this.prisma.category.count({ where: { archivedAt: null, restriction: 'BLOCKED' } }),
-      this.prisma.productVersion.findFirst({ where: { state: 'PENDING_REVIEW' }, orderBy: { submittedAt: 'asc' } }),
-    ]);
+    const [pendingNew, pendingUpd, flagged, pub, suspended, sup, hidden, cats, blocked, oldest] =
+      await Promise.all([
+        this.prisma.productVersion.count({
+          where: { state: 'PENDING_REVIEW', product: { publishedVersionId: null } },
+        }),
+        this.prisma.productVersion.count({
+          where: { state: 'PENDING_REVIEW', product: { publishedVersionId: { not: null } } },
+        }),
+        this.prisma.productVersion.count({
+          where: { state: 'PENDING_REVIEW', NOT: { autoFlags: { equals: [] } } },
+        }),
+        this.prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM marketplace_products`,
+        this.prisma.product.count({ where: { status: 'SUSPENDED' } }),
+        this.prisma.$queryRaw<
+          { n: number }[]
+        >`SELECT count(*)::int AS n FROM marketplace_suppliers`,
+        this.prisma.storefront.count({ where: { adminHiddenAt: { not: null } } }),
+        this.prisma.category.count({ where: { archivedAt: null } }),
+        this.prisma.category.count({ where: { archivedAt: null, restriction: 'BLOCKED' } }),
+        this.prisma.productVersion.findFirst({
+          where: { state: 'PENDING_REVIEW' },
+          orderBy: { submittedAt: 'asc' },
+        }),
+      ]);
     return {
       pending_reviews: pendingNew,
       pending_updates: pendingUpd,
@@ -145,7 +172,12 @@ export class AdminCatalogService {
           : {}),
         ...(cursor
           ? pending
-            ? { OR: [{ createdAt: { gt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { gt: cursor.id } }] }
+            ? {
+                OR: [
+                  { createdAt: { gt: cursor.createdAt } },
+                  { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+                ],
+              }
             : beforeCursor(cursor)
           : {}),
       },
@@ -163,9 +195,17 @@ export class AdminCatalogService {
         title_en: v.titleEn,
         title_ar: v.titleAr,
         company: { id: v.product.company.id, display_name: v.product.company.displayName },
-        category: { id: v.category.id, name_en: v.category.nameEn, name_ar: v.category.nameAr, restriction: v.category.restriction },
+        category: {
+          id: v.category.id,
+          name_en: v.category.nameEn,
+          name_ar: v.category.nameAr,
+          restriction: v.category.restriction,
+        },
         is_update: v.product.publishedVersionId !== null && v.product.publishedVersionId !== v.id,
-        auto_flags: (Array.isArray(v.autoFlags) ? (v.autoFlags as Record<string, unknown>[]) : []).map((f) => ({
+        auto_flags: (Array.isArray(v.autoFlags)
+          ? (v.autoFlags as Record<string, unknown>[])
+          : []
+        ).map((f) => ({
           kind: String(f.kind ?? ''),
           term: String(f.term ?? ''),
           field: String(f.field ?? ''),
@@ -180,7 +220,10 @@ export class AdminCatalogService {
   private async dims(versions: (VersionWithRefs | null | undefined)[]) {
     const ids = versions.flatMap((v) => v?.media.map((m) => m.fileId) ?? []);
     const files = ids.length
-      ? await this.prisma.file.findMany({ where: { id: { in: ids } }, select: { id: true, width: true, height: true } })
+      ? await this.prisma.file.findMany({
+          where: { id: { in: ids } },
+          select: { id: true, width: true, height: true },
+        })
       : [];
     return new Map(files.map((f) => [f.id, { width: f.width, height: f.height }]));
   }
@@ -195,11 +238,27 @@ export class AdminCatalogService {
     const p = (await this.prisma.product.findUniqueOrThrow({
       where: { id: v.productId },
       include: { ...PRODUCT_INCLUDE, company: true },
-    })) as ProductWithRefs & { company: { id: string; displayName: string; status: string; licenceExpiry: Date; emirate: string } };
-    const published = p.publishedVersion && p.publishedVersion.id !== v.id ? p.publishedVersion : null;
+    })) as ProductWithRefs & {
+      company: {
+        id: string;
+        displayName: string;
+        status: string;
+        licenceExpiry: Date;
+        emirate: string;
+      };
+    };
+    const published =
+      p.publishedVersion && p.publishedVersion.id !== v.id ? p.publishedVersion : null;
     const [history, versions, storefront, dims] = await Promise.all([
-      this.prisma.moderationEvent.findMany({ where: { productId: p.id }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 50 }),
-      this.prisma.productVersion.findMany({ where: { productId: p.id }, select: { id: true, version: true } }),
+      this.prisma.moderationEvent.findMany({
+        where: { productId: p.id },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 50,
+      }),
+      this.prisma.productVersion.findMany({
+        where: { productId: p.id },
+        select: { id: true, version: true },
+      }),
       this.prisma.storefront.findUnique({ where: { sellerWorkspaceId: p.sellerWorkspaceId } }),
       this.dims([v, published]),
     ]);
@@ -219,7 +278,12 @@ export class AdminCatalogService {
       version: mapVersion(v, ADMIN, dims),
       published_version: published ? mapVersion(published, ADMIN, dims) : null,
       changed_fields: changed,
-      product: { id: p.id, status: p.status, price_type: p.priceType, workspace_id: p.sellerWorkspaceId },
+      product: {
+        id: p.id,
+        status: p.status,
+        price_type: p.priceType,
+        workspace_id: p.sellerWorkspaceId,
+      },
       skus: p.skus.map(mapSku),
       company: {
         id: p.company.id,
@@ -229,14 +293,21 @@ export class AdminCatalogService {
         licence_expired: isLicenceExpired(p.company.licenceExpiry),
         emirate: p.company.emirate as 'DUBAI',
       },
-      storefront: storefront ? { id: storefront.id, status: storefront.status, business_type: storefront.businessType } : null,
+      storefront: storefront
+        ? { id: storefront.id, status: storefront.status, business_type: storefront.businessType }
+        : null,
       category_requirements_en: v.category.requirementsEn,
       category_requirements_ar: v.category.requirementsAr,
       history: history.map((e) => mapEvent(e, vn)),
     };
   }
 
-  async decide(admin: User, versionId: string, body: z.infer<typeof catalogDecisionRequest>, meta: RequestMeta) {
+  async decide(
+    admin: User,
+    versionId: string,
+    body: z.infer<typeof catalogDecisionRequest>,
+    meta: RequestMeta,
+  ) {
     assertUuid(versionId);
     await this.prisma.$transaction(async (tx) => {
       const pre = await tx.productVersion.findUnique({ where: { id: versionId } });
@@ -244,7 +315,8 @@ export class AdminCatalogService {
       await lockProduct(tx, pre.productId);
       const v = await tx.productVersion.findUniqueOrThrow({ where: { id: versionId } });
       if (v.state !== body.expected_state) throw new ApiError('CONFLICT', 'common.stale_version');
-      if (v.state !== 'PENDING_REVIEW') throw new ApiError('CONFLICT', 'catalog.invalid_transition');
+      if (v.state !== 'PENDING_REVIEW')
+        throw new ApiError('CONFLICT', 'catalog.invalid_transition');
       const p = await tx.product.findUniqueOrThrow({
         where: { id: v.productId },
         include: { workspace: true, company: true },
@@ -253,16 +325,32 @@ export class AdminCatalogService {
       const now = new Date();
       if (body.decision === 'APPROVED') {
         const elig = sellerEligibility(p.workspace, p.company);
-        if (!elig.eligible) throw new ApiError('CONFLICT', elig.reason ?? 'catalog.seller_not_eligible');
-        const cat = await tx.category.findUniqueOrThrow({ where: { id: v.categoryId }, include: { parent: true } });
-        if (cat.restriction === 'BLOCKED' || cat.archivedAt || cat.parent?.restriction === 'BLOCKED')
+        if (!elig.eligible)
+          throw new ApiError('CONFLICT', elig.reason ?? 'catalog.seller_not_eligible');
+        const cat = await tx.category.findUniqueOrThrow({
+          where: { id: v.categoryId },
+          include: { parent: true },
+        });
+        if (
+          cat.restriction === 'BLOCKED' ||
+          cat.archivedAt ||
+          cat.parent?.restriction === 'BLOCKED'
+        )
           throw new ApiError('CONFLICT', 'catalog.category_unavailable');
         if (p.publishedVersionId) {
-          await tx.productVersion.update({ where: { id: p.publishedVersionId }, data: { state: 'SUPERSEDED' } });
+          await tx.productVersion.update({
+            where: { id: p.publishedVersionId },
+            data: { state: 'SUPERSEDED' },
+          });
         }
         await tx.productVersion.update({
           where: { id: v.id },
-          data: { state: 'APPROVED', decidedAt: now, decidedById: admin.id, decisionReason: body.reason ?? null },
+          data: {
+            state: 'APPROVED',
+            decidedAt: now,
+            decidedById: admin.id,
+            decisionReason: body.reason ?? null,
+          },
         });
         const first = p.publishedVersionId === null;
         await tx.product.update({
@@ -276,12 +364,20 @@ export class AdminCatalogService {
             version: { increment: 1 },
           },
         });
-        await tx.sku.updateMany({ where: { productId: p.id, approvedAt: null }, data: { approvedAt: now } });
+        await tx.sku.updateMany({
+          where: { productId: p.id, approvedAt: null },
+          data: { approvedAt: now },
+        });
         await refreshListingStats(tx, p.id);
       } else {
         await tx.productVersion.update({
           where: { id: v.id },
-          data: { state: body.decision, decidedAt: now, decidedById: admin.id, decisionReason: body.reason ?? null },
+          data: {
+            state: body.decision,
+            decidedAt: now,
+            decidedById: admin.id,
+            decisionReason: body.reason ?? null,
+          },
         });
         await tx.product.update({ where: { id: p.id }, data: { version: { increment: 1 } } });
       }
@@ -295,12 +391,23 @@ export class AdminCatalogService {
         toState: body.decision,
         reason: body.reason ?? null,
       });
-      await this.audit(tx, admin, `catalog.review_${body.decision.toLowerCase()}`, 'product_version', v.id, p.companyId, meta, {
-        product_id: p.id,
-        version: v.version,
-        reason: body.reason ?? null,
+      await this.audit(
+        tx,
+        admin,
+        `catalog.review_${body.decision.toLowerCase()}`,
+        'product_version',
+        v.id,
+        p.companyId,
+        meta,
+        {
+          product_id: p.id,
+          version: v.version,
+          reason: body.reason ?? null,
+        },
+      );
+      const recipient = await tx.user.findUnique({
+        where: { id: v.submittedById ?? v.createdById },
       });
-      const recipient = await tx.user.findUnique({ where: { id: v.submittedById ?? v.createdById } });
       if (recipient)
         await enqueueEmail(tx, {
           template: 'catalog_decision',
@@ -377,16 +484,32 @@ export class AdminCatalogService {
     const p = (await this.prisma.product.findUnique({
       where: { id },
       include: { ...PRODUCT_INCLUDE, company: true },
-    })) as (ProductWithRefs & { company: { id: string; displayName: string; status: string } }) | null;
+    })) as
+      | (ProductWithRefs & { company: { id: string; displayName: string; status: string } })
+      | null;
     if (!p) throw new ApiError('NOT_FOUND', 'common.not_found');
     const [history, versions, isPublic, dims] = await Promise.all([
-      this.prisma.moderationEvent.findMany({ where: { productId: id }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 50 }),
-      this.prisma.productVersion.findMany({ where: { productId: id }, select: { id: true, version: true } }),
+      this.prisma.moderationEvent.findMany({
+        where: { productId: id },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 50,
+      }),
+      this.prisma.productVersion.findMany({
+        where: { productId: id },
+        select: { id: true, version: true },
+      }),
       isPublicProduct(this.prisma as unknown as Tx, id),
       this.dims([p.publishedVersion, p.workingVersion]),
     ]);
     return {
-      ...baseProductDetail(p, ADMIN, history, isPublic, new Map(versions.map((v) => [v.id, v.version])), dims),
+      ...baseProductDetail(
+        p,
+        ADMIN,
+        history,
+        isPublic,
+        new Map(versions.map((v) => [v.id, v.version])),
+        dims,
+      ),
       company: { id: p.company.id, display_name: p.company.displayName, status: p.company.status },
       actions: {
         suspend: ['PUBLISHED', 'UNPUBLISHED', 'DRAFT', 'ARCHIVED'].includes(p.status),
@@ -396,7 +519,13 @@ export class AdminCatalogService {
     };
   }
 
-  async enforce(admin: User, id: string, action: 'suspend' | 'restore' | 'remove', reason: string, meta: RequestMeta) {
+  async enforce(
+    admin: User,
+    id: string,
+    action: 'suspend' | 'restore' | 'remove',
+    reason: string,
+    meta: RequestMeta,
+  ) {
     assertUuid(id);
     await this.prisma.$transaction(async (tx) => {
       const exists = await tx.product.findUnique({ where: { id }, select: { id: true } });
@@ -405,11 +534,16 @@ export class AdminCatalogService {
       const p = await tx.product.findUniqueOrThrow({ where: { id }, include: { company: true } });
       let data: Prisma.ProductUpdateInput;
       if (action === 'suspend') {
-        if (p.status === 'SUSPENDED' || p.status === 'REMOVED') throw new ApiError('CONFLICT', 'catalog.invalid_transition');
+        if (p.status === 'SUSPENDED' || p.status === 'REMOVED')
+          throw new ApiError('CONFLICT', 'catalog.invalid_transition');
         data = { status: 'SUSPENDED', statusBeforeSuspension: p.status, statusReason: reason };
       } else if (action === 'restore') {
         if (p.status !== 'SUSPENDED') throw new ApiError('CONFLICT', 'catalog.invalid_transition');
-        data = { status: p.statusBeforeSuspension ?? 'UNPUBLISHED', statusBeforeSuspension: null, statusReason: null };
+        data = {
+          status: p.statusBeforeSuspension ?? 'UNPUBLISHED',
+          statusBeforeSuspension: null,
+          statusReason: null,
+        };
       } else {
         if (p.status === 'REMOVED') throw new ApiError('CONFLICT', 'catalog.invalid_transition');
         data = { status: 'REMOVED', statusReason: reason };
@@ -425,14 +559,25 @@ export class AdminCatalogService {
         toState: to,
         reason,
       });
-      await this.audit(tx, admin, `catalog.product_${action === 'suspend' ? 'suspended' : action === 'restore' ? 'restored' : 'removed'}`, 'product', id, p.companyId, meta, {
-        from: p.status,
-        to,
-        reason,
-      });
+      await this.audit(
+        tx,
+        admin,
+        `catalog.product_${action === 'suspend' ? 'suspended' : action === 'restore' ? 'restored' : 'removed'}`,
+        'product',
+        id,
+        p.companyId,
+        meta,
+        {
+          from: p.status,
+          to,
+          reason,
+        },
+      );
       const creator = await tx.user.findUnique({ where: { id: p.createdById } });
       const v = await tx.productVersion.findFirst({
-        where: { id: { in: [p.publishedVersionId, p.workingVersionId].filter((x): x is string => !!x) } },
+        where: {
+          id: { in: [p.publishedVersionId, p.workingVersionId].filter((x): x is string => !!x) },
+        },
       });
       if (creator)
         await enqueueEmail(tx, {
@@ -451,8 +596,14 @@ export class AdminCatalogService {
     const cursor = decodeCursor(q.cursor);
     const rows = await this.prisma.storefront.findMany({
       where: {
-        ...(q.hidden === true ? { adminHiddenAt: { not: null } } : q.hidden === false ? { adminHiddenAt: null } : {}),
-        ...(q.q ? { workspace: { company: { displayName: { contains: q.q, mode: 'insensitive' } } } } : {}),
+        ...(q.hidden === true
+          ? { adminHiddenAt: { not: null } }
+          : q.hidden === false
+            ? { adminHiddenAt: null }
+            : {}),
+        ...(q.q
+          ? { workspace: { company: { displayName: { contains: q.q, mode: 'insensitive' } } } }
+          : {}),
         ...beforeCursor(cursor),
       },
       include: { workspace: { include: { company: true } } },
@@ -467,7 +618,10 @@ export class AdminCatalogService {
             SELECT id FROM marketplace_suppliers WHERE id IN (${Prisma.join(ids.map((i) => Prisma.sql`${i}::uuid`))})`,
           this.prisma.product.groupBy({
             by: ['sellerWorkspaceId'],
-            where: { sellerWorkspaceId: { in: items.map((s) => s.sellerWorkspaceId) }, status: 'PUBLISHED' },
+            where: {
+              sellerWorkspaceId: { in: items.map((s) => s.sellerWorkspaceId) },
+              status: 'PUBLISHED',
+            },
             _count: { _all: true },
           }),
         ])
@@ -477,7 +631,11 @@ export class AdminCatalogService {
     return {
       data: items.map((s) => ({
         id: s.id,
-        company: { id: s.workspace.company.id, display_name: s.workspace.company.displayName, status: s.workspace.company.status },
+        company: {
+          id: s.workspace.company.id,
+          display_name: s.workspace.company.displayName,
+          status: s.workspace.company.status,
+        },
         status: s.status,
         business_type: s.businessType,
         public: pubSet.has(s.id),
@@ -497,17 +655,30 @@ export class AdminCatalogService {
       include: { media: true, workspace: { include: { company: true } } },
     });
     if (!s) throw new ApiError('NOT_FOUND', 'common.not_found');
-    const pub = await this.prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM marketplace_suppliers WHERE id = ${id}::uuid`;
+    const pub = await this.prisma.$queryRaw<
+      { n: number }[]
+    >`SELECT count(*)::int AS n FROM marketplace_suppliers WHERE id = ${id}::uuid`;
     return mapStorefront(s, s.workspace.company.displayName, ADMIN, (pub[0]?.n ?? 0) > 0);
   }
 
-  async storefrontEnforce(admin: User, id: string, action: 'hide' | 'restore', reason: string, meta: RequestMeta) {
+  async storefrontEnforce(
+    admin: User,
+    id: string,
+    action: 'hide' | 'restore',
+    reason: string,
+    meta: RequestMeta,
+  ) {
     assertUuid(id);
     await this.prisma.$transaction(async (tx) => {
-      const s = await tx.storefront.findUnique({ where: { id }, include: { workspace: { include: { company: true } } } });
+      const s = await tx.storefront.findUnique({
+        where: { id },
+        include: { workspace: { include: { company: true } } },
+      });
       if (!s) throw new ApiError('NOT_FOUND', 'common.not_found');
-      if (action === 'hide' && s.adminHiddenAt) throw new ApiError('CONFLICT', 'catalog.invalid_transition');
-      if (action === 'restore' && !s.adminHiddenAt) throw new ApiError('CONFLICT', 'catalog.invalid_transition');
+      if (action === 'hide' && s.adminHiddenAt)
+        throw new ApiError('CONFLICT', 'catalog.invalid_transition');
+      if (action === 'restore' && !s.adminHiddenAt)
+        throw new ApiError('CONFLICT', 'catalog.invalid_transition');
       await tx.storefront.update({
         where: { id },
         data:
@@ -522,7 +693,16 @@ export class AdminCatalogService {
         action: action === 'hide' ? 'storefront.hide' : 'storefront.restore',
         reason,
       });
-      await this.audit(tx, admin, action === 'hide' ? 'storefront.hidden' : 'storefront.restored', 'storefront', id, s.companyId, meta, { reason });
+      await this.audit(
+        tx,
+        admin,
+        action === 'hide' ? 'storefront.hidden' : 'storefront.restored',
+        'storefront',
+        id,
+        s.companyId,
+        meta,
+        { reason },
+      );
       await enqueueEmail(tx, {
         template: 'storefront_enforcement',
         to: s.workspace.company.contactEmail,
@@ -545,13 +725,16 @@ export class AdminCatalogService {
       SELECT v.category_id, count(*)::int AS n FROM products p
         JOIN product_versions v ON v.id = COALESCE(p.published_version_id, p.working_version_id)
        WHERE p.status <> 'REMOVED' GROUP BY 1`;
-    const pubCounts = await this.prisma.$queryRaw<{ category_id: string; parent_category_id: string | null; n: number }[]>`
+    const pubCounts = await this.prisma.$queryRaw<
+      { category_id: string; parent_category_id: string | null; n: number }[]
+    >`
       SELECT category_id, parent_category_id, count(*)::int AS n FROM marketplace_products GROUP BY 1, 2`;
     const listing = new Map(counts.map((c) => [c.category_id, c.n]));
     const pub = new Map<string, number>();
     for (const r of pubCounts) {
       pub.set(r.category_id, (pub.get(r.category_id) ?? 0) + r.n);
-      if (r.parent_category_id) pub.set(r.parent_category_id, (pub.get(r.parent_category_id) ?? 0) + r.n);
+      if (r.parent_category_id)
+        pub.set(r.parent_category_id, (pub.get(r.parent_category_id) ?? 0) + r.n);
     }
     return cats.map((c) => ({
       id: c.id,
@@ -586,10 +769,15 @@ export class AdminCatalogService {
     if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
     const [self] = await this.categoryItems({ id });
     const children = await this.categoryItems({ parentId: id });
-    const attrs = await this.prisma.categoryAttribute.findMany({ where: { categoryId: id }, orderBy: [{ position: 'asc' }, { key: 'asc' }] });
+    const attrs = await this.prisma.categoryAttribute.findMany({
+      where: { categoryId: id },
+      orderBy: [{ position: 'asc' }, { key: 'asc' }],
+    });
     return {
       ...self!,
-      parent: c.parent ? { id: c.parent.id, name_en: c.parent.nameEn, name_ar: c.parent.nameAr } : null,
+      parent: c.parent
+        ? { id: c.parent.id, name_en: c.parent.nameEn, name_ar: c.parent.nameAr }
+        : null,
       children,
       attributes: attrs.map((a) => this.attr(a)),
     };
@@ -603,7 +791,9 @@ export class AdminCatalogService {
       label_en: a.labelEn,
       label_ar: a.labelAr,
       type: a.type,
-      options: Array.isArray(a.options) ? (a.options as { value: string; label_en: string; label_ar: string }[]) : [],
+      options: Array.isArray(a.options)
+        ? (a.options as { value: string; label_en: string; label_ar: string }[])
+        : [],
       unit: a.unit,
       required: a.required,
       filterable: a.filterable,
@@ -612,14 +802,20 @@ export class AdminCatalogService {
     };
   }
 
-  async createCategory(admin: User, body: z.infer<typeof categoryCreateRequest>, meta: RequestMeta) {
+  async createCategory(
+    admin: User,
+    body: z.infer<typeof categoryCreateRequest>,
+    meta: RequestMeta,
+  ) {
     let id = '';
     try {
       await this.prisma.$transaction(async (tx) => {
         if (body.parent_id) {
           const parent = await tx.category.findUnique({ where: { id: body.parent_id } });
           if (!parent || parent.parentId || parent.archivedAt)
-            throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { parent_id: 'invalid' });
+            throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+              parent_id: 'invalid',
+            });
         }
         const c = await tx.category.create({
           data: {
@@ -638,24 +834,36 @@ export class AdminCatalogService {
           },
         });
         id = c.id;
-        await this.audit(tx, admin, 'category.created', 'category', c.id, null, meta, { slug: body.slug, reason: body.reason });
+        await this.audit(tx, admin, 'category.created', 'category', c.id, null, meta, {
+          slug: body.slug,
+          reason: body.reason,
+        });
       });
     } catch (e) {
-      if (isUniqueViolation(e)) throw new ApiError('CONFLICT', 'catalog.slug_taken', { slug: 'taken' });
+      if (isUniqueViolation(e))
+        throw new ApiError('CONFLICT', 'catalog.slug_taken', { slug: 'taken' });
       throw e;
     }
     return this.category(id);
   }
 
-  async updateCategory(admin: User, id: string, body: z.infer<typeof categoryUpdateRequest>, meta: RequestMeta) {
+  async updateCategory(
+    admin: User,
+    id: string,
+    body: z.infer<typeof categoryUpdateRequest>,
+    meta: RequestMeta,
+  ) {
     assertUuid(id);
     await this.prisma.$transaction(async (tx) => {
       const c = await tx.category.findUnique({ where: { id } });
       if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
       const sensitive = body.restriction !== undefined && body.restriction !== c.restriction;
-      const hiding = (body.visible === false && c.visible) || (body.archived === true && !c.archivedAt);
+      const hiding =
+        (body.visible === false && c.visible) || (body.archived === true && !c.archivedAt);
       if ((sensitive || hiding) && (!body.reason || body.reason.length < 5))
-        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { reason: 'reason_required' });
+        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+          reason: 'reason_required',
+        });
       const data: Prisma.CategoryUpdateManyMutationInput = {
         ...(body.name_en !== undefined ? { nameEn: body.name_en } : {}),
         ...(body.name_ar !== undefined ? { nameAr: body.name_ar } : {}),
@@ -667,19 +875,32 @@ export class AdminCatalogService {
         ...(body.restriction !== undefined ? { restriction: body.restriction } : {}),
         ...(body.requirements_en !== undefined ? { requirementsEn: body.requirements_en } : {}),
         ...(body.requirements_ar !== undefined ? { requirementsAr: body.requirements_ar } : {}),
-        ...(body.archived !== undefined ? { archivedAt: body.archived ? (c.archivedAt ?? new Date()) : null } : {}),
+        ...(body.archived !== undefined
+          ? { archivedAt: body.archived ? (c.archivedAt ?? new Date()) : null }
+          : {}),
         version: { increment: 1 },
       };
-      const r = await tx.category.updateMany({ where: { id, version: body.expected_version }, data });
+      const r = await tx.category.updateMany({
+        where: { id, version: body.expected_version },
+        data,
+      });
       if (r.count === 0) throw new ApiError('CONFLICT', 'common.stale_version');
       const { expected_version: _ev, reason, ...changes } = body;
       void _ev;
-      await this.audit(tx, admin, 'category.updated', 'category', id, null, meta, { changes, reason: reason ?? null });
+      await this.audit(tx, admin, 'category.updated', 'category', id, null, meta, {
+        changes,
+        reason: reason ?? null,
+      });
     });
     return this.category(id);
   }
 
-  async setCategoryImage(admin: User, id: string, file: UploadedFile | undefined, meta: RequestMeta) {
+  async setCategoryImage(
+    admin: User,
+    id: string,
+    file: UploadedFile | undefined,
+    meta: RequestMeta,
+  ) {
     assertUuid(id);
     const c = await this.prisma.category.findUnique({ where: { id } });
     if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
@@ -688,13 +909,23 @@ export class AdminCatalogService {
       (data) => this.prisma.file.create({ data, select: { id: true } }),
     );
     await this.prisma.$transaction(async (tx) => {
-      await tx.category.update({ where: { id }, data: { imageFileId: fileId, version: { increment: 1 } } });
-      await this.audit(tx, admin, 'category.image_set', 'category', id, null, meta, { file_id: fileId });
+      await tx.category.update({
+        where: { id },
+        data: { imageFileId: fileId, version: { increment: 1 } },
+      });
+      await this.audit(tx, admin, 'category.image_set', 'category', id, null, meta, {
+        file_id: fileId,
+      });
     });
     return this.category(id);
   }
 
-  async createAttribute(admin: User, categoryId: string, body: z.infer<typeof attributeCreateRequest>, meta: RequestMeta) {
+  async createAttribute(
+    admin: User,
+    categoryId: string,
+    body: z.infer<typeof attributeCreateRequest>,
+    meta: RequestMeta,
+  ) {
     assertUuid(categoryId);
     const c = await this.prisma.category.findUnique({ where: { id: categoryId } });
     if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
@@ -714,21 +945,38 @@ export class AdminCatalogService {
             position: body.position,
           },
         });
-        await this.audit(tx, admin, 'category.attribute_created', 'category_attribute', a.id, null, meta, { category_id: categoryId, key: body.key });
+        await this.audit(
+          tx,
+          admin,
+          'category.attribute_created',
+          'category_attribute',
+          a.id,
+          null,
+          meta,
+          { category_id: categoryId, key: body.key },
+        );
       });
     } catch (e) {
-      if (isUniqueViolation(e)) throw new ApiError('CONFLICT', 'catalog.attribute_exists', { key: 'taken' });
+      if (isUniqueViolation(e))
+        throw new ApiError('CONFLICT', 'catalog.attribute_exists', { key: 'taken' });
       throw e;
     }
     return this.category(categoryId);
   }
 
-  async updateAttribute(admin: User, id: string, body: z.infer<typeof attributeUpdateRequest>, meta: RequestMeta) {
+  async updateAttribute(
+    admin: User,
+    id: string,
+    body: z.infer<typeof attributeUpdateRequest>,
+    meta: RequestMeta,
+  ) {
     assertUuid(id);
     const a = await this.prisma.categoryAttribute.findUnique({ where: { id } });
     if (!a) throw new ApiError('NOT_FOUND', 'common.not_found');
     if (body.options && a.type !== 'SELECT')
-      throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { options: 'select_only' });
+      throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+        options: 'select_only',
+      });
     await this.prisma.$transaction(async (tx) => {
       await tx.categoryAttribute.update({
         where: { id },
@@ -743,7 +991,16 @@ export class AdminCatalogService {
           ...(body.active !== undefined ? { active: body.active } : {}),
         },
       });
-      await this.audit(tx, admin, 'category.attribute_updated', 'category_attribute', id, null, meta, { changes: body });
+      await this.audit(
+        tx,
+        admin,
+        'category.attribute_updated',
+        'category_attribute',
+        id,
+        null,
+        meta,
+        { changes: body },
+      );
     });
     return this.category(a.categoryId);
   }
@@ -751,10 +1008,15 @@ export class AdminCatalogService {
   // ------------------------------------------------------------------ restricted terms
 
   async restrictedTerms() {
-    const rows = await this.prisma.restrictedTerm.findMany({ orderBy: [{ active: 'desc' }, { term: 'asc' }] });
+    const rows = await this.prisma.restrictedTerm.findMany({
+      orderBy: [{ active: 'desc' }, { term: 'asc' }],
+    });
     const catIds = rows.map((r) => r.categoryId).filter((x): x is string => !!x);
     const cats = new Map(
-      (catIds.length ? await this.prisma.category.findMany({ where: { id: { in: catIds } } }) : []).map((c) => [c.id, c]),
+      (catIds.length
+        ? await this.prisma.category.findMany({ where: { id: { in: catIds } } })
+        : []
+      ).map((c) => [c.id, c]),
     );
     return rows.map((r) => {
       const c = r.categoryId ? cats.get(r.categoryId) : undefined;
@@ -770,15 +1032,23 @@ export class AdminCatalogService {
     });
   }
 
-  async createRestrictedTerm(admin: User, body: z.infer<typeof restrictedTermCreateRequest>, meta: RequestMeta) {
+  async createRestrictedTerm(
+    admin: User,
+    body: z.infer<typeof restrictedTermCreateRequest>,
+    meta: RequestMeta,
+  ) {
     if (body.category_id) {
       const c = await this.prisma.category.findUnique({ where: { id: body.category_id } });
-      if (!c) throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { category_id: 'invalid' });
+      if (!c)
+        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+          category_id: 'invalid',
+        });
     }
     await this.prisma.$transaction(async (tx) => {
       const n = await tx.$queryRaw<{ v: string }[]>`SELECT mkt_normalize(${body.term}) AS v`;
       const normalized = n[0]?.v ?? '';
-      if (normalized.length < 2) throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { term: 'min' });
+      if (normalized.length < 2)
+        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { term: 'min' });
       const t = await tx.restrictedTerm.create({
         data: {
           term: body.term,
@@ -789,12 +1059,20 @@ export class AdminCatalogService {
           createdById: admin.id,
         },
       });
-      await this.audit(tx, admin, 'restricted_term.created', 'restricted_term', t.id, null, meta, { term: body.term, action: body.action });
+      await this.audit(tx, admin, 'restricted_term.created', 'restricted_term', t.id, null, meta, {
+        term: body.term,
+        action: body.action,
+      });
     });
     return this.restrictedTerms();
   }
 
-  async updateRestrictedTerm(admin: User, id: string, body: z.infer<typeof restrictedTermUpdateRequest>, meta: RequestMeta) {
+  async updateRestrictedTerm(
+    admin: User,
+    id: string,
+    body: z.infer<typeof restrictedTermUpdateRequest>,
+    meta: RequestMeta,
+  ) {
     assertUuid(id);
     const t = await this.prisma.restrictedTerm.findUnique({ where: { id } });
     if (!t) throw new ApiError('NOT_FOUND', 'common.not_found');
@@ -807,7 +1085,10 @@ export class AdminCatalogService {
           ...(body.active !== undefined ? { active: body.active } : {}),
         },
       });
-      await this.audit(tx, admin, 'restricted_term.updated', 'restricted_term', id, null, meta, { before: { action: t.action, active: t.active }, changes: body });
+      await this.audit(tx, admin, 'restricted_term.updated', 'restricted_term', id, null, meta, {
+        before: { action: t.action, active: t.active },
+        changes: body,
+      });
     });
     return this.restrictedTerms();
   }
@@ -823,17 +1104,29 @@ export class AdminCatalogService {
     const sIds = rows.filter((r) => r.storefrontId).map((r) => r.storefrontId!);
     const [pubP, pubS, products, sfs] = await Promise.all([
       pIds.length
-        ? this.prisma.$queryRaw<{ id: string }[]>`SELECT id FROM marketplace_products WHERE id IN (${Prisma.join(pIds.map((i) => Prisma.sql`${i}::uuid`))})`
+        ? this.prisma.$queryRaw<
+            { id: string }[]
+          >`SELECT id FROM marketplace_products WHERE id IN (${Prisma.join(pIds.map((i) => Prisma.sql`${i}::uuid`))})`
         : [],
       sIds.length
-        ? this.prisma.$queryRaw<{ id: string }[]>`SELECT id FROM marketplace_suppliers WHERE id IN (${Prisma.join(sIds.map((i) => Prisma.sql`${i}::uuid`))})`
+        ? this.prisma.$queryRaw<
+            { id: string }[]
+          >`SELECT id FROM marketplace_suppliers WHERE id IN (${Prisma.join(sIds.map((i) => Prisma.sql`${i}::uuid`))})`
         : [],
-      this.prisma.product.findMany({ where: { id: { in: pIds } }, include: { publishedVersion: true, workingVersion: true } }),
-      this.prisma.storefront.findMany({ where: { id: { in: sIds } }, include: { workspace: { include: { company: true } } } }),
+      this.prisma.product.findMany({
+        where: { id: { in: pIds } },
+        include: { publishedVersion: true, workingVersion: true },
+      }),
+      this.prisma.storefront.findMany({
+        where: { id: { in: sIds } },
+        include: { workspace: { include: { company: true } } },
+      }),
     ]);
     const pubSet = new Set([...pubP, ...pubS].map((r) => r.id));
     const titles = new Map<string, string>([
-      ...products.map((p) => [p.id, (p.publishedVersion ?? p.workingVersion)?.titleEn ?? ''] as [string, string]),
+      ...products.map(
+        (p) => [p.id, (p.publishedVersion ?? p.workingVersion)?.titleEn ?? ''] as [string, string],
+      ),
       ...sfs.map((s) => [s.id, s.workspace.company.displayName] as [string, string]),
     ]);
     const now = Date.now();
@@ -849,20 +1142,33 @@ export class AdminCatalogService {
         ends_at: r.endsAt?.toISOString() ?? null,
         reason: r.reason,
         eligible: pubSet.has(target),
-        active_now: (!r.startsAt || r.startsAt.getTime() <= now) && (!r.endsAt || r.endsAt.getTime() > now),
+        active_now:
+          (!r.startsAt || r.startsAt.getTime() <= now) && (!r.endsAt || r.endsAt.getTime() > now),
         created_at: r.createdAt.toISOString(),
       };
     });
   }
 
   async addFeatured(admin: User, body: z.infer<typeof featuredCreateRequest>, meta: RequestMeta) {
-    const view = body.kind === 'PRODUCT' ? Prisma.sql`marketplace_products` : Prisma.sql`marketplace_suppliers`;
-    const r = await this.prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM ${view} WHERE id = ${body.target_id}::uuid`;
+    const view =
+      body.kind === 'PRODUCT'
+        ? Prisma.sql`marketplace_products`
+        : Prisma.sql`marketplace_suppliers`;
+    const r = await this.prisma.$queryRaw<
+      { n: number }[]
+    >`SELECT count(*)::int AS n FROM ${view} WHERE id = ${body.target_id}::uuid`;
     if ((r[0]?.n ?? 0) === 0)
-      throw new ApiError('VALIDATION_FAILED', 'catalog.featured_not_public', { target_id: 'not_public' });
+      throw new ApiError('VALIDATION_FAILED', 'catalog.featured_not_public', {
+        target_id: 'not_public',
+      });
     await this.prisma.$transaction(async (tx) => {
       const dup = await tx.featuredListing.findFirst({
-        where: { removedAt: null, ...(body.kind === 'PRODUCT' ? { productId: body.target_id } : { storefrontId: body.target_id }) },
+        where: {
+          removedAt: null,
+          ...(body.kind === 'PRODUCT'
+            ? { productId: body.target_id }
+            : { storefrontId: body.target_id }),
+        },
       });
       if (dup) throw new ApiError('CONFLICT', 'catalog.already_featured');
       const f = await tx.featuredListing.create({
@@ -877,7 +1183,11 @@ export class AdminCatalogService {
           createdById: admin.id,
         },
       });
-      await this.audit(tx, admin, 'featured.added', 'featured_listing', f.id, null, meta, { kind: body.kind, target_id: body.target_id, reason: body.reason });
+      await this.audit(tx, admin, 'featured.added', 'featured_listing', f.id, null, meta, {
+        kind: body.kind,
+        target_id: body.target_id,
+        reason: body.reason,
+      });
     });
     return this.featured();
   }

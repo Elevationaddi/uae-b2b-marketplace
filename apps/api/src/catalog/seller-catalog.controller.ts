@@ -46,7 +46,9 @@ import { StorefrontService } from './storefront.service';
 const ok = <T>(data: T, next: string | null = null) => ({ data, meta: { next_cursor: next } });
 const IMAGE_MAX = 10 * 1024 * 1024;
 const imageUpload = () =>
-  UseInterceptors(FileInterceptor('file', { limits: { fileSize: IMAGE_MAX, files: 1, fields: 5 } }));
+  UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: IMAGE_MAX, files: 1, fields: 5 } }),
+  );
 const cursorQuery = z.object({ cursor: z.string().max(200).optional() });
 
 /** Seller catalog, storefront and inventory (docs/03-seller.md). Every route re-resolves membership. */
@@ -73,8 +75,20 @@ export class SellerCatalogController {
   }
 
   @Patch('storefront')
-  async updateStorefront(@Auth() a: AuthContext, @Param('ws') ws: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.storefronts.update(a.user, ws, parse(storefrontUpdateRequest, body), requestMeta(req)));
+  async updateStorefront(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.storefronts.update(
+        a.user,
+        ws,
+        parse(storefrontUpdateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Post('storefront/publish')
@@ -98,11 +112,24 @@ export class SellerCatalogController {
     @Body() body: unknown,
     @Req() req: Request,
   ) {
-    return ok(await this.storefronts.addMedia(a.user, ws, file, parse(storefrontMediaFields, body), requestMeta(req)));
+    return ok(
+      await this.storefronts.addMedia(
+        a.user,
+        ws,
+        file,
+        parse(storefrontMediaFields, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Delete('storefront/media/:mediaId')
-  async removeStorefrontMedia(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('mediaId') mediaId: string, @Req() req: Request) {
+  async removeStorefrontMedia(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('mediaId') mediaId: string,
+    @Req() req: Request,
+  ) {
     return ok(await this.storefronts.removeMedia(a.user, ws, mediaId, requestMeta(req)));
   }
 
@@ -114,8 +141,15 @@ export class SellerCatalogController {
   }
 
   @Post('products')
-  async create(@Auth() a: AuthContext, @Param('ws') ws: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.products.create(a.user, ws, parse(productCreateRequest, body), requestMeta(req)));
+  async create(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.products.create(a.user, ws, parse(productCreateRequest, body), requestMeta(req)),
+    );
   }
 
   @Get('products/:id')
@@ -124,8 +158,22 @@ export class SellerCatalogController {
   }
 
   @Patch('products/:id')
-  async update(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.products.update(a.user, ws, id, parse(productUpdateRequest, body), requestMeta(req)));
+  async update(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.products.update(
+        a.user,
+        ws,
+        id,
+        parse(productUpdateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Post('products/:id/media')
@@ -138,13 +186,36 @@ export class SellerCatalogController {
     @Body() body: unknown,
     @Req() req: Request,
   ) {
-    return ok(await this.products.addMedia(a.user, ws, id, file, parse(mediaUploadFields, body), requestMeta(req)));
+    return ok(
+      await this.products.addMedia(
+        a.user,
+        ws,
+        id,
+        file,
+        parse(mediaUploadFields, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Post('products/:id/media/reorder')
   @HttpCode(200)
-  async reorder(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.products.reorderMedia(a.user, ws, id, parse(mediaReorderRequest, body), requestMeta(req)));
+  async reorder(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.products.reorderMedia(
+        a.user,
+        ws,
+        id,
+        parse(mediaReorderRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Delete('products/:id/media/:fileId')
@@ -159,8 +230,16 @@ export class SellerCatalogController {
   }
 
   @Post('products/:id/skus')
-  async addSku(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.products.addSku(a.user, ws, id, parse(skuCreateRequest, body), requestMeta(req)));
+  async addSku(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.products.addSku(a.user, ws, id, parse(skuCreateRequest, body), requestMeta(req)),
+    );
   }
 
   @Patch('products/:id/skus/:skuId')
@@ -172,7 +251,16 @@ export class SellerCatalogController {
     @Body() body: unknown,
     @Req() req: Request,
   ) {
-    return ok(await this.products.updateSku(a.user, ws, id, skuId, parse(skuUpdateRequest, body), requestMeta(req)));
+    return ok(
+      await this.products.updateSku(
+        a.user,
+        ws,
+        id,
+        skuId,
+        parse(skuUpdateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Delete('products/:id/skus/:skuId')
@@ -188,53 +276,102 @@ export class SellerCatalogController {
 
   @Post('products/:id/pricing')
   @HttpCode(200)
-  async pricing(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.products.setPricing(a.user, ws, id, parse(pricingRequest, body), requestMeta(req)));
+  async pricing(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.products.setPricing(a.user, ws, id, parse(pricingRequest, body), requestMeta(req)),
+    );
   }
 
   @Post('products/:id/duplicate')
-  async duplicate(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Req() req: Request) {
+  async duplicate(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
     return ok(await this.products.duplicate(a.user, ws, id, requestMeta(req)));
   }
 
   @Post('products/:id/submit')
   @HttpCode(200)
-  async submit(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async submit(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { expected_version: v } = parse(expectedVersionRequest, body);
     return ok(await this.products.submit(a.user, ws, id, v, requestMeta(req)));
   }
 
   @Post('products/:id/withdraw')
   @HttpCode(200)
-  async withdraw(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async withdraw(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { expected_version: v } = parse(expectedVersionRequest, body);
     return ok(await this.products.withdraw(a.user, ws, id, v, requestMeta(req)));
   }
 
   @Post('products/:id/archive')
   @HttpCode(200)
-  async archive(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async archive(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { expected_version: v } = parse(expectedVersionRequest, body);
     return ok(await this.products.archive(a.user, ws, id, v, requestMeta(req)));
   }
 
   @Post('products/:id/unpublish')
   @HttpCode(200)
-  async unpublish(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async unpublish(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { expected_version: v } = parse(expectedVersionRequest, body);
     return ok(await this.products.unpublish(a.user, ws, id, v, requestMeta(req)));
   }
 
   @Post('products/:id/republish')
   @HttpCode(200)
-  async republish(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async republish(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { expected_version: v } = parse(expectedVersionRequest, body);
     return ok(await this.products.republish(a.user, ws, id, v, requestMeta(req)));
   }
 
   @Post('products/:id/restore')
   @HttpCode(200)
-  async restore(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async restore(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { expected_version: v } = parse(expectedVersionRequest, body);
     return ok(await this.products.restore(a.user, ws, id, v, requestMeta(req)));
   }
@@ -249,17 +386,50 @@ export class SellerCatalogController {
 
   @Post('inventory/:skuId/adjust')
   @HttpCode(200)
-  async adjust(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('skuId') skuId: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.inventory.adjust(a.user, ws, skuId, parse(inventoryAdjustRequest, body), requestMeta(req)));
+  async adjust(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('skuId') skuId: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.inventory.adjust(
+        a.user,
+        ws,
+        skuId,
+        parse(inventoryAdjustRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Patch('inventory/:skuId')
-  async settings(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('skuId') skuId: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.inventory.settings(a.user, ws, skuId, parse(inventorySettingsRequest, body), requestMeta(req)));
+  async settings(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('skuId') skuId: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.inventory.settings(
+        a.user,
+        ws,
+        skuId,
+        parse(inventorySettingsRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Get('inventory/:skuId/movements')
-  async movements(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('skuId') skuId: string, @Query() q: unknown) {
+  async movements(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('skuId') skuId: string,
+    @Query() q: unknown,
+  ) {
     const r = await this.inventory.movements(a.user, ws, skuId, parse(cursorQuery, q).cursor);
     return ok(r.items, r.next_cursor);
   }

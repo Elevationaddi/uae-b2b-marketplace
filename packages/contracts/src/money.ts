@@ -112,7 +112,11 @@ export type QuantityCheck =
  */
 export function priceForQuantity(
   priceType: PriceTypeValue,
-  p: { moq: number; order_increment: number; tiers: { min_qty: number; unit_price_fils: bigint }[] },
+  p: {
+    moq: number;
+    order_increment: number;
+    tiers: { min_qty: number; unit_price_fils: bigint }[];
+  },
   quantity: number,
 ): QuantityCheck {
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_QUANTITY)

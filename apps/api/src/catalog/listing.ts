@@ -67,7 +67,12 @@ export function contentOf(v: ProductVersion): Prisma.ProductVersionUncheckedCrea
   const out: Record<string, unknown> = {};
   for (const f of CONTENT_FIELDS) {
     const val = (v as unknown as Record<string, unknown>)[f];
-    out[f] = val === null ? (f === 'attributes' || f === 'specifications' || f === 'certifications' ? undefined : null) : val;
+    out[f] =
+      val === null
+        ? f === 'attributes' || f === 'specifications' || f === 'certifications'
+          ? undefined
+          : null
+        : val;
   }
   return out as unknown as Prisma.ProductVersionUncheckedCreateInput;
 }
@@ -88,7 +93,8 @@ export async function ensureDraft(
   });
   const w = p.workingVersion;
   if (w?.state === 'DRAFT') return w;
-  if (w?.state === 'PENDING_REVIEW') throw new ApiError('CONFLICT', 'catalog.pending_review_locked');
+  if (w?.state === 'PENDING_REVIEW')
+    throw new ApiError('CONFLICT', 'catalog.pending_review_locked');
   const source = w ?? p.publishedVersion;
   if (!source) throw new ApiError('CONFLICT', 'catalog.no_content');
   const max = await tx.productVersion.aggregate({ where: { productId }, _max: { version: true } });
@@ -181,7 +187,10 @@ export interface ScreeningResult {
  */
 export async function screenContent(
   tx: Tx,
-  v: Pick<ProductVersion, 'titleEn' | 'titleAr' | 'descriptionEn' | 'descriptionAr' | 'materials' | 'categoryId'>,
+  v: Pick<
+    ProductVersion,
+    'titleEn' | 'titleAr' | 'descriptionEn' | 'descriptionAr' | 'materials' | 'categoryId'
+  >,
   parentCategoryId: string | null,
   categoryRestriction: string,
 ): Promise<ScreeningResult> {
@@ -236,7 +245,8 @@ export async function validateForSubmission(
   if (!cat || !selectable(cat) || (cat.parent && !selectable(cat.parent)))
     e.category_id = 'category_unavailable';
   else if (cat.children.length > 0) e.category_id = 'choose_subcategory';
-  const restriction = cat?.restriction === 'REVIEW_REQUIRED' || cat?.parent?.restriction === 'REVIEW_REQUIRED';
+  const restriction =
+    cat?.restriction === 'REVIEW_REQUIRED' || cat?.parent?.restriction === 'REVIEW_REQUIRED';
   const certs = Array.isArray(draft.certifications) ? draft.certifications : [];
   if (restriction && certs.length === 0) e.certifications = 'required_for_category';
   if (cat) {
@@ -246,10 +256,11 @@ export async function validateForSubmission(
       validateAttributes(defs, (draft.attributes as Record<string, unknown> | null) ?? {}),
     );
   }
-  if (draft.mode === 'MADE_TO_ORDER' && draft.leadTimeMinDays == null) e.lead_time_min_days = 'required';
+  if (draft.mode === 'MADE_TO_ORDER' && (draft.leadTimeMinDays ?? null) === null)
+    e.lead_time_min_days = 'required';
   if (
-    draft.leadTimeMinDays != null &&
-    draft.leadTimeMaxDays != null &&
+    typeof draft.leadTimeMinDays === 'number' &&
+    typeof draft.leadTimeMaxDays === 'number' &&
     draft.leadTimeMaxDays < draft.leadTimeMinDays
   )
     e.lead_time_max_days = 'lead_time_range';
@@ -264,7 +275,10 @@ export async function validateForSubmission(
     const errs = validateSkuPricing(priceType, {
       moq: s.moq,
       order_increment: s.orderIncrement,
-      tiers: s.tiers.map((t) => ({ min_qty: t.minQty, unit_price_fils: t.unitPriceFils.toString() })),
+      tiers: s.tiers.map((t) => ({
+        min_qty: t.minQty,
+        unit_price_fils: t.unitPriceFils.toString(),
+      })),
     });
     if (Object.keys(errs).length) {
       e.pricing = 'invalid';

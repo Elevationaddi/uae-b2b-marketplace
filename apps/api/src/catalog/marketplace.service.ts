@@ -132,7 +132,8 @@ export class MarketplaceService {
       price: {
         visible: viewer.verified,
         price_type: r.price_type,
-        min_price_fils: viewer.verified && r.min_price_fils !== null ? r.min_price_fils.toString() : null,
+        min_price_fils:
+          viewer.verified && r.min_price_fils !== null ? r.min_price_fils.toString() : null,
       },
       min_moq: r.min_moq,
       lead_time_min_days: r.lead_time_min_days,
@@ -154,22 +155,31 @@ export class MarketplaceService {
 
   // ------------------------------------------------------------------ search
 
-  private where(q: MarketplaceSearchQuery, viewer: Viewer, opts: { ignoreCategory?: boolean } = {}) {
+  private where(
+    q: MarketplaceSearchQuery,
+    viewer: Viewer,
+    opts: { ignoreCategory?: boolean } = {},
+  ) {
     const c: Prisma.Sql[] = [Prisma.sql`TRUE`];
     for (const t of searchTokens(q.q)) {
       c.push(Prisma.sql`(search_text LIKE '%' || mkt_normalize(${t}) || '%' ESCAPE '\\'
         OR company_search LIKE '%' || mkt_normalize(${t}) || '%' ESCAPE '\\')`);
     }
     if (q.category_id && !opts.ignoreCategory)
-      c.push(Prisma.sql`(category_id = ${q.category_id}::uuid OR parent_category_id = ${q.category_id}::uuid)`);
+      c.push(
+        Prisma.sql`(category_id = ${q.category_id}::uuid OR parent_category_id = ${q.category_id}::uuid)`,
+      );
     if (q.storefront_id) c.push(Prisma.sql`storefront_id = ${q.storefront_id}::uuid`);
     if (q.mode) c.push(Prisma.sql`mode::text = ${q.mode}`);
-    if (q.business_type?.length) c.push(Prisma.sql`business_type::text IN (${Prisma.join(q.business_type)})`);
+    if (q.business_type?.length)
+      c.push(Prisma.sql`business_type::text IN (${Prisma.join(q.business_type)})`);
     if (q.emirate?.length) c.push(Prisma.sql`emirate::text IN (${Prisma.join(q.emirate)})`);
     if (q.price_min !== undefined || q.price_max !== undefined) {
       // Prices are hidden from guests; filtering on them would let a guest infer them (A12).
       if (!viewer.verified)
-        throw new ApiError('VALIDATION_FAILED', 'marketplace.price_requires_verified', { price_min: 'requires_verified' });
+        throw new ApiError('VALIDATION_FAILED', 'marketplace.price_requires_verified', {
+          price_min: 'requires_verified',
+        });
       if (q.price_min !== undefined) c.push(Prisma.sql`min_price_fils >= ${BigInt(q.price_min)}`);
       if (q.price_max !== undefined) c.push(Prisma.sql`min_price_fils <= ${BigInt(q.price_max)}`);
     }
@@ -177,7 +187,8 @@ export class MarketplaceService {
     if (q.lead_time_max !== undefined)
       c.push(Prisma.sql`(mode = 'READY_STOCK' OR lead_time_max_days <= ${q.lead_time_max})`);
     if (q.delivery_max !== undefined) c.push(Prisma.sql`fulfilment_days <= ${q.delivery_max}`);
-    if (q.in_stock !== undefined) c.push(q.in_stock ? Prisma.sql`in_stock` : Prisma.sql`NOT in_stock`);
+    if (q.in_stock !== undefined)
+      c.push(q.in_stock ? Prisma.sql`in_stock` : Prisma.sql`NOT in_stock`);
     if (q.custom) c.push(Prisma.sql`custom_manufacturing`);
     if (q.private_label) c.push(Prisma.sql`private_label`);
     if (q.white_label) c.push(Prisma.sql`white_label`);
@@ -195,7 +206,9 @@ export class MarketplaceService {
 
   async search(q: MarketplaceSearchQuery, viewer: Viewer) {
     if ((q.sort === 'price_asc' || q.sort === 'price_desc') && !viewer.verified)
-      throw new ApiError('VALIDATION_FAILED', 'marketplace.price_requires_verified', { sort: 'requires_verified' });
+      throw new ApiError('VALIDATION_FAILED', 'marketplace.price_requires_verified', {
+        sort: 'requires_verified',
+      });
     const offset = decodeOffset(q.cursor);
     const where = this.where(q, viewer);
     const norm = q.q ? q.q.slice(0, 100) : '';
@@ -212,18 +225,26 @@ export class MarketplaceService {
       this.prisma.$queryRaw<{ id: string }[]>`
         SELECT id FROM marketplace_products WHERE ${where} ORDER BY ${order}, id ASC
         LIMIT ${q.limit + 1} OFFSET ${offset}`,
-      this.prisma.$queryRaw<{ n: number }[]>`SELECT count(*)::int AS n FROM marketplace_products WHERE ${where}`,
-      this.prisma.$queryRaw<{ category_id: string; parent_category_id: string | null; n: number }[]>`
+      this.prisma.$queryRaw<
+        { n: number }[]
+      >`SELECT count(*)::int AS n FROM marketplace_products WHERE ${where}`,
+      this.prisma.$queryRaw<
+        { category_id: string; parent_category_id: string | null; n: number }[]
+      >`
         SELECT category_id, parent_category_id, count(*)::int AS n FROM marketplace_products
          WHERE ${this.where(q, viewer, { ignoreCategory: true })} GROUP BY 1, 2`,
     ]);
     const counts = new Map<string, number>();
     for (const f of facets) {
       counts.set(f.category_id, (counts.get(f.category_id) ?? 0) + f.n);
-      if (f.parent_category_id) counts.set(f.parent_category_id, (counts.get(f.parent_category_id) ?? 0) + f.n);
+      if (f.parent_category_id)
+        counts.set(f.parent_category_id, (counts.get(f.parent_category_id) ?? 0) + f.n);
     }
     const pageIds = ids.slice(0, q.limit).map((r) => r.id);
-    const next = ids.length > q.limit && offset + q.limit <= MAX_OFFSET ? encodeOffset(offset + q.limit) : null;
+    const next =
+      ids.length > q.limit && offset + q.limit <= MAX_OFFSET
+        ? encodeOffset(offset + q.limit)
+        : null;
     return {
       items: await this.cards(pageIds, viewer),
       total: total[0]?.n ?? 0,
@@ -241,7 +262,9 @@ export class MarketplaceService {
       ' AND ',
     );
     const supLike = Prisma.join(
-      tokens.map((t) => Prisma.sql`company_search LIKE '%' || mkt_normalize(${t}) || '%' ESCAPE '\\'`),
+      tokens.map(
+        (t) => Prisma.sql`company_search LIKE '%' || mkt_normalize(${t}) || '%' ESCAPE '\\'`,
+      ),
       ' AND ',
     );
     const [products, suppliers, categories] = await Promise.all([
@@ -276,12 +299,15 @@ export class MarketplaceService {
   }
 
   private async categoryCounts() {
-    const rows = await this.prisma.$queryRaw<{ category_id: string; parent_category_id: string | null; n: number }[]>`
+    const rows = await this.prisma.$queryRaw<
+      { category_id: string; parent_category_id: string | null; n: number }[]
+    >`
       SELECT category_id, parent_category_id, count(*)::int AS n FROM marketplace_products GROUP BY 1, 2`;
     const counts = new Map<string, number>();
     for (const r of rows) {
       counts.set(r.category_id, (counts.get(r.category_id) ?? 0) + r.n);
-      if (r.parent_category_id) counts.set(r.parent_category_id, (counts.get(r.parent_category_id) ?? 0) + r.n);
+      if (r.parent_category_id)
+        counts.set(r.parent_category_id, (counts.get(r.parent_category_id) ?? 0) + r.n);
     }
     return counts;
   }
@@ -336,7 +362,9 @@ export class MarketplaceService {
         label_en: a.labelEn,
         label_ar: a.labelAr,
         type: a.type,
-        options: Array.isArray(a.options) ? (a.options as { value: string; label_en: string; label_ar: string }[]) : [],
+        options: Array.isArray(a.options)
+          ? (a.options as { value: string; label_en: string; label_ar: string }[])
+          : [],
         unit: a.unit,
         required: a.required,
         filterable: a.filterable,
@@ -350,7 +378,9 @@ export class MarketplaceService {
 
   private async publicRow(id: string) {
     assertUuid(id);
-    const rows = await this.prisma.$queryRaw<MpRow[]>`SELECT * FROM marketplace_products WHERE id = ${id}::uuid`;
+    const rows = await this.prisma.$queryRaw<
+      MpRow[]
+    >`SELECT * FROM marketplace_products WHERE id = ${id}::uuid`;
     const r = rows[0];
     if (!r) throw new ApiError('NOT_FOUND', 'common.not_found');
     return r;
@@ -358,7 +388,8 @@ export class MarketplaceService {
 
   private tradingFor(viewer: Viewer, priceType: string) {
     if (!viewer.verified) return { available: false, reason: 'sign_in' as const };
-    if (!viewer.approvedBuyer) return { available: false, reason: 'requires_approved_buyer' as const };
+    if (!viewer.approvedBuyer)
+      return { available: false, reason: 'requires_approved_buyer' as const };
     if (priceType === 'QUOTE_ONLY') return { available: false, reason: 'quote_only' as const };
     return { available: false, reason: 'phase_unavailable' as const };
   }
@@ -380,7 +411,10 @@ export class MarketplaceService {
         select: { id: true, width: true, height: true },
       }),
       this.prisma.categoryAttribute.findMany({
-        where: { categoryId: { in: [v.categoryId, ...(v.category.parentId ? [v.category.parentId] : [])] }, active: true },
+        where: {
+          categoryId: { in: [v.categoryId, ...(v.category.parentId ? [v.category.parentId] : [])] },
+          active: true,
+        },
         orderBy: [{ position: 'asc' }, { key: 'asc' }],
       }),
       r.storefront_id
@@ -411,7 +445,11 @@ export class MarketplaceService {
         name_en: v.category.nameEn,
         name_ar: v.category.nameAr,
         parent: v.category.parent
-          ? { id: v.category.parent.id, name_en: v.category.parent.nameEn, name_ar: v.category.parent.nameAr }
+          ? {
+              id: v.category.parent.id,
+              name_en: v.category.parent.nameEn,
+              name_ar: v.category.parent.nameAr,
+            }
           : null,
       },
       media: v.media.map((m) => ({
@@ -431,19 +469,22 @@ export class MarketplaceService {
           const raw = attrs[a.key];
           let value = String(raw);
           if (a.type === 'SELECT' && Array.isArray(a.options)) {
-            const opt = (a.options as { value: string; label_en: string }[]).find((o) => o.value === raw);
+            const opt = (a.options as { value: string; label_en: string }[]).find(
+              (o) => o.value === raw,
+            );
             if (opt) value = opt.label_en;
           }
           if (a.type === 'BOOLEAN') value = raw ? 'yes' : 'no';
           return { key: a.key, label_en: a.labelEn, label_ar: a.labelAr, value, unit: a.unit };
         }),
-      specifications: (Array.isArray(v.specifications) ? (v.specifications as Record<string, unknown>[]) : []).map(
-        (s) => ({
-          label_en: String(s.label_en ?? ''),
-          label_ar: (s.label_ar as string | null) ?? null,
-          value: String(s.value ?? ''),
-        }),
-      ),
+      specifications: (Array.isArray(v.specifications)
+        ? (v.specifications as Record<string, unknown>[])
+        : []
+      ).map((s) => ({
+        label_en: String(s.label_en ?? ''),
+        label_ar: (s.label_ar as string | null) ?? null,
+        value: String(s.value ?? ''),
+      })),
       materials: v.materials,
       dimensions: v.dimensions,
       country_of_origin: v.countryOfOrigin,
@@ -460,7 +501,9 @@ export class MarketplaceService {
       price_visible: viewer.verified,
       price_type: r.price_type,
       skus: skus.map((s) => {
-        const avail = s.inventory ? s.inventory.onHand - s.inventory.reserved - s.inventory.unavailable : 0;
+        const avail = s.inventory
+          ? s.inventory.onHand - s.inventory.reserved - s.inventory.unavailable
+          : 0;
         return {
           id: s.id,
           code: s.code,
@@ -470,9 +513,13 @@ export class MarketplaceService {
           order_increment: s.orderIncrement,
           tiers:
             viewer.verified && r.price_type !== 'QUOTE_ONLY'
-              ? s.tiers.map((t) => ({ min_qty: t.minQty, unit_price_fils: t.unitPriceFils.toString() }))
+              ? s.tiers.map((t) => ({
+                  min_qty: t.minQty,
+                  unit_price_fils: t.unitPriceFils.toString(),
+                }))
               : null,
-          availability: v.mode === 'MADE_TO_ORDER' ? 'MADE_TO_ORDER' : avail > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
+          availability:
+            v.mode === 'MADE_TO_ORDER' ? 'MADE_TO_ORDER' : avail > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK',
         };
       }),
       supplier: {
@@ -503,7 +550,12 @@ export class MarketplaceService {
          AND (category_id = ${r.category_id}::uuid
               OR (${r.parent_category_id}::uuid IS NOT NULL AND parent_category_id = ${r.parent_category_id}::uuid))
        ORDER BY (category_id = ${r.category_id}::uuid) DESC, published_at DESC NULLS LAST, id LIMIT 8`;
-    return { items: await this.cards(ids.map((x) => x.id), viewer) };
+    return {
+      items: await this.cards(
+        ids.map((x) => x.id),
+        viewer,
+      ),
+    };
   }
 
   /** Server-side price for a quantity (T09/T10). Verified users only; never a commitment. */
@@ -555,14 +607,17 @@ export class MarketplaceService {
       where: { companyId: { in: companyIds }, state: 'APPROVED' },
       _min: { decidedAt: true },
     });
-    for (const r of rows) if (r._min.decidedAt) out.set(r.companyId, r._min.decidedAt.toISOString());
+    for (const r of rows)
+      if (r._min.decidedAt) out.set(r.companyId, r._min.decidedAt.toISOString());
     return out;
   }
 
   /** Supplier cards for storefront ids (must be in marketplace_suppliers), in the given order. */
   async supplierCards(ids: string[]): Promise<SupplierCard[]> {
     if (ids.length === 0) return [];
-    const pub = await this.prisma.$queryRaw<{ id: string; company_id: string; company_name: string; emirate: string }[]>`
+    const pub = await this.prisma.$queryRaw<
+      { id: string; company_id: string; company_name: string; emirate: string }[]
+    >`
       SELECT id, company_id, company_name, emirate::text AS emirate FROM marketplace_suppliers
        WHERE id IN (${Prisma.join(ids.map((i) => Prisma.sql`${i}::uuid`))})`;
     if (pub.length === 0) return [];
@@ -575,7 +630,9 @@ export class MarketplaceService {
       this.prisma.$queryRaw<{ storefront_id: string; n: number }[]>`
         SELECT storefront_id, count(*)::int AS n FROM marketplace_products
          WHERE storefront_id IN (${Prisma.join(sfIds.map((i) => Prisma.sql`${i}::uuid`))}) GROUP BY 1`,
-      this.prisma.$queryRaw<{ storefront_id: string; id: string; name_en: string; name_ar: string }[]>`
+      this.prisma.$queryRaw<
+        { storefront_id: string; id: string; name_en: string; name_ar: string }[]
+      >`
         SELECT DISTINCT mp.storefront_id, c.id, c.name_en, c.name_ar FROM marketplace_products mp
           JOIN categories c ON c.id = COALESCE(mp.parent_category_id, mp.category_id)
          WHERE mp.storefront_id IN (${Prisma.join(sfIds.map((i) => Prisma.sql`${i}::uuid`))})`,
@@ -623,7 +680,8 @@ export class MarketplaceService {
       c.push(Prisma.sql`EXISTS (SELECT 1 FROM marketplace_products mp WHERE mp.storefront_id = ms.id
         AND (mp.category_id = ${q.category_id}::uuid OR mp.parent_category_id = ${q.category_id}::uuid))`);
     if (q.emirate?.length) c.push(Prisma.sql`ms.emirate::text IN (${Prisma.join(q.emirate)})`);
-    if (q.business_type?.length) c.push(Prisma.sql`ms.business_type::text IN (${Prisma.join(q.business_type)})`);
+    if (q.business_type?.length)
+      c.push(Prisma.sql`ms.business_type::text IN (${Prisma.join(q.business_type)})`);
     if (q.custom) c.push(Prisma.sql`s.customization_services`);
     if (q.private_label) c.push(Prisma.sql`s.private_label`);
     if (q.white_label) c.push(Prisma.sql`s.white_label`);
@@ -639,7 +697,10 @@ export class MarketplaceService {
     return {
       items: await this.supplierCards(ids.slice(0, q.limit).map((r) => r.id)),
       total: total[0]?.n ?? 0,
-      next_cursor: ids.length > q.limit && offset + q.limit <= MAX_OFFSET ? encodeOffset(offset + q.limit) : null,
+      next_cursor:
+        ids.length > q.limit && offset + q.limit <= MAX_OFFSET
+          ? encodeOffset(offset + q.limit)
+          : null,
     };
   }
 
@@ -647,7 +708,10 @@ export class MarketplaceService {
     assertUuid(id);
     const [card] = await this.supplierCards([id]);
     if (!card) throw new ApiError('NOT_FOUND', 'common.not_found');
-    const s = await this.prisma.storefront.findUniqueOrThrow({ where: { id }, include: { media: true } });
+    const s = await this.prisma.storefront.findUniqueOrThrow({
+      where: { id },
+      include: { media: true },
+    });
     const saved = viewer.userId
       ? await this.prisma.savedItem.count({ where: { userId: viewer.userId, storefrontId: id } })
       : 0;
@@ -709,7 +773,9 @@ export class MarketplaceService {
          ORDER BY published_at DESC NULLS LAST, id LIMIT 8`,
       this.prisma.$queryRaw<{ id: string }[]>`
         SELECT id FROM marketplace_products ORDER BY published_at DESC NULLS LAST, id LIMIT 8`,
-      viewer.userId ? this.prisma.marketplacePreference.findUnique({ where: { userId: viewer.userId } }) : null,
+      viewer.userId
+        ? this.prisma.marketplacePreference.findUnique({ where: { userId: viewer.userId } })
+        : null,
     ]);
     let forYou: ProductCard[] = [];
     const prefCats = Array.isArray(prefs?.categoryIds) ? (prefs!.categoryIds as string[]) : [];
@@ -719,7 +785,10 @@ export class MarketplaceService {
          WHERE category_id IN (${Prisma.join(prefCats.map((i) => Prisma.sql`${i}::uuid`))})
             OR parent_category_id IN (${Prisma.join(prefCats.map((i) => Prisma.sql`${i}::uuid`))})
          ORDER BY published_at DESC NULLS LAST, id LIMIT 8`;
-      forYou = await this.cards(ids.map((x) => x.id), viewer);
+      forYou = await this.cards(
+        ids.map((x) => x.id),
+        viewer,
+      );
     }
     return {
       totals: { products: totals[0]?.p ?? 0, suppliers: totals[0]?.s ?? 0 },
@@ -728,7 +797,10 @@ export class MarketplaceService {
       featured_products: (await this.cards(fp, viewer)).slice(0, 8),
       featured_suppliers: (await this.supplierCards(fs)).slice(0, 8),
       manufacturers: await this.supplierCards(manuIds.map((x) => x.id)),
-      new_products: await this.cards(newIds.map((x) => x.id), viewer),
+      new_products: await this.cards(
+        newIds.map((x) => x.id),
+        viewer,
+      ),
       for_you: forYou,
       price_visible: viewer.verified,
     };

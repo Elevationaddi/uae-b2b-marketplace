@@ -43,7 +43,14 @@ export class BuyerListsService {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: MAX_SAVED,
     });
-    const cards = new Map((await this.market.cards(rows.map((r) => r.productId!), viewer)).map((c) => [c.id, c]));
+    const cards = new Map(
+      (
+        await this.market.cards(
+          rows.map((r) => r.productId!),
+          viewer,
+        )
+      ).map((c) => [c.id, c]),
+    );
     return {
       items: rows.map((r) => ({
         product_id: r.productId!,
@@ -59,7 +66,9 @@ export class BuyerListsService {
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: MAX_SAVED,
     });
-    const cards = new Map((await this.market.supplierCards(rows.map((r) => r.storefrontId!))).map((c) => [c.id, c]));
+    const cards = new Map(
+      (await this.market.supplierCards(rows.map((r) => r.storefrontId!))).map((c) => [c.id, c]),
+    );
     return {
       items: rows.map((r) => ({
         storefront_id: r.storefrontId!,
@@ -87,7 +96,10 @@ export class BuyerListsService {
   async unsave(viewer: Viewer, kind: 'product' | 'supplier', id: string) {
     assertUuid(id);
     await this.prisma.savedItem.deleteMany({
-      where: { userId: viewer.userId!, ...(kind === 'product' ? { productId: id } : { storefrontId: id }) },
+      where: {
+        userId: viewer.userId!,
+        ...(kind === 'product' ? { productId: id } : { storefrontId: id }),
+      },
     });
     return { saved: false };
   }
@@ -99,7 +111,14 @@ export class BuyerListsService {
       where: { userId: viewer.userId! },
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
     });
-    const cards = new Map((await this.market.cards(rows.map((r) => r.productId), viewer)).map((c) => [c.id, c]));
+    const cards = new Map(
+      (
+        await this.market.cards(
+          rows.map((r) => r.productId),
+          viewer,
+        )
+      ).map((c) => [c.id, c]),
+    );
     const publicIds = rows.map((r) => r.productId).filter((id) => cards.has(id));
     const details = publicIds.length
       ? await this.prisma.product.findMany({
@@ -107,11 +126,20 @@ export class BuyerListsService {
           include: { publishedVersion: { include: { category: true } } },
         })
       : [];
-    const catIds = [...new Set(details.flatMap((d) => (d.publishedVersion ? [d.publishedVersion.categoryId, d.publishedVersion.category.parentId] : [])))].filter(
-      (x): x is string => !!x,
-    );
+    const catIds = [
+      ...new Set(
+        details.flatMap((d) =>
+          d.publishedVersion
+            ? [d.publishedVersion.categoryId, d.publishedVersion.category.parentId]
+            : [],
+        ),
+      ),
+    ].filter((x): x is string => !!x);
     const defs = catIds.length
-      ? await this.prisma.categoryAttribute.findMany({ where: { categoryId: { in: catIds }, active: true }, orderBy: { position: 'asc' } })
+      ? await this.prisma.categoryAttribute.findMany({
+          where: { categoryId: { in: catIds }, active: true },
+          orderBy: { position: 'asc' },
+        })
       : [];
     const byId = new Map(details.map((d) => [d.id, d]));
     return {
@@ -119,7 +147,8 @@ export class BuyerListsService {
         const card = cards.get(r.productId);
         const d = byId.get(r.productId);
         const v = d?.publishedVersion;
-        if (!card || !v) return { product_id: r.productId, added_at: r.createdAt.toISOString(), product: null };
+        if (!card || !v)
+          return { product_id: r.productId, added_at: r.createdAt.toISOString(), product: null };
         const attrs = (v.attributes ?? {}) as Record<string, unknown>;
         return {
           product_id: r.productId,
@@ -132,12 +161,22 @@ export class BuyerListsService {
             dimensions: v.dimensions,
             country_of_origin: v.countryOfOrigin,
             fulfilment_days: v.fulfilmentDays,
-            certifications: (Array.isArray(v.certifications) ? (v.certifications as { name?: string }[]) : []).map((c) =>
-              String(c.name ?? ''),
-            ),
+            certifications: (Array.isArray(v.certifications)
+              ? (v.certifications as { name?: string }[])
+              : []
+            ).map((c) => String(c.name ?? '')),
             attributes: defs
-              .filter((a) => (a.categoryId === v.categoryId || a.categoryId === v.category.parentId) && attrs[a.key] != null)
-              .map((a) => ({ key: a.key, label_en: a.labelEn, label_ar: a.labelAr, value: String(attrs[a.key]) })),
+              .filter(
+                (a) =>
+                  (a.categoryId === v.categoryId || a.categoryId === v.category.parentId) &&
+                  (attrs[a.key] ?? null) !== null,
+              )
+              .map((a) => ({
+                key: a.key,
+                label_en: a.labelEn,
+                label_ar: a.labelAr,
+                value: String(attrs[a.key]),
+              })),
           },
         };
       }),
@@ -149,7 +188,9 @@ export class BuyerListsService {
     const userId = viewer.userId!;
     await this.prisma.$transaction(
       async (tx) => {
-        const existing = await tx.comparisonItem.findUnique({ where: { userId_productId: { userId, productId: id } } });
+        const existing = await tx.comparisonItem.findUnique({
+          where: { userId_productId: { userId, productId: id } },
+        });
         if (existing) return;
         const n = await tx.comparisonItem.count({ where: { userId } });
         if (n >= MAX_COMPARE) throw new ApiError('CONFLICT', 'marketplace.compare_limit');
@@ -162,7 +203,9 @@ export class BuyerListsService {
 
   async removeCompare(viewer: Viewer, id: string) {
     assertUuid(id);
-    await this.prisma.comparisonItem.deleteMany({ where: { userId: viewer.userId!, productId: id } });
+    await this.prisma.comparisonItem.deleteMany({
+      where: { userId: viewer.userId!, productId: id },
+    });
     return this.compare(viewer);
   }
 
@@ -187,7 +230,14 @@ export class BuyerListsService {
       orderBy: [{ viewedAt: 'desc' }, { id: 'desc' }],
       take: MAX_RECENT,
     });
-    const cards = new Map((await this.market.cards(rows.map((r) => r.productId), viewer)).map((c) => [c.id, c]));
+    const cards = new Map(
+      (
+        await this.market.cards(
+          rows.map((r) => r.productId),
+          viewer,
+        )
+      ).map((c) => [c.id, c]),
+    );
     return {
       items: rows.map((r) => ({
         product_id: r.productId,
@@ -205,7 +255,9 @@ export class BuyerListsService {
   // ---------------------------------------------------------------- preferences
 
   async preferences(viewer: Viewer) {
-    const p = await this.prisma.marketplacePreference.findUnique({ where: { userId: viewer.userId! } });
+    const p = await this.prisma.marketplacePreference.findUnique({
+      where: { userId: viewer.userId! },
+    });
     return {
       category_ids: Array.isArray(p?.categoryIds) ? (p!.categoryIds as string[]) : [],
       emirates: Array.isArray(p?.emirates) ? (p!.emirates as string[]) : [],
@@ -217,10 +269,17 @@ export class BuyerListsService {
   async updatePreferences(viewer: Viewer, body: z.infer<typeof preferencesRequest>) {
     if (body.category_ids?.length) {
       const n = await this.prisma.category.count({
-        where: { id: { in: body.category_ids }, visible: true, archivedAt: null, restriction: { not: 'BLOCKED' } },
+        where: {
+          id: { in: body.category_ids },
+          visible: true,
+          archivedAt: null,
+          restriction: { not: 'BLOCKED' },
+        },
       });
       if (n !== new Set(body.category_ids).size)
-        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { category_ids: 'invalid' });
+        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+          category_ids: 'invalid',
+        });
     }
     const data = {
       ...(body.category_ids ? { categoryIds: [...new Set(body.category_ids)] } : {}),

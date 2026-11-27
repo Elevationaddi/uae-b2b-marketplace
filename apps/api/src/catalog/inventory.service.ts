@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { inventoryAdjustRequest, inventoryQuery, inventorySettingsRequest } from '@app/contracts';
+import type {
+  inventoryAdjustRequest,
+  inventoryQuery,
+  inventorySettingsRequest,
+} from '@app/contracts';
 import { hasCapability } from '@app/contracts';
 import { Prisma, toIsoDate, writeAudit, type PrismaClient, type User } from '@app/db';
 import type { z } from 'zod';
@@ -30,17 +34,22 @@ export class InventoryService {
   /** Stock changes: warehouse staff, or catalog editors (owner/admin/sales). Trading-gated. */
   private requireStock(ctx: SellerContext) {
     const role = ctx.membership.role;
-    const can = (c: 'seller.inventory.ship' | 'seller.catalog.edit') => hasCapability('SELLER', role, true, c);
+    const can = (c: 'seller.inventory.ship' | 'seller.catalog.edit') =>
+      hasCapability('SELLER', role, true, c);
     if (!can('seller.inventory.ship') && !can('seller.catalog.edit'))
       throw new ApiError('FORBIDDEN', 'common.forbidden');
-    if (!ctx.eligible) throw new ApiError('FORBIDDEN', ctx.ineligibleReason ?? 'catalog.seller_not_eligible');
+    if (!ctx.eligible)
+      throw new ApiError('FORBIDDEN', ctx.ineligibleReason ?? 'catalog.seller_not_eligible');
   }
 
   private async ownedSku(tx: Tx | PrismaClient, ctx: SellerContext, skuId: string) {
     assertUuid(skuId);
     const sku = await tx.sku.findFirst({
       where: { id: skuId, sellerWorkspaceId: ctx.workspace.id },
-      include: { product: { include: { workingVersion: true, publishedVersion: true } }, inventory: true },
+      include: {
+        product: { include: { workingVersion: true, publishedVersion: true } },
+        inventory: true,
+      },
     });
     if (!sku) throw new ApiError('NOT_FOUND', 'common.not_found');
     return sku;
@@ -68,7 +77,10 @@ export class InventoryService {
     // window and filter in memory so the derived value has one definition (mappers.available).
     const rows = await this.prisma.sku.findMany({
       where,
-      include: { product: { include: { workingVersion: true, publishedVersion: true } }, inventory: true },
+      include: {
+        product: { include: { workingVersion: true, publishedVersion: true } },
+        inventory: true,
+      },
       orderBy: NEWEST_FIRST,
       take: q.filter === 'all' ? q.limit + 1 : 1000,
     });
@@ -84,7 +96,10 @@ export class InventoryService {
 
   private item(
     s: Prisma.SkuGetPayload<{
-      include: { product: { include: { workingVersion: true; publishedVersion: true } }; inventory: true };
+      include: {
+        product: { include: { workingVersion: true; publishedVersion: true } };
+        inventory: true;
+      };
     }>,
   ) {
     const v = s.product.publishedVersion ?? s.product.workingVersion;
@@ -115,43 +130,60 @@ export class InventoryService {
     };
   }
 
-  async adjust(user: User, ws: string, skuId: string, body: z.infer<typeof inventoryAdjustRequest>, meta: RequestMeta) {
+  async adjust(
+    user: User,
+    ws: string,
+    skuId: string,
+    body: z.infer<typeof inventoryAdjustRequest>,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.ctx(user, ws);
     this.requireStock(ctx);
     await this.prisma.$transaction(async (tx) => {
       const sku = await this.ownedSku(tx, ctx, skuId);
-      if (sku.product.status === 'REMOVED') throw new ApiError('CONFLICT', 'catalog.product_locked');
+      if (sku.product.status === 'REMOVED')
+        throw new ApiError('CONFLICT', 'catalog.product_locked');
       if (!sku.inventory) await tx.inventory.create({ data: { skuId: sku.id } });
       const q = body.quantity;
       let rows: InvRow[];
       let deltas: { onHand: number; unavailable: number };
       switch (body.kind) {
         case 'RECEIVE':
-          rows = await tx.$queryRaw<InvRow[]>`UPDATE inventory SET on_hand = on_hand + ${q}, version = version + 1, updated_at = now()
+          rows = await tx.$queryRaw<
+            InvRow[]
+          >`UPDATE inventory SET on_hand = on_hand + ${q}, version = version + 1, updated_at = now()
             WHERE sku_id = ${sku.id}::uuid RETURNING on_hand, reserved, unavailable, version`;
           deltas = { onHand: q, unavailable: 0 };
           break;
         case 'REMOVE':
-          rows = await tx.$queryRaw<InvRow[]>`UPDATE inventory SET on_hand = on_hand - ${q}, version = version + 1, updated_at = now()
+          rows = await tx.$queryRaw<
+            InvRow[]
+          >`UPDATE inventory SET on_hand = on_hand - ${q}, version = version + 1, updated_at = now()
             WHERE sku_id = ${sku.id}::uuid AND on_hand - reserved - unavailable >= ${q}
             RETURNING on_hand, reserved, unavailable, version`;
           deltas = { onHand: -q, unavailable: 0 };
           break;
         case 'MARK_UNAVAILABLE':
-          rows = await tx.$queryRaw<InvRow[]>`UPDATE inventory SET unavailable = unavailable + ${q}, version = version + 1, updated_at = now()
+          rows = await tx.$queryRaw<
+            InvRow[]
+          >`UPDATE inventory SET unavailable = unavailable + ${q}, version = version + 1, updated_at = now()
             WHERE sku_id = ${sku.id}::uuid AND on_hand - reserved - unavailable >= ${q}
             RETURNING on_hand, reserved, unavailable, version`;
           deltas = { onHand: 0, unavailable: q };
           break;
         case 'RELEASE_UNAVAILABLE':
-          rows = await tx.$queryRaw<InvRow[]>`UPDATE inventory SET unavailable = unavailable - ${q}, version = version + 1, updated_at = now()
+          rows = await tx.$queryRaw<
+            InvRow[]
+          >`UPDATE inventory SET unavailable = unavailable - ${q}, version = version + 1, updated_at = now()
             WHERE sku_id = ${sku.id}::uuid AND unavailable >= ${q}
             RETURNING on_hand, reserved, unavailable, version`;
           deltas = { onHand: 0, unavailable: -q };
           break;
         case 'SET_ON_HAND': {
           const before = await tx.inventory.findUniqueOrThrow({ where: { skuId: sku.id } });
-          rows = await tx.$queryRaw<InvRow[]>`UPDATE inventory SET on_hand = ${q}, version = version + 1, updated_at = now()
+          rows = await tx.$queryRaw<
+            InvRow[]
+          >`UPDATE inventory SET on_hand = ${q}, version = version + 1, updated_at = now()
             WHERE sku_id = ${sku.id}::uuid AND version = ${body.expected_version!} AND ${q} >= reserved + unavailable
             RETURNING on_hand, reserved, unavailable, version`;
           if (rows.length === 0 && before.version !== body.expected_version)
@@ -162,7 +194,9 @@ export class InventoryService {
       }
       const after = rows[0];
       if (!after)
-        throw new ApiError('VALIDATION_FAILED', 'catalog.insufficient_stock', { quantity: 'insufficient_stock' });
+        throw new ApiError('VALIDATION_FAILED', 'catalog.insufficient_stock', {
+          quantity: 'insufficient_stock',
+        });
       await tx.stockMovement.create({
         data: {
           skuId: sku.id,
@@ -183,7 +217,12 @@ export class InventoryService {
         resourceType: 'sku',
         resourceId: sku.id,
         companyId: ctx.company.id,
-        details: { kind: body.kind, quantity: q, reason: body.reason, on_hand_after: after.on_hand },
+        details: {
+          kind: body.kind,
+          quantity: q,
+          reason: body.reason,
+          on_hand_after: after.on_hand,
+        },
         requestId: meta.requestId,
         ip: meta.ip,
       });
@@ -195,14 +234,21 @@ export class InventoryService {
     return this.item(await this.ownedSku(this.prisma, ctx, skuId));
   }
 
-  async settings(user: User, ws: string, skuId: string, body: z.infer<typeof inventorySettingsRequest>, meta: RequestMeta) {
+  async settings(
+    user: User,
+    ws: string,
+    skuId: string,
+    body: z.infer<typeof inventorySettingsRequest>,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.ctx(user, ws);
     this.requireStock(ctx);
     await this.prisma.$transaction(async (tx) => {
       const sku = await this.ownedSku(tx, ctx, skuId);
       const data: Prisma.SkuUpdateInput = {};
       if (body.low_stock_threshold !== undefined) data.lowStockThreshold = body.low_stock_threshold;
-      if (body.restock_at !== undefined) data.restockAt = body.restock_at ? new Date(`${body.restock_at}T00:00:00Z`) : null;
+      if (body.restock_at !== undefined)
+        data.restockAt = body.restock_at ? new Date(`${body.restock_at}T00:00:00Z`) : null;
       await tx.sku.update({ where: { id: sku.id }, data });
       await writeAudit(tx, {
         actorId: user.id,
@@ -212,7 +258,10 @@ export class InventoryService {
         resourceId: sku.id,
         companyId: ctx.company.id,
         details: {
-          before: { low_stock_threshold: sku.lowStockThreshold, restock_at: sku.restockAt ? toIsoDate(sku.restockAt) : null },
+          before: {
+            low_stock_threshold: sku.lowStockThreshold,
+            restock_at: sku.restockAt ? toIsoDate(sku.restockAt) : null,
+          },
           after: body,
         },
         requestId: meta.requestId,
@@ -222,7 +271,13 @@ export class InventoryService {
     return this.get(ctx, skuId);
   }
 
-  async movements(user: User, ws: string, skuId: string, cursorRaw: string | undefined, limit = 50) {
+  async movements(
+    user: User,
+    ws: string,
+    skuId: string,
+    cursorRaw: string | undefined,
+    limit = 50,
+  ) {
     const ctx = await this.ctx(user, ws);
     requireSeller(ctx, 'seller.catalog.read');
     const sku = await this.ownedSku(this.prisma, ctx, skuId);
@@ -233,9 +288,12 @@ export class InventoryService {
     });
     const actorIds = [...new Set(rows.map((r) => r.actorId).filter((x): x is string => !!x))];
     const actors = new Map(
-      (await this.prisma.user.findMany({ where: { id: { in: actorIds } }, select: { id: true, email: true } })).map(
-        (u) => [u.id, u.email],
-      ),
+      (
+        await this.prisma.user.findMany({
+          where: { id: { in: actorIds } },
+          select: { id: true, email: true },
+        })
+      ).map((u) => [u.id, u.email]),
     );
     const { items, nextCursor } = page(rows, limit);
     return {

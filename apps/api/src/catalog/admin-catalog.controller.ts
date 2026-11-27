@@ -70,8 +70,20 @@ export class AdminCatalogController {
   @Post('catalog/reviews/:versionId/decision')
   @HttpCode(200)
   @RequireAdmin('admin.catalog.review')
-  async decide(@Auth() a: AuthContext, @Param('versionId') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.decide(a.user, parse(uuid, id), parse(catalogDecisionRequest, body), requestMeta(req)));
+  async decide(
+    @Auth() a: AuthContext,
+    @Param('versionId') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.catalog.decide(
+        a.user,
+        parse(uuid, id),
+        parse(catalogDecisionRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Get('catalog/products')
@@ -89,25 +101,46 @@ export class AdminCatalogController {
   @Post('catalog/products/:id/suspend')
   @HttpCode(200)
   @RequireAdmin('admin.catalog.enforce')
-  async suspendProduct(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async suspendProduct(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { reason } = parse(reasonRequest, body);
-    return ok(await this.catalog.enforce(a.user, parse(uuid, id), 'suspend', reason, requestMeta(req)));
+    return ok(
+      await this.catalog.enforce(a.user, parse(uuid, id), 'suspend', reason, requestMeta(req)),
+    );
   }
 
   @Post('catalog/products/:id/restore')
   @HttpCode(200)
   @RequireAdmin('admin.catalog.enforce')
-  async restoreProduct(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async restoreProduct(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { reason } = parse(reasonRequest, body);
-    return ok(await this.catalog.enforce(a.user, parse(uuid, id), 'restore', reason, requestMeta(req)));
+    return ok(
+      await this.catalog.enforce(a.user, parse(uuid, id), 'restore', reason, requestMeta(req)),
+    );
   }
 
   @Post('catalog/products/:id/remove')
   @HttpCode(200)
   @RequireAdmin('admin.catalog.enforce')
-  async removeProduct(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async removeProduct(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { reason } = parse(reasonRequest, body);
-    return ok(await this.catalog.enforce(a.user, parse(uuid, id), 'remove', reason, requestMeta(req)));
+    return ok(
+      await this.catalog.enforce(a.user, parse(uuid, id), 'remove', reason, requestMeta(req)),
+    );
   }
 
   @Get('storefronts')
@@ -125,17 +158,43 @@ export class AdminCatalogController {
   @Post('storefronts/:id/hide')
   @HttpCode(200)
   @RequireAdmin('admin.catalog.enforce')
-  async hideStorefront(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async hideStorefront(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { reason } = parse(reasonRequest, body);
-    return ok(await this.catalog.storefrontEnforce(a.user, parse(uuid, id), 'hide', reason, requestMeta(req)));
+    return ok(
+      await this.catalog.storefrontEnforce(
+        a.user,
+        parse(uuid, id),
+        'hide',
+        reason,
+        requestMeta(req),
+      ),
+    );
   }
 
   @Post('storefronts/:id/restore')
   @HttpCode(200)
   @RequireAdmin('admin.catalog.enforce')
-  async restoreStorefront(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
+  async restoreStorefront(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
     const { reason } = parse(reasonRequest, body);
-    return ok(await this.catalog.storefrontEnforce(a.user, parse(uuid, id), 'restore', reason, requestMeta(req)));
+    return ok(
+      await this.catalog.storefrontEnforce(
+        a.user,
+        parse(uuid, id),
+        'restore',
+        reason,
+        requestMeta(req),
+      ),
+    );
   }
 
   @Get('categories')
@@ -147,7 +206,13 @@ export class AdminCatalogController {
   @Post('categories')
   @RequireAdmin('admin.categories.manage')
   async createCategory(@Auth() a: AuthContext, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.createCategory(a.user, parse(categoryCreateRequest, body), requestMeta(req)));
+    return ok(
+      await this.catalog.createCategory(
+        a.user,
+        parse(categoryCreateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Get('categories/:id')
@@ -158,13 +223,27 @@ export class AdminCatalogController {
 
   @Patch('categories/:id')
   @RequireAdmin('admin.categories.manage')
-  async updateCategory(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.updateCategory(a.user, parse(uuid, id), parse(categoryUpdateRequest, body), requestMeta(req)));
+  async updateCategory(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.catalog.updateCategory(
+        a.user,
+        parse(uuid, id),
+        parse(categoryUpdateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Post('categories/:id/image')
   @RequireAdmin('admin.categories.manage')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 2 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 2 } }),
+  )
   async categoryImage(
     @Auth() a: AuthContext,
     @Param('id') id: string,
@@ -176,14 +255,38 @@ export class AdminCatalogController {
 
   @Post('categories/:id/attributes')
   @RequireAdmin('admin.categories.manage')
-  async createAttribute(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.createAttribute(a.user, parse(uuid, id), parse(attributeCreateRequest, body), requestMeta(req)));
+  async createAttribute(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.catalog.createAttribute(
+        a.user,
+        parse(uuid, id),
+        parse(attributeCreateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Patch('category-attributes/:id')
   @RequireAdmin('admin.categories.manage')
-  async updateAttribute(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.updateAttribute(a.user, parse(uuid, id), parse(attributeUpdateRequest, body), requestMeta(req)));
+  async updateAttribute(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.catalog.updateAttribute(
+        a.user,
+        parse(uuid, id),
+        parse(attributeUpdateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Get('restricted-terms')
@@ -195,13 +298,31 @@ export class AdminCatalogController {
   @Post('restricted-terms')
   @RequireAdmin('admin.restricted.manage')
   async createRestricted(@Auth() a: AuthContext, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.createRestrictedTerm(a.user, parse(restrictedTermCreateRequest, body), requestMeta(req)));
+    return ok(
+      await this.catalog.createRestrictedTerm(
+        a.user,
+        parse(restrictedTermCreateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Patch('restricted-terms/:id')
   @RequireAdmin('admin.restricted.manage')
-  async updateRestricted(@Auth() a: AuthContext, @Param('id') id: string, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.updateRestrictedTerm(a.user, parse(uuid, id), parse(restrictedTermUpdateRequest, body), requestMeta(req)));
+  async updateRestricted(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.catalog.updateRestrictedTerm(
+        a.user,
+        parse(uuid, id),
+        parse(restrictedTermUpdateRequest, body),
+        requestMeta(req),
+      ),
+    );
   }
 
   @Get('featured')
@@ -213,7 +334,9 @@ export class AdminCatalogController {
   @Post('featured')
   @RequireAdmin('admin.featured.manage')
   async addFeatured(@Auth() a: AuthContext, @Body() body: unknown, @Req() req: Request) {
-    return ok(await this.catalog.addFeatured(a.user, parse(featuredCreateRequest, body), requestMeta(req)));
+    return ok(
+      await this.catalog.addFeatured(a.user, parse(featuredCreateRequest, body), requestMeta(req)),
+    );
   }
 
   @Delete('featured/:id')

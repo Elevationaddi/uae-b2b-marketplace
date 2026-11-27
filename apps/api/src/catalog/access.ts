@@ -1,5 +1,11 @@
 import { hasCapability, TRADING_CAPABILITIES, type Capability } from '@app/contracts';
-import { isLicenceExpired, type Company, type Membership, type PrismaClient, type Workspace } from '@app/db';
+import {
+  isLicenceExpired,
+  type Company,
+  type Membership,
+  type PrismaClient,
+  type Workspace,
+} from '@app/db';
 import { ApiError } from '../common/api-error';
 
 export interface SellerContext {
@@ -29,10 +35,12 @@ export function sellerEligibility(
           ? 'catalog.licence_expired'
           : 'catalog.company_suspended',
     };
-  if (company.status !== 'APPROVED') return { eligible: false, reason: 'catalog.company_not_approved' };
+  if (company.status !== 'APPROVED')
+    return { eligible: false, reason: 'catalog.company_not_approved' };
   if (isLicenceExpired(company.licenceExpiry))
     return { eligible: false, reason: 'catalog.licence_expired' };
-  if (workspace.status !== 'ACTIVE') return { eligible: false, reason: 'catalog.workspace_inactive' };
+  if (workspace.status !== 'ACTIVE')
+    return { eligible: false, reason: 'catalog.workspace_inactive' };
   return { eligible: true, reason: null };
 }
 

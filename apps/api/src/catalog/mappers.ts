@@ -18,11 +18,15 @@ import {
   type StorefrontMedia,
 } from '@app/db';
 
-export type MediaScope = { kind: 'public' } | { kind: 'seller'; workspaceId: string } | { kind: 'admin' };
+export type MediaScope =
+  | { kind: 'public' }
+  | { kind: 'seller'; workspaceId: string }
+  | { kind: 'admin' };
 
 /** URLs are always same-origin API paths; access is re-checked on every request. */
 export function mediaUrl(scope: MediaScope, fileId: string): string {
-  if (scope.kind === 'seller') return `/api/v1/seller/workspaces/${scope.workspaceId}/media/${fileId}`;
+  if (scope.kind === 'seller')
+    return `/api/v1/seller/workspaces/${scope.workspaceId}/media/${fileId}`;
   if (scope.kind === 'admin') return `/api/v1/admin/media/${fileId}`;
   return `/api/v1/media/${fileId}`;
 }
@@ -40,7 +44,13 @@ export const SKU_INCLUDE = {
 export const PRODUCT_INCLUDE = {
   publishedVersion: { include: VERSION_INCLUDE },
   workingVersion: { include: VERSION_INCLUDE },
-  skus: { include: SKU_INCLUDE, orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }] as { createdAt?: 'asc'; id?: 'asc' }[] },
+  skus: {
+    include: SKU_INCLUDE,
+    orderBy: [{ createdAt: 'asc' as const }, { id: 'asc' as const }] as {
+      createdAt?: 'asc';
+      id?: 'asc';
+    }[],
+  },
 };
 
 export type VersionWithRefs = ProductVersion & {
@@ -72,7 +82,11 @@ export function mapVersion(
       name_en: v.category.nameEn,
       name_ar: v.category.nameAr,
       parent: v.category.parent
-        ? { id: v.category.parent.id, name_en: v.category.parent.nameEn, name_ar: v.category.parent.nameAr }
+        ? {
+            id: v.category.parent.id,
+            name_en: v.category.parent.nameEn,
+            name_ar: v.category.parent.nameAr,
+          }
         : null,
       restriction: v.category.restriction,
     },

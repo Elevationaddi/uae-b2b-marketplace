@@ -1,5 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { StorefrontResponse, storefrontMediaFields, storefrontUpdateRequest } from '@app/contracts';
+import type {
+  StorefrontResponse,
+  storefrontMediaFields,
+  storefrontUpdateRequest,
+} from '@app/contracts';
 import { Prisma, writeAudit, type PrismaClient, type User } from '@app/db';
 import type { z } from 'zod';
 import { ApiError } from '../common/api-error';
@@ -51,7 +55,9 @@ export class StorefrontService {
   }
 
   private async ensure(tx: Tx, ctx: SellerContext) {
-    const existing = await tx.storefront.findUnique({ where: { sellerWorkspaceId: ctx.workspace.id } });
+    const existing = await tx.storefront.findUnique({
+      where: { sellerWorkspaceId: ctx.workspace.id },
+    });
     if (existing) return existing;
     try {
       return await tx.storefront.create({
@@ -113,7 +119,12 @@ export class StorefrontService {
     return this.view(ctx);
   }
 
-  async update(user: User, ws: string, body: z.infer<typeof storefrontUpdateRequest>, meta: RequestMeta) {
+  async update(
+    user: User,
+    ws: string,
+    body: z.infer<typeof storefrontUpdateRequest>,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.ctx(user, ws);
     requireSeller(ctx, 'seller.catalog.edit');
     await this.prisma.$transaction(async (tx) => {
@@ -146,16 +157,28 @@ export class StorefrontService {
       const s = await this.ensure(tx, ctx);
       const errors: Record<string, string> = {};
       if (!s.businessType) errors.business_type = 'required';
-      if (!s.descriptionEn || s.descriptionEn.trim().length < 20) errors.description_en = 'min_description';
+      if (!s.descriptionEn || s.descriptionEn.trim().length < 20)
+        errors.description_en = 'min_description';
       if (!s.city) errors.city = 'required';
       if (Object.keys(errors).length)
         throw new ApiError('VALIDATION_FAILED', 'catalog.storefront_incomplete', errors);
       await tx.storefront.update({
         where: { id: s.id },
-        data: { status: 'PUBLISHED', publishedAt: s.publishedAt ?? new Date(), version: { increment: 1 } },
+        data: {
+          status: 'PUBLISHED',
+          publishedAt: s.publishedAt ?? new Date(),
+          version: { increment: 1 },
+        },
       });
       await tx.moderationEvent.create({
-        data: { storefrontId: s.id, actorId: user.id, actorType: 'user', action: 'publish', fromState: s.status, toState: 'PUBLISHED' },
+        data: {
+          storefrontId: s.id,
+          actorId: user.id,
+          actorType: 'user',
+          action: 'publish',
+          fromState: s.status,
+          toState: 'PUBLISHED',
+        },
       });
       await this.audit(tx, user, ctx, 'storefront.published', s.id, meta);
     });
@@ -166,13 +189,25 @@ export class StorefrontService {
     const ctx = await this.ctx(user, ws);
     // Taking a storefront offline is never trading-gated: an ineligible seller can still hide it.
     requireSeller(ctx, 'seller.catalog.read');
-    if (!['OWNER', 'SALES'].includes(ctx.membership.role)) throw new ApiError('FORBIDDEN', 'common.forbidden');
+    if (!['OWNER', 'SALES'].includes(ctx.membership.role))
+      throw new ApiError('FORBIDDEN', 'common.forbidden');
     await this.prisma.$transaction(async (tx) => {
       const s = await tx.storefront.findUnique({ where: { sellerWorkspaceId: ctx.workspace.id } });
-      if (!s || s.status !== 'PUBLISHED') throw new ApiError('CONFLICT', 'catalog.invalid_transition');
-      await tx.storefront.update({ where: { id: s.id }, data: { status: 'DRAFT', version: { increment: 1 } } });
+      if (!s || s.status !== 'PUBLISHED')
+        throw new ApiError('CONFLICT', 'catalog.invalid_transition');
+      await tx.storefront.update({
+        where: { id: s.id },
+        data: { status: 'DRAFT', version: { increment: 1 } },
+      });
       await tx.moderationEvent.create({
-        data: { storefrontId: s.id, actorId: user.id, actorType: 'user', action: 'unpublish', fromState: 'PUBLISHED', toState: 'DRAFT' },
+        data: {
+          storefrontId: s.id,
+          actorId: user.id,
+          actorType: 'user',
+          action: 'unpublish',
+          fromState: 'PUBLISHED',
+          toState: 'DRAFT',
+        },
       });
       await this.audit(tx, user, ctx, 'storefront.unpublished', s.id, meta);
     });
@@ -198,10 +233,15 @@ export class StorefrontService {
       if (SINGLE_KINDS.has(fields.kind)) {
         await tx.storefrontMedia.deleteMany({ where: { storefrontId: s.id, kind: fields.kind } });
       } else {
-        const n = await tx.storefrontMedia.count({ where: { storefrontId: s.id, kind: { notIn: ['LOGO', 'COVER'] } } });
-        if (n >= MAX_GALLERY) throw new ApiError('CONFLICT', 'catalog.media_limit', { file: 'media_limit' });
+        const n = await tx.storefrontMedia.count({
+          where: { storefrontId: s.id, kind: { notIn: ['LOGO', 'COVER'] } },
+        });
+        if (n >= MAX_GALLERY)
+          throw new ApiError('CONFLICT', 'catalog.media_limit', { file: 'media_limit' });
       }
-      const pos = await tx.storefrontMedia.count({ where: { storefrontId: s.id, kind: fields.kind } });
+      const pos = await tx.storefrontMedia.count({
+        where: { storefrontId: s.id, kind: fields.kind },
+      });
       await tx.storefrontMedia.create({
         data: {
           storefrontId: s.id,
@@ -213,7 +253,10 @@ export class StorefrontService {
         },
       });
       await tx.storefront.update({ where: { id: s.id }, data: { version: { increment: 1 } } });
-      await this.audit(tx, user, ctx, 'storefront.media_added', s.id, meta, { file_id: fileId, kind: fields.kind });
+      await this.audit(tx, user, ctx, 'storefront.media_added', s.id, meta, {
+        file_id: fileId,
+        kind: fields.kind,
+      });
     });
     return this.view(ctx);
   }
@@ -228,8 +271,13 @@ export class StorefrontService {
       });
       if (!m) throw new ApiError('NOT_FOUND', 'common.not_found');
       await tx.storefrontMedia.delete({ where: { id: m.id } });
-      await tx.storefront.update({ where: { id: m.storefrontId }, data: { version: { increment: 1 } } });
-      await this.audit(tx, user, ctx, 'storefront.media_removed', m.storefrontId, meta, { file_id: m.fileId });
+      await tx.storefront.update({
+        where: { id: m.storefrontId },
+        data: { version: { increment: 1 } },
+      });
+      await this.audit(tx, user, ctx, 'storefront.media_removed', m.storefrontId, meta, {
+        file_id: m.fileId,
+      });
     });
     return this.view(ctx);
   }

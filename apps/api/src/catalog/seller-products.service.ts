@@ -72,7 +72,12 @@ function audit(
   });
 }
 
-const PAST = { archive: 'archived', unpublish: 'unpublished', republish: 'republished', restore: 'restored' } as const;
+const PAST = {
+  archive: 'archived',
+  unpublish: 'unpublished',
+  republish: 'republished',
+  restore: 'restored',
+} as const;
 
 @Injectable()
 export class SellerProductsService {
@@ -126,7 +131,15 @@ export class SellerProductsService {
           SELECT count(*)::int AS n FROM marketplace_products WHERE seller_workspace_id = ${ws}::uuid`,
         this.prisma.sku.findMany({
           where: { sellerWorkspaceId: ws, active: true, product: { status: { not: 'REMOVED' } } },
-          include: { inventory: true, product: { select: { workingVersion: { select: { mode: true } }, publishedVersion: { select: { mode: true } } } } },
+          include: {
+            inventory: true,
+            product: {
+              select: {
+                workingVersion: { select: { mode: true } },
+                publishedVersion: { select: { mode: true } },
+              },
+            },
+          },
         }),
         this.prisma.productVersion.findMany({
           where: {
@@ -219,8 +232,12 @@ export class SellerProductsService {
         AND: [search, beforeCursor(decodeCursor(q.cursor))],
       },
       include: {
-        workingVersion: { include: { category: true, media: { orderBy: { position: 'asc' }, take: 1 } } },
-        publishedVersion: { include: { category: true, media: { orderBy: { position: 'asc' }, take: 1 } } },
+        workingVersion: {
+          include: { category: true, media: { orderBy: { position: 'asc' }, take: 1 } },
+        },
+        publishedVersion: {
+          include: { category: true, media: { orderBy: { position: 'asc' }, take: 1 } },
+        },
         skus: { where: { active: true }, include: { inventory: true } },
       },
       orderBy: NEWEST_FIRST,
@@ -282,13 +299,15 @@ export class SellerProductsService {
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: 50,
       }),
-      this.prisma.productVersion.findMany({ where: { productId }, select: { id: true, version: true } }),
+      this.prisma.productVersion.findMany({
+        where: { productId },
+        select: { id: true, version: true },
+      }),
       isPublicProduct(this.prisma as unknown as Tx, productId),
     ]);
-    const fileIds = [
-      ...(p.publishedVersion?.media ?? []),
-      ...(p.workingVersion?.media ?? []),
-    ].map((m) => m.fileId);
+    const fileIds = [...(p.publishedVersion?.media ?? []), ...(p.workingVersion?.media ?? [])].map(
+      (m) => m.fileId,
+    );
     const files = fileIds.length
       ? await this.prisma.file.findMany({
           where: { id: { in: fileIds } },
@@ -470,7 +489,13 @@ export class SellerProductsService {
     return this.load(ctx, productId);
   }
 
-  async removeMedia(user: User, workspaceId: string, productId: string, fileId: string, meta: RequestMeta) {
+  async removeMedia(
+    user: User,
+    workspaceId: string,
+    productId: string,
+    fileId: string,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.context(user, workspaceId);
     requireSeller(ctx, 'seller.catalog.edit');
     assertUuid(fileId);
@@ -485,7 +510,8 @@ export class SellerProductsService {
         orderBy: { position: 'asc' },
       });
       for (const [i, r] of rest.entries())
-        if (r.position !== i) await tx.productMedia.update({ where: { id: r.id }, data: { position: i } });
+        if (r.position !== i)
+          await tx.productMedia.update({ where: { id: r.id }, data: { position: i } });
       await tx.product.update({ where: { id: productId }, data: { version: { increment: 1 } } });
       await audit(tx, user, ctx, 'product.media_removed', productId, meta, { file_id: fileId });
     });
@@ -512,11 +538,14 @@ export class SellerProductsService {
         new Set(input.file_ids).size !== input.file_ids.length ||
         input.file_ids.some((f) => !current.has(f))
       )
-        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { file_ids: 'mismatch' });
+        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+          file_ids: 'mismatch',
+        });
       // Positions are unique per version through a DEFERRABLE constraint, checked at commit.
       for (const [i, fid] of input.file_ids.entries()) {
         const m = media.find((x) => x.fileId === fid)!;
-        if (m.position !== i) await tx.productMedia.update({ where: { id: m.id }, data: { position: i } });
+        if (m.position !== i)
+          await tx.productMedia.update({ where: { id: m.id }, data: { position: i } });
       }
       await audit(tx, user, ctx, 'product.media_reordered', productId, meta);
     });
@@ -552,10 +581,14 @@ export class SellerProductsService {
         });
         await tx.inventory.create({ data: { skuId: sku.id } });
         await tx.product.update({ where: { id: productId }, data: { version: { increment: 1 } } });
-        await audit(tx, user, ctx, 'product.sku_added', productId, meta, { sku_id: sku.id, code: sku.code });
+        await audit(tx, user, ctx, 'product.sku_added', productId, meta, {
+          sku_id: sku.id,
+          code: sku.code,
+        });
       });
     } catch (err) {
-      if (isUniqueViolation(err)) throw new ApiError('CONFLICT', 'catalog.sku_exists', { code: 'exists' });
+      if (isUniqueViolation(err))
+        throw new ApiError('CONFLICT', 'catalog.sku_exists', { code: 'exists' });
       throw err;
     }
     return this.load(ctx, productId);
@@ -577,14 +610,19 @@ export class SellerProductsService {
         await this.editable(tx, ctx, productId);
         const sku = await tx.sku.findFirst({ where: { id: skuId, productId } });
         if (!sku) throw new ApiError('NOT_FOUND', 'common.not_found');
-        const identity = input.code !== undefined || input.variant_attributes !== undefined || input.unit !== undefined;
+        const identity =
+          input.code !== undefined ||
+          input.variant_attributes !== undefined ||
+          input.unit !== undefined;
         if (identity && sku.approvedAt)
           throw new ApiError('CONFLICT', 'catalog.sku_identity_locked');
         await tx.sku.update({
           where: { id: skuId },
           data: {
             ...(input.code !== undefined && { code: input.code }),
-            ...(input.variant_attributes !== undefined && { variantAttributes: input.variant_attributes }),
+            ...(input.variant_attributes !== undefined && {
+              variantAttributes: input.variant_attributes,
+            }),
             ...(input.unit !== undefined && { unit: input.unit }),
             ...(input.active !== undefined && { active: input.active }),
           },
@@ -597,13 +635,20 @@ export class SellerProductsService {
         });
       });
     } catch (err) {
-      if (isUniqueViolation(err)) throw new ApiError('CONFLICT', 'catalog.sku_exists', { code: 'exists' });
+      if (isUniqueViolation(err))
+        throw new ApiError('CONFLICT', 'catalog.sku_exists', { code: 'exists' });
       throw err;
     }
     return this.load(ctx, productId);
   }
 
-  async deleteSku(user: User, workspaceId: string, productId: string, skuId: string, meta: RequestMeta) {
+  async deleteSku(
+    user: User,
+    workspaceId: string,
+    productId: string,
+    skuId: string,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.context(user, workspaceId);
     requireSeller(ctx, 'seller.catalog.edit');
     assertUuid(skuId);
@@ -621,7 +666,10 @@ export class SellerProductsService {
       await tx.sku.delete({ where: { id: skuId } });
       await tx.product.update({ where: { id: productId }, data: { version: { increment: 1 } } });
       await refreshListingStats(tx, productId);
-      await audit(tx, user, ctx, 'product.sku_deleted', productId, meta, { sku_id: skuId, code: sku.code });
+      await audit(tx, user, ctx, 'product.sku_deleted', productId, meta, {
+        sku_id: skuId,
+        code: sku.code,
+      });
     });
     return this.load(ctx, productId);
   }
@@ -641,7 +689,10 @@ export class SellerProductsService {
     requireSeller(ctx, 'seller.catalog.edit');
     await this.prisma.$transaction(async (tx) => {
       const p = await this.editable(tx, ctx, productId);
-      const skus = await tx.sku.findMany({ where: { productId }, include: { tiers: { orderBy: { minQty: 'asc' } } } });
+      const skus = await tx.sku.findMany({
+        where: { productId },
+        include: { tiers: { orderBy: { minQty: 'asc' } } },
+      });
       const byId = new Map(skus.map((s) => [s.id, s]));
       const errors: Record<string, string> = {};
       const seen = new Set<string>();
@@ -701,7 +752,13 @@ export class SellerProductsService {
 
   // ------------------------------------------------------------------ lifecycle
 
-  async submit(user: User, workspaceId: string, productId: string, expected: number, meta: RequestMeta) {
+  async submit(
+    user: User,
+    workspaceId: string,
+    productId: string,
+    expected: number,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.context(user, workspaceId);
     requireSeller(ctx, 'seller.catalog.edit');
     await this.prisma.$transaction(async (tx) => {
@@ -709,7 +766,8 @@ export class SellerProductsService {
       const draft = p.workingVersionId
         ? await tx.productVersion.findUnique({ where: { id: p.workingVersionId } })
         : null;
-      if (!draft || draft.state !== 'DRAFT') throw new ApiError('CONFLICT', 'catalog.nothing_to_submit');
+      if (!draft || draft.state !== 'DRAFT')
+        throw new ApiError('CONFLICT', 'catalog.nothing_to_submit');
       const errors = await validateForSubmission(tx, productId, draft, p.priceType);
       if (Object.keys(errors).length)
         throw new ApiError('VALIDATION_FAILED', 'catalog.submission_incomplete', errors);
@@ -760,12 +818,20 @@ export class SellerProductsService {
     return this.load(ctx, productId);
   }
 
-  async withdraw(user: User, workspaceId: string, productId: string, expected: number, meta: RequestMeta) {
+  async withdraw(
+    user: User,
+    workspaceId: string,
+    productId: string,
+    expected: number,
+    meta: RequestMeta,
+  ) {
     const ctx = await this.context(user, workspaceId);
     requireSeller(ctx, 'seller.catalog.edit');
     await this.prisma.$transaction(async (tx) => {
       const p = await this.editable(tx, ctx, productId);
-      const w = p.workingVersionId ? await tx.productVersion.findUnique({ where: { id: p.workingVersionId } }) : null;
+      const w = p.workingVersionId
+        ? await tx.productVersion.findUnique({ where: { id: p.workingVersionId } })
+        : null;
       if (w?.state !== 'PENDING_REVIEW') throw new ApiError('CONFLICT', 'catalog.not_pending');
       await this.bump(tx, productId, expected);
       await tx.productVersion.update({
@@ -898,10 +964,17 @@ export class SellerProductsService {
           })),
         });
       await tx.product.update({ where: { id: product.id }, data: { workingVersionId: v.id } });
-      const skus = await tx.sku.findMany({ where: { productId, active: true }, include: { tiers: true } });
+      const skus = await tx.sku.findMany({
+        where: { productId, active: true },
+        include: { tiers: true },
+      });
       for (const s of skus) {
         let code = `${s.code}-COPY`.slice(0, 40);
-        for (let n = 2; await tx.sku.findFirst({ where: { sellerWorkspaceId: ctx.workspace.id, code } }); n++)
+        for (
+          let n = 2;
+          await tx.sku.findFirst({ where: { sellerWorkspaceId: ctx.workspace.id, code } });
+          n++
+        )
           code = `${s.code.slice(0, 32)}-COPY${n}`;
         const ns = await tx.sku.create({
           data: {
@@ -918,7 +991,11 @@ export class SellerProductsService {
         await tx.inventory.create({ data: { skuId: ns.id } });
         if (s.tiers.length)
           await tx.priceTier.createMany({
-            data: s.tiers.map((t) => ({ skuId: ns.id, minQty: t.minQty, unitPriceFils: t.unitPriceFils })),
+            data: s.tiers.map((t) => ({
+              skuId: ns.id,
+              minQty: t.minQty,
+              unitPriceFils: t.unitPriceFils,
+            })),
           });
       }
       await refreshListingStats(tx, product.id);
@@ -931,7 +1008,9 @@ export class SellerProductsService {
         toState: 'DRAFT',
         reason: null,
       });
-      await audit(tx, user, ctx, 'product.duplicated', product.id, meta, { source_product_id: productId });
+      await audit(tx, user, ctx, 'product.duplicated', product.id, meta, {
+        source_product_id: productId,
+      });
       return product.id;
     });
     return this.load(ctx, newId);

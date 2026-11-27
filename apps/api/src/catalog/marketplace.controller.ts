@@ -67,13 +67,21 @@ export class MarketplaceController {
   }
 
   @Get('categories/:id')
-  async category(@Param('id') id: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async category(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.viewer(req, res);
     return ok(await this.market.category(id));
   }
 
   @Get('products')
-  async search(@Query() q: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async search(
+    @Query() q: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const viewer = await this.viewer(req, res);
     const r = await this.market.search(parse(marketplaceSearchQuery, q), viewer);
     const { next_cursor, ...data } = r;
@@ -81,37 +89,62 @@ export class MarketplaceController {
   }
 
   @Get('suggest')
-  async suggest(@Query() q: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async suggest(
+    @Query() q: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.viewer(req, res);
     return ok(await this.market.suggest(parse(suggestQuery, q).q));
   }
 
   @Get('products/:id')
-  async product(@Param('id') id: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async product(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     return ok(await this.market.product(id, await this.viewer(req, res)));
   }
 
   @Get('products/:id/related')
-  async related(@Param('id') id: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async related(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     return ok((await this.market.related(id, await this.viewer(req, res))).items);
   }
 
   @Get('products/:id/estimate')
-  async estimate(@Param('id') id: string, @Query() q: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async estimate(
+    @Param('id') id: string,
+    @Query() q: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const viewer = await this.viewer(req, res);
     const input = parse(estimateQuery, q);
     return ok(await this.market.estimate(id, input.sku_id, input.quantity, viewer));
   }
 
   @Get('suppliers')
-  async suppliers(@Query() q: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async suppliers(
+    @Query() q: unknown,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.viewer(req, res);
     const r = await this.market.suppliers(parse(supplierDirectoryQuery, q));
     return ok({ items: r.items, total: r.total }, r.next_cursor);
   }
 
   @Get('suppliers/:id')
-  async supplier(@Param('id') id: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async supplier(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     return ok(await this.market.supplier(id, await this.viewer(req, res)));
   }
 }
@@ -202,7 +235,9 @@ export class BuyerListsController {
 
   @Patch('preferences')
   async updatePreferences(@Auth() a: AuthContext, @Body() body: unknown) {
-    return ok(await this.lists.updatePreferences(await this.viewer(a), parse(preferencesRequest, body)));
+    return ok(
+      await this.lists.updatePreferences(await this.viewer(a), parse(preferencesRequest, body)),
+    );
   }
 }
 
@@ -215,7 +250,11 @@ export class PublicMediaController {
   ) {}
 
   @Get(':id')
-  async get(@Param('id') id: string, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async get(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.limits.consume('search_ip', req.ip ?? 'unknown');
     const m = await this.mediaAccess.public(parse(uuid, id));
     res.setHeader('Content-Type', m.mime);

@@ -179,6 +179,8 @@ describe('retention (A13, provisional)', () => {
     expect(e.RETENTION_DELETION_ENABLED).toBe(false);
   });
   it('refuses to enable irreversible deletion until legally approved', () => {
-    expect(() => parseEnv({ ...dev, RETENTION_DELETION_ENABLED: 'true' })).toThrow(EnvValidationError);
+    expect(() => parseEnv({ ...dev, RETENTION_DELETION_ENABLED: 'true' })).toThrow(
+      EnvValidationError,
+    );
   });
 });

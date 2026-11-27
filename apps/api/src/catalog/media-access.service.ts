@@ -31,8 +31,14 @@ export class MediaAccessService {
 
   private async open(fileId: string, cache: string): Promise<MediaStream> {
     const f = await this.prisma.file.findUnique({ where: { id: fileId } });
-    if (!f || f.visibility !== 'MEDIA' || f.scanState !== 'CLEAN') throw new ApiError('NOT_FOUND', 'common.not_found');
-    return { stream: await this.storage.get(f.objectKey, 'media'), mime: f.mime, bytes: f.bytes, cache };
+    if (!f || f.visibility !== 'MEDIA' || f.scanState !== 'CLEAN')
+      throw new ApiError('NOT_FOUND', 'common.not_found');
+    return {
+      stream: await this.storage.get(f.objectKey, 'media'),
+      mime: f.mime,
+      bytes: f.bytes,
+      cache,
+    };
   }
 
   async public(fileId: string) {
