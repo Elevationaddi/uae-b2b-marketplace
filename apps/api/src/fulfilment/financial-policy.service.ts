@@ -8,12 +8,17 @@ import {
   type orderHoldListQuery,
   type orderHoldReleaseRequest,
   type OrderHoldItem,
+  type PayoutHolidayItem,
   type PayoutRunSummary,
+  type payoutHolidayCreateRequest,
   type reconciliationResolveRequest,
 } from '@app/contracts';
+import type { AppEnv } from '@app/config';
 import {
   activeCommission,
   dubaiWeekStart,
+  notifyWorkspace,
+  payoutSchedule,
   Prisma,
   providerAvailableFils,
   recomputeSettlement,
@@ -28,7 +33,7 @@ import { assertUuid, decodeOffset, encodeOffset } from '../catalog/access';
 import { ApiError } from '../common/api-error';
 import type { RequestMeta } from '../common/request-context';
 import { CommerceConfig, companyNames } from '../commerce/commerce-common';
-import { PRISMA } from '../infra/tokens';
+import { APP_ENV, PRISMA } from '../infra/tokens';
 
 type Tx = Prisma.TransactionClient;
 const PAGE = 20;
@@ -45,7 +50,12 @@ export class FinancialPolicyService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     private readonly config: CommerceConfig,
     private readonly mfa: MfaService,
+    @Inject(APP_ENV) private readonly env: AppEnv,
   ) {}
+
+  private get schedule() {
+    return { weekday: this.env.PAYOUT_WEEKDAY, time: this.env.PAYOUT_TIME };
+  }
 
   private audit(
     tx: Tx | PrismaClient,
@@ -185,14 +195,92 @@ export class FinancialPolicyService {
           _count: { _all: true },
         })
       : null;
+    const sched = await payoutSchedule(this.prisma, this.schedule, now);
     return {
       week_start: toIsoDate(weekStart),
       week_end: toIsoDate(weekEnd),
+      scheduled_for: sched.scheduledFor.toISOString(),
+      next_scheduled_for: sched.nextScheduledFor.toISOString(),
+      proposed_at: run?.proposedAt?.toISOString() ?? null,
+      proposed_count: run?.proposedCount ?? null,
+      schedule: this.schedule,
       payout_count: agg?._count._all ?? 0,
       amount_fils: (agg?._sum.amountFils ?? 0n).toString(),
       available_fils: (await providerAvailableFils(this.prisma)).toString(),
       sandbox: this.config.psp?.sandbox ?? false,
     };
+  }
+
+  // ---------------------------------------------------------------- payout holidays (Q9)
+
+  async holidays(): Promise<PayoutHolidayItem[]> {
+    const rows = await this.prisma.payoutHoliday.findMany({
+      where: { date: { gte: new Date(Date.now() - 366 * 86_400_000) } },
+      orderBy: { date: 'asc' },
+    });
+    const names = await this.userNames(rows.map((r) => r.createdById));
+    return rows.map((r) => ({
+      date: toIsoDate(r.date),
+      name: r.name,
+      created_by: r.createdById ? (names.get(r.createdById) ?? '') : null,
+      created_at: r.createdAt.toISOString(),
+    }));
+  }
+
+  private parseDate(v: string): Date {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+    const d = m ? new Date(Date.UTC(+m[1]!, +m[2]! - 1, +m[3]!)) : null;
+    if (!d || toIsoDate(d) !== v)
+      throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', { date: 'date' });
+    return d;
+  }
+
+  async addHoliday(admin: User, b: z.infer<typeof payoutHolidayCreateRequest>, meta: RequestMeta) {
+    const date = this.parseDate(b.date);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.payoutHoliday.create({ data: { date, name: b.name, createdById: admin.id } });
+        await this.audit(
+          tx,
+          admin,
+          'payout_holiday.added',
+          'payout_holiday',
+          b.date,
+          meta,
+          undefined,
+          {
+            date: b.date,
+            name: b.name,
+          },
+        );
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')
+        throw new ApiError('CONFLICT', 'payout_holiday.exists');
+      throw e;
+    }
+    return (await this.holidays()).find((h) => h.date === b.date)!;
+  }
+
+  async removeHoliday(admin: User, value: string, meta: RequestMeta) {
+    const date = this.parseDate(value);
+    await this.prisma.$transaction(async (tx) => {
+      const r = await tx.payoutHoliday.deleteMany({ where: { date } });
+      if (r.count === 0) throw new ApiError('NOT_FOUND', 'common.not_found');
+      await this.audit(
+        tx,
+        admin,
+        'payout_holiday.removed',
+        'payout_holiday',
+        value,
+        meta,
+        undefined,
+        {
+          date: value,
+        },
+      );
+    });
+    return { date: value };
   }
 
   // ---------------------------------------------------------------- commission (C-05)
@@ -204,6 +292,7 @@ export class FinancialPolicyService {
       take: 50,
     });
     const names = await this.userNames(rows.map((r) => r.createdById));
+    const now = Date.now();
     return {
       current: {
         rate_bps: current.bps,
@@ -211,6 +300,10 @@ export class FinancialPolicyService {
         source: current.policyId ? 'policy' : 'configuration',
       },
       can_manage: adminCapabilities(roles).includes('admin.commission.manage'),
+      notice_days: this.env.COMMISSION_NOTICE_DAYS,
+      earliest_effective_from: new Date(
+        now + this.env.COMMISSION_NOTICE_DAYS * 86_400_000,
+      ).toISOString(),
       history: rows.map((r) => ({
         id: r.id,
         version: r.version,
@@ -218,14 +311,18 @@ export class FinancialPolicyService {
         base: r.base,
         reason: r.reason,
         created_by: r.createdById ? (names.get(r.createdById) ?? '') : null,
+        effective_from: r.effectiveFrom.toISOString(),
+        scheduled: r.effectiveFrom.getTime() > now,
         created_at: r.createdAt.toISOString(),
       })),
     };
   }
 
   /**
-   * A new commission policy version applies to checkouts created from now on; existing orders keep
-   * the rate they were priced with. Needs a fresh TOTP code (step-up) and a stated reason.
+   * A new commission policy version applies to checkouts created from its effective date, which
+   * must give suppliers at least COMMISSION_NOTICE_DAYS (FD-05: 30 days) of notice; existing
+   * orders keep the rate they were priced with. Needs a fresh TOTP code (step-up) and a stated
+   * reason. Every active supplier workspace is notified in the app.
    */
   async setCommission(
     admin: User,
@@ -233,6 +330,13 @@ export class FinancialPolicyService {
     b: z.infer<typeof commissionPolicyCreateRequest>,
     meta: RequestMeta,
   ) {
+    const effectiveFrom = new Date(b.effective_from);
+    const earliest = Date.now() + this.env.COMMISSION_NOTICE_DAYS * 86_400_000;
+    // One minute of tolerance for the time between the form computing the date and submitting.
+    if (effectiveFrom.getTime() < earliest - 60_000)
+      throw new ApiError('VALIDATION_FAILED', 'commission.notice_too_short', {
+        effective_from: 'notice',
+      });
     if (!(await this.mfa.verifyTotp(admin.id, admin.mfaSecretEnc, b.totp_code))) {
       await this.audit(
         this.prisma,
@@ -259,13 +363,29 @@ export class FinancialPolicyService {
           rateBps: b.rate_bps,
           reason: b.reason,
           createdById: admin.id,
+          effectiveFrom,
         },
       });
+      const sellers = await tx.workspace.findMany({
+        where: { kind: 'SELLER' },
+        select: { id: true },
+      });
+      for (const w of sellers)
+        await notifyWorkspace(tx, w.id, ['OWNER', 'FINANCE'], 'commission.change_scheduled', {
+          rate: `${p.rateBps / 100}%`,
+          rate_bps: String(p.rateBps),
+          previous_rate_bps: String(before.bps),
+          effective_from: effectiveFrom.toISOString(),
+          // Dubai calendar date (UTC+4) for the notification text.
+          effective_date: toIsoDate(new Date(effectiveFrom.getTime() + 4 * 3_600_000)),
+        });
       await this.audit(tx, admin, 'commission.changed', 'commission_policy', p.id, meta, b.reason, {
         version: p.version,
         rate_bps: p.rateBps,
         previous_rate_bps: before.bps,
         previous_version: before.version,
+        effective_from: effectiveFrom.toISOString(),
+        suppliers_notified: sellers.length,
       });
     });
     return this.commission(roles);

@@ -5,6 +5,7 @@ import {
   expireExports,
   pingDatabase,
   processPendingPaymentEvents,
+  proposeWeeklyPayouts,
   autoCloseResolvedTickets,
   runSettlementSweep,
   submitApprovedSettlements,
@@ -36,6 +37,9 @@ import {
  * - settlement.submit: sends dual-approved refunds and payouts to the provider adapter
  *   (idempotency key per refund/payout, so a retry never pays twice).
  * - settlement.sweep: auto-completion and payout eligibility (C-01, C-03).
+ * - payouts.weekly_proposal: once the weekly run is due (Monday 10:00 Dubai by default, moved past
+ *   weekends and recorded holidays), proposes a payout per supplier with eligible orders. Finance
+ *   must confirm and a different approver approve each one; nothing is paid here (Q9).
  * - export.cleanup: deletes the bytes of report exports past their 24 h retention.
  * - support.auto_close: closes resolved tickets after 7 days without a customer response (C-16).
  * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
@@ -50,6 +54,7 @@ export const TASK = {
   checkoutExpiry: 'checkout.expiry',
   settlementSubmit: 'settlement.submit',
   settlementSweep: 'settlement.sweep',
+  payoutProposal: 'payouts.weekly_proposal',
   exportCleanup: 'export.cleanup',
   supportAutoClose: 'support.auto_close',
   sandboxWebhooks: 'sandbox.webhooks',
@@ -136,6 +141,19 @@ export function buildTasks(
       run: async () => {
         const res = await runSettlementSweep(prisma);
         if (res.auto_completed || res.recomputed) log.info(res, 'settlement sweep');
+        return res;
+      },
+    },
+    {
+      name: TASK.payoutProposal,
+      everySeconds: 300,
+      leaseSeconds: 300,
+      run: async () => {
+        const res = await proposeWeeklyPayouts(prisma, {
+          weekday: env.PAYOUT_WEEKDAY,
+          time: env.PAYOUT_TIME,
+        });
+        if (res.week_start) log.info(res, 'weekly payouts proposed');
         return res;
       },
     },

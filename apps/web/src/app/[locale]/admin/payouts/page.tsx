@@ -2,18 +2,29 @@
 import {
   PAYOUT_STATES,
   type PayoutEligibleSeller,
+  type PayoutHolidayItem,
   type PayoutItem,
   type PayoutRunSummary,
 } from '@app/contracts';
-import { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
 import { Money } from '@/components/catalog-ui';
 import { SandboxNotice } from '@/components/commerce-ui';
-import { DecisionButtons, SandboxComplete } from '@/components/finance-ops';
+import { DecisionButtons, ProposalButtons, SandboxComplete } from '@/components/finance-ops';
 import { StateBadge } from '@/components/fulfilment-ui';
 import { Resource } from '@/components/resource';
-import { Button, ConfirmDialog, DefinitionList, Empty, PageHeader, Pager } from '@/components/ui';
+import {
+  ApiErrorAlert,
+  Button,
+  ConfirmDialog,
+  DefinitionList,
+  Empty,
+  Field,
+  PageHeader,
+  Pager,
+  useFieldError,
+} from '@/components/ui';
 import { formatDubaiTime } from '@/i18n/messages';
 import { useCursor, useMutation, useResource } from '@/lib/use-resource';
 
@@ -54,6 +65,7 @@ function RequestPayout({ s, onDone }: { s: PayoutEligibleSeller; onDone: () => v
 /** Weekly payout run (C-04) and the balance approvals are checked against. */
 function PayoutRun() {
   const t = useT();
+  const { locale } = useApp();
   const res = useResource<PayoutRunSummary>('/admin/payouts/run');
   return (
     <section className="card" aria-labelledby="po-run">
@@ -70,6 +82,17 @@ function PayoutRun() {
                   t('payout.week', { date: r.week_start }),
                   t('payout.run_week', { start: r.week_start, end: r.week_end }),
                 ],
+                [t('payout.scheduled_for'), formatDubaiTime(r.scheduled_for, locale)],
+                [
+                  t('payout.proposal_status'),
+                  r.proposed_at
+                    ? t('payout.proposed_on', {
+                        count: String(r.proposed_count ?? 0),
+                        date: formatDubaiTime(r.proposed_at, locale),
+                      })
+                    : t('payout.not_proposed'),
+                ],
+                [t('payout.next_run'), formatDubaiTime(r.next_scheduled_for, locale)],
                 [t('payout.run_count'), String(r.payout_count)],
                 [t('payout.run_amount'), <Money key="a" fils={r.amount_fils} />],
                 [
@@ -86,6 +109,101 @@ function PayoutRun() {
           </div>
         )}
       </Resource>
+    </section>
+  );
+}
+
+/** UAE public holidays: a run due on one moves to the next working day (Q9). */
+function Holidays({ canManage, onChange }: { canManage: boolean; onChange: () => void }) {
+  const t = useT();
+  const res = useResource<PayoutHolidayItem[]>('/admin/payouts/holidays');
+  const m = useMutation();
+  const fe = useFieldError(m.error);
+  const [removing, setRemoving] = useState<PayoutHolidayItem | null>(null);
+  const del = useMutation();
+  async function add(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const r = await m.run('/admin/payouts/holidays', {
+      method: 'POST',
+      body: { date: String(fd.get('date') ?? ''), name: String(fd.get('name') ?? '') },
+    });
+    if (r.ok) {
+      form.reset();
+      res.reload();
+      onChange();
+    }
+  }
+  return (
+    <section className="card" aria-labelledby="po-hol">
+      <h2 id="po-hol" className="h3">
+        {t('payout.holidays')}
+      </h2>
+      <p className="muted small">{t('payout.holidays_note')}</p>
+      <Resource state={res.state} reload={res.reload} lines={2}>
+        {(items) =>
+          items.length === 0 ? (
+            <Empty>
+              <p>{t('payout.holidays_empty')}</p>
+            </Empty>
+          ) : (
+            <ul className="doc-list" data-testid="payout-holidays">
+              {items.map((h) => (
+                <li key={h.date}>
+                  <bdi>{h.date}</bdi> · {h.name}{' '}
+                  {canManage ? (
+                    <Button variant="link" onClick={() => setRemoving(h)}>
+                      {t('payout.holiday_remove')}
+                    </Button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </Resource>
+      {canManage ? (
+        <form onSubmit={add} noValidate className="inline-form" data-testid="holiday-form">
+          {m.error && Object.keys(m.error.fieldErrors).length === 0 ? (
+            <ApiErrorAlert error={m.error} />
+          ) : null}
+          <Field
+            label={t('payout.holiday_date')}
+            name="date"
+            type="date"
+            required
+            error={fe('date')}
+          />
+          <Field label={t('payout.holiday_name')} name="name" required error={fe('name')} />
+          <Button type="submit" variant="secondary" busy={m.busy}>
+            {t('payout.holiday_add')}
+          </Button>
+        </form>
+      ) : null}
+      <ConfirmDialog
+        open={removing !== null}
+        title={t('payout.holiday_remove_title', { date: removing?.date ?? '' })}
+        confirmLabel={t('payout.holiday_remove')}
+        danger
+        busy={del.busy}
+        error={del.error}
+        onClose={() => {
+          setRemoving(null);
+          del.setError(null);
+        }}
+        onConfirm={async () => {
+          if (!removing) return;
+          const r = await del.run(`/admin/payouts/holidays/${removing.date}`, {
+            method: 'DELETE',
+          });
+          if (r.ok) {
+            setRemoving(null);
+            res.reload();
+            onChange();
+          }
+        }}
+      />
     </section>
   );
 }
@@ -169,6 +287,7 @@ function Payouts() {
       <p className="muted">{t('payout.intro')}</p>
       <SandboxNotice />
       <PayoutRun key={version} />
+      <Holidays canManage={canRequest} onChange={() => setVersion((v) => v + 1)} />
       <Eligible canRequest={canRequest} onChange={changed} />
       <section className="card" aria-labelledby="po-list">
         <h2 id="po-list" className="h3">
@@ -242,7 +361,11 @@ function Payouts() {
                             <Money fils={p.amount_fils} />
                           </td>
                           <td>
-                            {p.requested_by}
+                            {p.requested_by ?? (
+                              <span className="muted small">
+                                {t('payout.proposed_by_schedule')}
+                              </span>
+                            )}
                             {p.approved_by ? (
                               <span className="muted small block">
                                 {t('refund.approved_by')}: {p.approved_by}
@@ -250,6 +373,9 @@ function Payouts() {
                             ) : null}
                           </td>
                           <td>
+                            {p.state === 'PROPOSED' && canRequest ? (
+                              <ProposalButtons id={p.id} number={p.number} onDone={changed} />
+                            ) : null}
                             {p.state === 'REQUESTED' && canApprove && !p.requested_by_me ? (
                               <DecisionButtons
                                 path={`/admin/payouts/${p.id}`}
