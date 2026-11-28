@@ -225,6 +225,27 @@ export class SettlementService {
           },
         });
       }
+      if (!approve && r.buyerCancellation) {
+        // FD-09: finance refused the buyer's cancellation; fulfilment continues.
+        await tx.order.updateMany({
+          where: { id: r.orderId, buyerCancelState: 'REFUND_REVIEW' },
+          data: {
+            buyerCancelState: 'DECLINED',
+            buyerCancelDecidedAt: new Date(),
+            buyerCancelDecisionReason: b.reason,
+            version: { increment: 1 },
+          },
+        });
+        await tx.orderEvent.create({
+          data: {
+            orderId: r.orderId,
+            kind: 'order.buyer_cancel_rejected',
+            actorSide: 'ADMIN',
+            actorId: admin.id,
+            reason: b.reason,
+          },
+        });
+      }
       if (!approve) await recomputeSettlement(tx, r.orderId);
       await this.audit(
         tx,

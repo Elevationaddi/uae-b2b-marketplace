@@ -355,6 +355,11 @@ export const NOTIFICATION_TYPES = [
   /** Phase 8: completed automatically after the dispute window (C-03). */
   'order.auto_completed',
   'order.supplier_cancelled',
+  /** FD-09 buyer cancellation requests. */
+  'order.buyer_cancel_requested',
+  'order.buyer_cancel_review',
+  'order.cancel_declined',
+  'order.cancel_refund_review',
   'order.refunded',
   'dispute.opened',
   'dispute.updated',

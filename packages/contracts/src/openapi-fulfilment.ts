@@ -95,6 +95,12 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
     binary: true,
     capability: memberS,
   }),
+  seller(
+    'post',
+    '/orders/{id}/buyer-cancel/decision',
+    "Accept or decline the buyer's cancellation of custom goods (accepting requests a full refund for finance approval)",
+    { body: f.buyerCancelDecisionRequest, response: orderDetail, capability: ship },
+  ),
   seller('post', '/orders/{id}/disputes', 'Open a dispute on the order', {
     body: f.disputeOpenRequest,
     response: f.disputeDetail,
@@ -131,6 +137,12 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
     response: orderDetail,
     capability: buyerAct,
   }),
+  buyer(
+    'post',
+    '/orders/{id}/cancel-request',
+    'Ask to cancel a paid order before dispatch (ready stock: refund review; custom goods: supplier review)',
+    { body: f.buyerCancelRequest, response: orderDetail, capability: buyerAct },
+  ),
   buyer('post', '/orders/{id}/review', 'Rate the supplier once the order is completed', {
     body: f.reviewCreateRequest,
     response: orderDetail,

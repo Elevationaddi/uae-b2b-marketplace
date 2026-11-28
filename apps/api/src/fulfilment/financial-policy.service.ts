@@ -17,7 +17,6 @@ import type { AppEnv } from '@app/config';
 import {
   activeCommission,
   dubaiWeekStart,
-  notifyWorkspace,
   payoutSchedule,
   Prisma,
   providerAvailableFils,
@@ -366,26 +365,42 @@ export class FinancialPolicyService {
           effectiveFrom,
         },
       });
-      const sellers = await tx.workspace.findMany({
-        where: { kind: 'SELLER' },
-        select: { id: true },
+      // One query and one insert for every supplier's owners and finance users, so the notice
+      // stays fast inside the transaction however many suppliers exist.
+      const members = await tx.membership.findMany({
+        where: {
+          status: 'ACTIVE',
+          role: { in: ['OWNER', 'FINANCE'] },
+          user: { status: 'ACTIVE' },
+          workspace: { kind: 'SELLER' },
+        },
+        select: { userId: true, workspaceId: true },
       });
-      for (const w of sellers)
-        await notifyWorkspace(tx, w.id, ['OWNER', 'FINANCE'], 'commission.change_scheduled', {
-          rate: `${p.rateBps / 100}%`,
-          rate_bps: String(p.rateBps),
-          previous_rate_bps: String(before.bps),
-          effective_from: effectiveFrom.toISOString(),
-          // Dubai calendar date (UTC+4) for the notification text.
-          effective_date: toIsoDate(new Date(effectiveFrom.getTime() + 4 * 3_600_000)),
+      const payload = {
+        rate: `${p.rateBps / 100}%`,
+        rate_bps: String(p.rateBps),
+        previous_rate_bps: String(before.bps),
+        effective_from: effectiveFrom.toISOString(),
+        // Dubai calendar date (UTC+4) for the notification text.
+        effective_date: toIsoDate(new Date(effectiveFrom.getTime() + 4 * 3_600_000)),
+      };
+      const recipients = [...new Set(members.map((m) => m.userId))];
+      if (recipients.length)
+        await tx.notification.createMany({
+          data: recipients.map((userId) => ({
+            userId,
+            type: 'commission.change_scheduled',
+            payload,
+          })),
         });
+      const sellers = new Set(members.map((m) => m.workspaceId));
       await this.audit(tx, admin, 'commission.changed', 'commission_policy', p.id, meta, b.reason, {
         version: p.version,
         rate_bps: p.rateBps,
         previous_rate_bps: before.bps,
         previous_version: before.version,
         effective_from: effectiveFrom.toISOString(),
-        suppliers_notified: sellers.length,
+        suppliers_notified: sellers.size,
       });
     });
     return this.commission(roles);

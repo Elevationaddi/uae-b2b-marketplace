@@ -6,6 +6,8 @@ import type {
   shipmentDeliverRequest,
   shipmentDispatchRequest,
   sellerCancelRequest,
+  buyerCancelRequest,
+  buyerCancelDecisionRequest,
 } from '@app/contracts';
 import type { AppEnv } from '@app/config';
 import {
@@ -46,6 +48,30 @@ export async function workspaceUsers(tx: Tx, workspaceId: string, roles: readonl
     select: { userId: true },
   });
   return [...new Set(m.map((x) => x.userId))];
+}
+
+/** A supplier or buyer cancellation is awaiting a decision; fulfilment waits (C-07, FD-09). */
+export function cancellationPending(o: {
+  sellerCancelRequestedAt: Date | null;
+  buyerCancelState: string | null;
+}) {
+  return (
+    !!o.sellerCancelRequestedAt ||
+    o.buyerCancelState === 'SUPPLIER_REVIEW' ||
+    o.buyerCancelState === 'REFUND_REVIEW'
+  );
+}
+
+/**
+ * FD-09: custom or made-to-order goods. Catalogue checkout only sells ready stock (made-to-order
+ * products are quoted through RFQs), so an order is custom exactly when it came from a quote.
+ */
+export async function isCustomOrder(tx: Tx, o: { checkoutId: string }) {
+  const checkout = await tx.checkout.findUniqueOrThrow({
+    where: { id: o.checkoutId },
+    select: { source: true },
+  });
+  return checkout.source === 'QUOTE';
 }
 
 /** Lock an order row and load it within the caller's scope; anything else is 404. */
@@ -121,7 +147,12 @@ export class FulfilmentService {
   private async tellBuyer(
     tx: Tx,
     o: { id: string; number: string; buyerWorkspaceId: string },
-    type: 'order.dispatched' | 'order.delivered' | 'order.supplier_cancelled',
+    type:
+      | 'order.dispatched'
+      | 'order.delivered'
+      | 'order.supplier_cancelled'
+      | 'order.cancel_declined'
+      | 'order.cancel_refund_review',
   ) {
     await notify(
       tx,
@@ -143,7 +174,7 @@ export class FulfilmentService {
       const o = await lockScopedOrder(tx, id, { sellerWorkspaceId: ctx.workspace.id });
       if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
       if (o.state !== 'CONFIRMED') throw new ApiError('CONFLICT', 'order.invalid_transition');
-      if (o.sellerCancelRequestedAt) throw new ApiError('CONFLICT', 'order.cancellation_pending');
+      if (cancellationPending(o)) throw new ApiError('CONFLICT', 'order.cancellation_pending');
       await tx.order.update({
         where: { id: o.id },
         data: { state: 'PROCESSING', processingAt: new Date(), version: { increment: 1 } },
@@ -183,7 +214,7 @@ export class FulfilmentService {
       if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
       if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
         throw new ApiError('CONFLICT', 'order.invalid_transition');
-      if (o.sellerCancelRequestedAt) throw new ApiError('CONFLICT', 'order.cancellation_pending');
+      if (cancellationPending(o)) throw new ApiError('CONFLICT', 'order.cancellation_pending');
       // FD-08: a collection order is handed over at the supplier's premises; no carrier needed.
       const carrier =
         body.carrier ?? (o.deliveryMethod === 'COLLECTION' ? 'Buyer collection' : null);
@@ -233,6 +264,56 @@ export class FulfilmentService {
   }
 
   /**
+   * Request a full refund of what is left on a paid, undispatched order (C-07, FD-09). Finance
+   * approves it; the requester can never approve their own refund.
+   */
+  private async requestFullRefund(
+    tx: Tx,
+    o: Awaited<ReturnType<typeof lockScopedOrder>>,
+    requestedById: string,
+    reason: string,
+    by: 'seller' | 'buyer',
+  ) {
+    if (o.settlementState === 'IN_PAYOUT' || o.settlementState === 'PAID_OUT')
+      throw new ApiError('CONFLICT', 'refund.order_settled');
+    const payment = await tx.payment.findFirst({
+      where: { checkoutId: o.checkoutId, state: { in: ['CAPTURED', 'PARTIALLY_REFUNDED'] } },
+    });
+    if (!payment) throw new ApiError('CONFLICT', 'refund.no_capture');
+    const prior = await tx.refund.findMany({
+      where: {
+        orderId: o.id,
+        state: { in: ['REQUESTED', 'APPROVED', 'SUBMITTED', 'SUCCEEDED'] },
+      },
+    });
+    const amount = o.totalFils - prior.reduce((sum, r) => sum + r.amountFils, 0n);
+    const parts = allocateRefund(o, prior, amount);
+    if (typeof parts === 'string') throw new ApiError('CONFLICT', parts);
+    const refund = await tx.refund.create({
+      data: {
+        number: await nextCaseNumber(tx, 'refund'),
+        orderId: o.id,
+        paymentId: payment.id,
+        amountFils: amount,
+        merchandiseFils: parts.merchandise,
+        shippingFils: parts.shipping,
+        taxFils: parts.tax,
+        commissionFils: merchandiseCommissionShare(
+          o,
+          prior.reduce((sum, r) => sum + refundParts(o, r).merchandise, 0n),
+          parts.merchandise,
+          prior.reduce((sum, r) => sum + r.commissionFils, 0n),
+        ),
+        reason,
+        requestedById,
+        sellerCancellation: by === 'seller',
+        buyerCancellation: by === 'buyer',
+      },
+    });
+    return { refund, amount };
+  }
+
+  /**
    * C-07: the supplier cancels an unfulfilled (paid, not dispatched) order. This requests a full
    * refund of what is left, which finance must approve (the supplier is the requester, so a second
    * person always decides). Fulfilment stops; the order is cancelled when the refund succeeds, and
@@ -251,42 +332,14 @@ export class FulfilmentService {
       if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
       if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
         throw new ApiError('CONFLICT', 'order.invalid_transition');
-      if (o.sellerCancelRequestedAt) throw new ApiError('CONFLICT', 'order.cancellation_pending');
-      if (o.settlementState === 'IN_PAYOUT' || o.settlementState === 'PAID_OUT')
-        throw new ApiError('CONFLICT', 'refund.order_settled');
-      const payment = await tx.payment.findFirst({
-        where: { checkoutId: o.checkoutId, state: { in: ['CAPTURED', 'PARTIALLY_REFUNDED'] } },
-      });
-      if (!payment) throw new ApiError('CONFLICT', 'refund.no_capture');
-      const prior = await tx.refund.findMany({
-        where: {
-          orderId: o.id,
-          state: { in: ['REQUESTED', 'APPROVED', 'SUBMITTED', 'SUCCEEDED'] },
-        },
-      });
-      const amount = o.totalFils - prior.reduce((sum, r) => sum + r.amountFils, 0n);
-      const parts = allocateRefund(o, prior, amount);
-      if (typeof parts === 'string') throw new ApiError('CONFLICT', parts);
-      const refund = await tx.refund.create({
-        data: {
-          number: await nextCaseNumber(tx, 'refund'),
-          orderId: o.id,
-          paymentId: payment.id,
-          amountFils: amount,
-          merchandiseFils: parts.merchandise,
-          shippingFils: parts.shipping,
-          taxFils: parts.tax,
-          commissionFils: merchandiseCommissionShare(
-            o,
-            prior.reduce((sum, r) => sum + refundParts(o, r).merchandise, 0n),
-            parts.merchandise,
-            prior.reduce((sum, r) => sum + r.commissionFils, 0n),
-          ),
-          reason: `Supplier cancellation: ${body.reason}`,
-          requestedById: user.id,
-          sellerCancellation: true,
-        },
-      });
+      if (cancellationPending(o)) throw new ApiError('CONFLICT', 'order.cancellation_pending');
+      const { refund, amount } = await this.requestFullRefund(
+        tx,
+        o,
+        user.id,
+        `Supplier cancellation: ${body.reason}`,
+        'seller',
+      );
       await tx.order.update({
         where: { id: o.id },
         data: {
@@ -404,7 +457,140 @@ export class FulfilmentService {
     return out;
   }
 
+  /**
+   * FD-09: the supplier accepts or declines a buyer's cancellation of custom or made-to-order
+   * goods. Accepting only requests the full refund; finance still approves it, so nothing is
+   * refunded automatically. Declining lets fulfilment continue.
+   */
+  async decideBuyerCancel(
+    user: User,
+    ws: string,
+    id: string,
+    body: z.infer<typeof buyerCancelDecisionRequest>,
+    meta: RequestMeta,
+  ) {
+    const ctx = await this.seller(user, ws);
+    await this.prisma.$transaction(async (tx) => {
+      const o = await lockScopedOrder(tx, id, { sellerWorkspaceId: ctx.workspace.id });
+      if (o.buyerCancelState !== 'SUPPLIER_REVIEW')
+        throw new ApiError('CONFLICT', 'order.invalid_transition');
+      if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
+        throw new ApiError('CONFLICT', 'order.invalid_transition');
+      const now = new Date();
+      if (body.accept) {
+        const { refund, amount } = await this.requestFullRefund(
+          tx,
+          o,
+          user.id,
+          `Buyer cancellation accepted by the supplier: ${o.buyerCancelReason ?? ''}`.trim(),
+          'buyer',
+        );
+        await tx.order.update({
+          where: { id: o.id },
+          data: {
+            buyerCancelState: 'REFUND_REVIEW',
+            buyerCancelDecidedAt: now,
+            buyerCancelDecisionReason: body.reason ?? null,
+            version: { increment: 1 },
+          },
+        });
+        await recomputeSettlement(tx, o.id);
+        await this.event(tx, o.id, 'order.buyer_cancel_accepted', 'SELLER', user.id, body.reason);
+        await this.audit(tx, ctx, user, 'order.buyer_cancel_accepted', o.id, meta, {
+          refund_id: refund.id,
+          amount_fils: amount.toString(),
+        });
+        await this.tellBuyer(tx, o, 'order.cancel_refund_review');
+      } else {
+        await tx.order.update({
+          where: { id: o.id },
+          data: {
+            buyerCancelState: 'DECLINED',
+            buyerCancelDecidedAt: now,
+            buyerCancelDecisionReason: body.reason ?? null,
+            version: { increment: 1 },
+          },
+        });
+        await this.event(tx, o.id, 'order.buyer_cancel_declined', 'SELLER', user.id, body.reason);
+        await this.audit(tx, ctx, user, 'order.buyer_cancel_declined', o.id, meta);
+        await this.tellBuyer(tx, o, 'order.cancel_declined');
+      }
+    });
+  }
+
   // ---------------------------------------------------------------- buyer
+
+  /**
+   * FD-09: the buyer asks to cancel a paid order before dispatch. Ready-stock orders go straight to
+   * refund review (a full refund that finance approves). Custom or made-to-order goods (quote
+   * orders) go to the supplier first and are never refunded
+   * automatically. One request per order.
+   */
+  async requestCancel(
+    user: User,
+    ws: string,
+    id: string,
+    body: z.infer<typeof buyerCancelRequest>,
+    meta: RequestMeta,
+  ) {
+    const ctx = await this.buyer(user, ws);
+    await this.prisma.$transaction(async (tx) => {
+      const o = await lockScopedOrder(tx, id, { buyerWorkspaceId: ctx.workspace.id });
+      if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
+      if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
+        throw new ApiError('CONFLICT', 'order.cancel_after_dispatch');
+      if (cancellationPending(o)) throw new ApiError('CONFLICT', 'order.cancellation_pending');
+      if (o.buyerCancelState) throw new ApiError('CONFLICT', 'order.cancel_already_requested');
+      const custom = await isCustomOrder(tx, o);
+      const now = new Date();
+      const base = {
+        buyerCancelRequestedAt: now,
+        buyerCancelRequestedById: user.id,
+        buyerCancelReason: body.reason,
+        buyerCancelCustom: custom,
+        version: { increment: 1 },
+      };
+      if (custom) {
+        await tx.order.update({
+          where: { id: o.id },
+          data: { ...base, buyerCancelState: 'SUPPLIER_REVIEW' },
+        });
+        await this.event(tx, o.id, 'order.buyer_cancel_requested', 'BUYER', user.id, body.reason);
+        await this.audit(tx, ctx, user, 'order.buyer_cancel_requested', o.id, meta, {
+          custom: true,
+        });
+      } else {
+        const { refund, amount } = await this.requestFullRefund(
+          tx,
+          o,
+          user.id,
+          `Buyer cancellation: ${body.reason}`,
+          'buyer',
+        );
+        await tx.order.update({
+          where: { id: o.id },
+          data: { ...base, buyerCancelState: 'REFUND_REVIEW' },
+        });
+        await recomputeSettlement(tx, o.id);
+        await this.event(tx, o.id, 'order.buyer_cancel_requested', 'BUYER', user.id, body.reason);
+        await this.audit(tx, ctx, user, 'order.buyer_cancel_requested', o.id, meta, {
+          custom: false,
+          refund_id: refund.id,
+          amount_fils: amount.toString(),
+        });
+      }
+      await notify(
+        tx,
+        await workspaceUsers(tx, o.sellerWorkspaceId, SELLER_NOTIFY),
+        custom ? 'order.buyer_cancel_review' : 'order.buyer_cancel_requested',
+        { order_id: o.id, order_number: o.number },
+        {
+          path: `/app/seller/${o.sellerWorkspaceId}/orders/${o.id}`,
+          webOrigin: this.env.WEB_ORIGIN,
+        },
+      );
+    });
+  }
 
   /** Buyer receipt (T25/T26): only a buyer member can complete; the seller never can. */
   async confirmReceipt(user: User, ws: string, id: string, meta: RequestMeta) {

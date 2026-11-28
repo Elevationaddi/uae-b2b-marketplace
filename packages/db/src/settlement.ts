@@ -301,12 +301,20 @@ async function processRefund(tx: TxClient, ev: PaymentEvent, failureCode: string
   const fullyRefunded = refundedFils >= order.totalFils;
   const cancel = fullyRefunded && (order.state === 'CONFIRMED' || order.state === 'PROCESSING');
   // C-07: a supplier-requested cancellation is recorded as such.
-  const cancelReason = order.sellerCancelRequestedAt ? 'cancelled_by_supplier' : 'refunded_in_full';
+  // FD-09: an approved buyer cancellation is recorded as such.
+  const cancelReason = order.sellerCancelRequestedAt
+    ? 'cancelled_by_supplier'
+    : order.buyerCancelState === 'REFUND_REVIEW'
+      ? 'cancelled_by_buyer'
+      : 'refunded_in_full';
   await tx.order.update({
     where: { id: order.id },
     data: {
       refundedFils,
       ...(cancel ? { state: 'CANCELLED', cancelledAt: now, cancelReason } : {}),
+      ...(cancel && order.buyerCancelState === 'REFUND_REVIEW'
+        ? { buyerCancelState: 'REFUNDED' }
+        : {}),
       version: { increment: 1 },
     },
   });

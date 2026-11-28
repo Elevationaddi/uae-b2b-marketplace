@@ -40,6 +40,8 @@ import {
   shipmentDeliverRequest,
   shipmentDispatchRequest,
   sellerCancelRequest,
+  buyerCancelRequest,
+  buyerCancelDecisionRequest,
   uuid,
 } from '@app/contracts';
 import type { Request, Response } from 'express';
@@ -177,6 +179,26 @@ export class SellerFulfilmentController {
     return sendFile(res, await this.fulfilment.proof(a.user, 'seller', ws, id, requestMeta(req)));
   }
 
+  /** FD-09: accept or decline a buyer's cancellation of custom goods. */
+  @Post('orders/:id/buyer-cancel/decision')
+  @HttpCode(200)
+  async decideBuyerCancel(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    await this.fulfilment.decideBuyerCancel(
+      a.user,
+      ws,
+      id,
+      parse(buyerCancelDecisionRequest, b),
+      requestMeta(req),
+    );
+    return ok(await this.orders.sellerDetail(a.user, ws, id));
+  }
+
   @Get('orders/:id/dispatch-proof')
   async dispatchProof(
     @Auth() a: AuthContext,
@@ -286,6 +308,26 @@ export class BuyerFulfilmentController {
     @Req() req: Request,
   ) {
     await this.fulfilment.confirmReceipt(a.user, ws, id, requestMeta(req));
+    return ok(await this.orders.buyerDetail(a.user, ws, id));
+  }
+
+  /** FD-09: ask to cancel a paid order before dispatch. */
+  @Post('orders/:id/cancel-request')
+  @HttpCode(200)
+  async requestCancel(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    await this.fulfilment.requestCancel(
+      a.user,
+      ws,
+      id,
+      parse(buyerCancelRequest, b),
+      requestMeta(req),
+    );
     return ok(await this.orders.buyerDetail(a.user, ws, id));
   }
 
