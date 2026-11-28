@@ -117735,6 +117735,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -117953,6 +118001,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -117962,11 +118016,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -119692,6 +119749,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -119910,6 +120015,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -119919,11 +120030,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -122676,6 +122790,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -122894,6 +123056,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -122903,11 +123071,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -125371,6 +125542,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -125589,6 +125808,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -125598,11 +125823,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -126358,6 +126586,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -126576,6 +126852,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -126585,11 +126867,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -127373,6 +127658,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -127591,6 +127924,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -127600,11 +127939,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -128380,6 +128722,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -128598,6 +128988,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -128607,11 +129003,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -129089,6 +129488,1072 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/seller/workspaces/{ws}/orders/{id}/buyer-cancel/decision": {
+      "post": {
+        "summary": "Accept or decline the buyer's cancellation of custom goods (accepting requests a full refund for finance approval)",
+        "description": "Requires: seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted).",
+        "tags": [
+          "Seller fulfilment and disputes"
+        ],
+        "security": [
+          {
+            "companySession": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "ws",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "accept": {
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "accept"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "number": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "AWAITING_PAYMENT",
+                            "CONFIRMED",
+                            "PROCESSING",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "COMPLETED",
+                            "CANCELLED"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "CART",
+                            "QUOTE"
+                          ]
+                        },
+                        "checkout_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "checkout_number": {
+                          "type": "string"
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "workspace_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "company_name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "workspace_id",
+                            "company_name"
+                          ]
+                        },
+                        "seller": {
+                          "type": "object",
+                          "properties": {
+                            "workspace_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "company_name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "workspace_id",
+                            "company_name"
+                          ]
+                        },
+                        "total_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "line_count": {
+                          "type": "integer"
+                        },
+                        "pay_by": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "position": {
+                                "type": "integer"
+                              },
+                              "sku_id": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "uuid"
+                              },
+                              "product_id": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "uuid"
+                              },
+                              "quote_version_id": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "uuid"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "sku_code": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "variant_attributes": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "PIECE",
+                                  "CARTON",
+                                  "BOX",
+                                  "PACK",
+                                  "SET",
+                                  "PAIR",
+                                  "ROLL",
+                                  "DOZEN"
+                                ]
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "unit_price_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "line_total_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "position",
+                              "sku_id",
+                              "product_id",
+                              "quote_version_id",
+                              "title",
+                              "sku_code",
+                              "variant_attributes",
+                              "unit",
+                              "quantity",
+                              "unit_price_fils",
+                              "line_total_fils"
+                            ]
+                          }
+                        },
+                        "merchandise_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_bps": {
+                          "type": "integer"
+                        },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
+                        "return_policy": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "en",
+                            "ar"
+                          ]
+                        },
+                        "seller_cancel": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "requested_at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "requested_at",
+                            "reason"
+                          ]
+                        },
+                        "commission_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "seller_payable_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "address": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "recipient": {
+                              "type": "string"
+                            },
+                            "phone": {
+                              "type": "string"
+                            },
+                            "line1": {
+                              "type": "string"
+                            },
+                            "line2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "city": {
+                              "type": "string"
+                            },
+                            "emirate": {
+                              "type": "string",
+                              "enum": [
+                                "ABU_DHABI",
+                                "DUBAI",
+                                "SHARJAH",
+                                "AJMAN",
+                                "UMM_AL_QUWAIN",
+                                "RAS_AL_KHAIMAH",
+                                "FUJAIRAH"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "recipient",
+                            "phone",
+                            "line1",
+                            "line2",
+                            "city",
+                            "emirate"
+                          ]
+                        },
+                        "po_reference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "rfq_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "checkout_state": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING_PAYMENT",
+                            "PAID",
+                            "EXPIRED",
+                            "CANCELLED",
+                            "RECONCILIATION_REQUIRED"
+                          ]
+                        },
+                        "cancel_reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "kind": {
+                                "type": "string"
+                              },
+                              "actor_side": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "actor_side",
+                              "reason",
+                              "created_at"
+                            ]
+                          }
+                        },
+                        "fulfilment": {
+                          "type": "object",
+                          "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
+                            "shipment": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "DISPATCHED",
+                                    "DELIVERED"
+                                  ]
+                                },
+                                "carrier": {
+                                  "type": "string"
+                                },
+                                "tracking_code": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "expected_delivery_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "dispatched_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "delivered_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "delivery_note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "has_proof": {
+                                  "type": "boolean"
+                                },
+                                "items": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "order_line_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "quantity": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "order_line_id",
+                                      "quantity"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "state",
+                                "carrier",
+                                "tracking_code",
+                                "expected_delivery_date",
+                                "dispatched_at",
+                                "delivered_at",
+                                "delivery_note",
+                                "has_proof",
+                                "items"
+                              ]
+                            },
+                            "settlement_state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "NOT_ELIGIBLE",
+                                "ELIGIBLE",
+                                "HELD",
+                                "IN_PAYOUT",
+                                "PAID_OUT",
+                                null
+                              ]
+                            },
+                            "refunded_fils": {
+                              "type": "string",
+                              "pattern": "^\\d{1,15}$"
+                            },
+                            "completed_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "dispute": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "number": {
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "OPEN",
+                                    "UNDER_REVIEW",
+                                    "AWAITING_EVIDENCE",
+                                    "RESOLUTION_PROPOSED",
+                                    "RESOLVING",
+                                    "CLOSED"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "number",
+                                "state"
+                              ]
+                            },
+                            "review": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "rating": {
+                                  "type": "integer"
+                                },
+                                "comment": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PUBLISHED",
+                                    "HIDDEN"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "rating",
+                                "comment",
+                                "state"
+                              ]
+                            },
+                            "actions": {
+                              "type": "object",
+                              "properties": {
+                                "can_process": {
+                                  "type": "boolean"
+                                },
+                                "can_dispatch": {
+                                  "type": "boolean"
+                                },
+                                "can_deliver": {
+                                  "type": "boolean"
+                                },
+                                "can_confirm_receipt": {
+                                  "type": "boolean"
+                                },
+                                "can_dispute": {
+                                  "type": "boolean"
+                                },
+                                "can_review": {
+                                  "type": "boolean"
+                                },
+                                "can_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "can_process",
+                                "can_dispatch",
+                                "can_deliver",
+                                "can_confirm_receipt",
+                                "can_dispute",
+                                "can_review",
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "buyer_cancel",
+                            "shipment",
+                            "settlement_state",
+                            "refunded_fils",
+                            "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
+                            "dispute",
+                            "review",
+                            "actions"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "number",
+                        "state",
+                        "source",
+                        "checkout_id",
+                        "checkout_number",
+                        "buyer",
+                        "seller",
+                        "total_fils",
+                        "line_count",
+                        "pay_by",
+                        "created_at",
+                        "confirmed_at",
+                        "lines",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
+                        "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
+                        "return_policy",
+                        "seller_cancel",
+                        "commission_fils",
+                        "seller_payable_fils",
+                        "address",
+                        "po_reference",
+                        "rfq_id",
+                        "checkout_state",
+                        "cancel_reason",
+                        "events",
+                        "fulfilment"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
                 }
               }
             }
@@ -132868,6 +134333,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -133086,6 +134599,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -133095,11 +134614,1078 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
+                            "shipment",
+                            "settlement_state",
+                            "refunded_fils",
+                            "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
+                            "dispute",
+                            "review",
+                            "actions"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "number",
+                        "state",
+                        "source",
+                        "checkout_id",
+                        "checkout_number",
+                        "buyer",
+                        "seller",
+                        "total_fils",
+                        "line_count",
+                        "pay_by",
+                        "created_at",
+                        "confirmed_at",
+                        "lines",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
+                        "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
+                        "return_policy",
+                        "seller_cancel",
+                        "commission_fils",
+                        "seller_payable_fils",
+                        "address",
+                        "po_reference",
+                        "rfq_id",
+                        "checkout_state",
+                        "cancel_reason",
+                        "events",
+                        "fulfilment"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/buyer/workspaces/{ws}/orders/{id}/cancel-request": {
+      "post": {
+        "summary": "Ask to cancel a paid order before dispatch (ready stock: refund review; custom goods: supplier review)",
+        "description": "Requires: buyer.orders.act (OWNER, PROCUREMENT).",
+        "tags": [
+          "Buyer fulfilment and disputes"
+        ],
+        "security": [
+          {
+            "companySession": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "ws",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "number": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "AWAITING_PAYMENT",
+                            "CONFIRMED",
+                            "PROCESSING",
+                            "DISPATCHED",
+                            "DELIVERED",
+                            "COMPLETED",
+                            "CANCELLED"
+                          ]
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": [
+                            "CART",
+                            "QUOTE"
+                          ]
+                        },
+                        "checkout_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "checkout_number": {
+                          "type": "string"
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "workspace_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "company_name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "workspace_id",
+                            "company_name"
+                          ]
+                        },
+                        "seller": {
+                          "type": "object",
+                          "properties": {
+                            "workspace_id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "company_name": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "workspace_id",
+                            "company_name"
+                          ]
+                        },
+                        "total_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "line_count": {
+                          "type": "integer"
+                        },
+                        "pay_by": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "position": {
+                                "type": "integer"
+                              },
+                              "sku_id": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "uuid"
+                              },
+                              "product_id": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "uuid"
+                              },
+                              "quote_version_id": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "uuid"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "sku_code": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "variant_attributes": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              },
+                              "unit": {
+                                "type": "string",
+                                "enum": [
+                                  "PIECE",
+                                  "CARTON",
+                                  "BOX",
+                                  "PACK",
+                                  "SET",
+                                  "PAIR",
+                                  "ROLL",
+                                  "DOZEN"
+                                ]
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "unit_price_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "line_total_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "position",
+                              "sku_id",
+                              "product_id",
+                              "quote_version_id",
+                              "title",
+                              "sku_code",
+                              "variant_attributes",
+                              "unit",
+                              "quantity",
+                              "unit_price_fils",
+                              "line_total_fils"
+                            ]
+                          }
+                        },
+                        "merchandise_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_bps": {
+                          "type": "integer"
+                        },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
+                        "return_policy": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "en",
+                            "ar"
+                          ]
+                        },
+                        "seller_cancel": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "requested_at": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "requested_at",
+                            "reason"
+                          ]
+                        },
+                        "commission_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "seller_payable_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "address": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "label": {
+                              "type": "string"
+                            },
+                            "recipient": {
+                              "type": "string"
+                            },
+                            "phone": {
+                              "type": "string"
+                            },
+                            "line1": {
+                              "type": "string"
+                            },
+                            "line2": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "city": {
+                              "type": "string"
+                            },
+                            "emirate": {
+                              "type": "string",
+                              "enum": [
+                                "ABU_DHABI",
+                                "DUBAI",
+                                "SHARJAH",
+                                "AJMAN",
+                                "UMM_AL_QUWAIN",
+                                "RAS_AL_KHAIMAH",
+                                "FUJAIRAH"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "label",
+                            "recipient",
+                            "phone",
+                            "line1",
+                            "line2",
+                            "city",
+                            "emirate"
+                          ]
+                        },
+                        "po_reference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "rfq_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "checkout_state": {
+                          "type": "string",
+                          "enum": [
+                            "PENDING_PAYMENT",
+                            "PAID",
+                            "EXPIRED",
+                            "CANCELLED",
+                            "RECONCILIATION_REQUIRED"
+                          ]
+                        },
+                        "cancel_reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "events": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "kind": {
+                                "type": "string"
+                              },
+                              "actor_side": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "actor_side",
+                              "reason",
+                              "created_at"
+                            ]
+                          }
+                        },
+                        "fulfilment": {
+                          "type": "object",
+                          "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
+                            "shipment": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "DISPATCHED",
+                                    "DELIVERED"
+                                  ]
+                                },
+                                "carrier": {
+                                  "type": "string"
+                                },
+                                "tracking_code": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "expected_delivery_date": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "dispatched_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "delivered_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "delivery_note": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "has_proof": {
+                                  "type": "boolean"
+                                },
+                                "items": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "order_line_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "quantity": {
+                                        "type": "integer"
+                                      }
+                                    },
+                                    "required": [
+                                      "order_line_id",
+                                      "quantity"
+                                    ]
+                                  }
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "state",
+                                "carrier",
+                                "tracking_code",
+                                "expected_delivery_date",
+                                "dispatched_at",
+                                "delivered_at",
+                                "delivery_note",
+                                "has_proof",
+                                "items"
+                              ]
+                            },
+                            "settlement_state": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "NOT_ELIGIBLE",
+                                "ELIGIBLE",
+                                "HELD",
+                                "IN_PAYOUT",
+                                "PAID_OUT",
+                                null
+                              ]
+                            },
+                            "refunded_fils": {
+                              "type": "string",
+                              "pattern": "^\\d{1,15}$"
+                            },
+                            "completed_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "dispute": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "number": {
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "OPEN",
+                                    "UNDER_REVIEW",
+                                    "AWAITING_EVIDENCE",
+                                    "RESOLUTION_PROPOSED",
+                                    "RESOLVING",
+                                    "CLOSED"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "number",
+                                "state"
+                              ]
+                            },
+                            "review": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "rating": {
+                                  "type": "integer"
+                                },
+                                "comment": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "PUBLISHED",
+                                    "HIDDEN"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "rating",
+                                "comment",
+                                "state"
+                              ]
+                            },
+                            "actions": {
+                              "type": "object",
+                              "properties": {
+                                "can_process": {
+                                  "type": "boolean"
+                                },
+                                "can_dispatch": {
+                                  "type": "boolean"
+                                },
+                                "can_deliver": {
+                                  "type": "boolean"
+                                },
+                                "can_confirm_receipt": {
+                                  "type": "boolean"
+                                },
+                                "can_dispute": {
+                                  "type": "boolean"
+                                },
+                                "can_review": {
+                                  "type": "boolean"
+                                },
+                                "can_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
+                                }
+                              },
+                              "required": [
+                                "can_process",
+                                "can_dispatch",
+                                "can_deliver",
+                                "can_confirm_receipt",
+                                "can_dispute",
+                                "can_review",
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",
@@ -133879,6 +136465,54 @@
                         "fulfilment": {
                           "type": "object",
                           "properties": {
+                            "buyer_cancel": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "SUPPLIER_REVIEW",
+                                    "REFUND_REVIEW",
+                                    "DECLINED",
+                                    "REFUNDED"
+                                  ]
+                                },
+                                "requested_at": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "reason": {
+                                  "type": "string"
+                                },
+                                "custom": {
+                                  "type": "boolean"
+                                },
+                                "decided_at": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "decision_reason": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "state",
+                                "requested_at",
+                                "reason",
+                                "custom",
+                                "decided_at",
+                                "decision_reason"
+                              ]
+                            },
                             "shipment": {
                               "type": [
                                 "object",
@@ -134097,6 +136731,12 @@
                                 },
                                 "can_cancel": {
                                   "type": "boolean"
+                                },
+                                "can_request_cancel": {
+                                  "type": "boolean"
+                                },
+                                "can_decide_cancel": {
+                                  "type": "boolean"
                                 }
                               },
                               "required": [
@@ -134106,11 +136746,14 @@
                                 "can_confirm_receipt",
                                 "can_dispute",
                                 "can_review",
-                                "can_cancel"
+                                "can_cancel",
+                                "can_request_cancel",
+                                "can_decide_cancel"
                               ]
                             }
                           },
                           "required": [
+                            "buyer_cancel",
                             "shipment",
                             "settlement_state",
                             "refunded_fils",

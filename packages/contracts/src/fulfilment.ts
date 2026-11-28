@@ -91,6 +91,18 @@ export const shipmentDispatchRequest = z.object({
 /** Multipart form field next to the optional `file` (proof of delivery, PDF/PNG/JPEG). */
 /** C-07: supplier cancels an unfulfilled order; a full refund is requested for finance approval. */
 export const sellerCancelRequest = z.object({ reason: text(1000) });
+/** FD-09: buyer asks to cancel a paid order before dispatch. */
+export const buyerCancelRequest = z.object({ reason: text(1000) });
+/** FD-09: supplier decision on a buyer cancellation of custom goods; a decline needs a reason. */
+export const buyerCancelDecisionRequest = z
+  .object({ accept: z.boolean(), reason: optionalText(1000) })
+  .refine((v) => v.accept || !!v.reason, { path: ['reason'], message: 'required' });
+export const BUYER_CANCEL_STATES = [
+  'SUPPLIER_REVIEW',
+  'REFUND_REVIEW',
+  'DECLINED',
+  'REFUNDED',
+] as const;
 export const shipmentDeliverRequest = z.object({ note: optionalText(500) });
 
 export const shipmentView = z.object({
@@ -319,8 +331,23 @@ export const orderActions = z.object({
   can_review: z.boolean(),
   /** Seller: cancel this paid, not yet dispatched order (C-07). */
   can_cancel: z.boolean(),
+  /** Buyer: ask to cancel this paid, not yet dispatched order (FD-09). */
+  can_request_cancel: z.boolean(),
+  /** Seller: accept or decline a buyer cancellation of custom goods (FD-09). */
+  can_decide_cancel: z.boolean(),
+});
+export const buyerCancelView = z.object({
+  state: z.enum(BUYER_CANCEL_STATES),
+  requested_at: isoDateTime,
+  reason: z.string(),
+  /** Custom or made-to-order goods: the supplier reviews first. */
+  custom: z.boolean(),
+  decided_at: isoDateTime.nullable(),
+  decision_reason: z.string().nullable(),
 });
 export const orderFulfilment = z.object({
+  /** FD-09: the buyer's cancellation request, if any. */
+  buyer_cancel: buyerCancelView.nullable(),
   shipment: shipmentView.nullable(),
   /** Seller and admin only. */
   settlement_state: z.enum(SETTLEMENT_STATES).nullable(),

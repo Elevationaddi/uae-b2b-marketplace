@@ -1,4 +1,5 @@
 import {
+  type BUYER_CANCEL_STATES,
   hasCapability,
   type Capability,
   type MembershipRole,
@@ -90,7 +91,23 @@ export function buildFulfilment(
     disputable(o) &&
     ((side === 'buyer' && act) || (side === 'seller' && !!ctx && sellerCanDispute(ctx)));
   const s = o.shipment;
+  const unshipped = o.state === 'CONFIRMED' || o.state === 'PROCESSING';
+  const buyerPending =
+    o.buyerCancelState === 'SUPPLIER_REVIEW' || o.buyerCancelState === 'REFUND_REVIEW';
+  const pending = !!o.sellerCancelRequestedAt || buyerPending;
+  const settled = o.settlementState === 'IN_PAYOUT' || o.settlementState === 'PAID_OUT';
   return {
+    buyer_cancel:
+      o.buyerCancelState && o.buyerCancelRequestedAt
+        ? {
+            state: o.buyerCancelState as (typeof BUYER_CANCEL_STATES)[number],
+            requested_at: o.buyerCancelRequestedAt.toISOString(),
+            reason: o.buyerCancelReason ?? '',
+            custom: !!o.buyerCancelCustom,
+            decided_at: o.buyerCancelDecidedAt?.toISOString() ?? null,
+            decision_reason: o.buyerCancelDecisionReason,
+          }
+        : null,
     shipment: s
       ? {
           id: s.id,
@@ -121,19 +138,15 @@ export function buildFulfilment(
       ? { rating: o.review.rating, comment: o.review.comment, state: o.review.state }
       : null,
     actions: {
-      can_process: ship && o.state === 'CONFIRMED' && !o.sellerCancelRequestedAt,
-      can_dispatch:
-        ship && (o.state === 'CONFIRMED' || o.state === 'PROCESSING') && !o.sellerCancelRequestedAt,
+      can_process: ship && o.state === 'CONFIRMED' && !pending,
+      can_dispatch: ship && unshipped && !pending,
       can_deliver: ship && o.state === 'DISPATCHED',
       can_confirm_receipt: act && (o.state === 'DISPATCHED' || o.state === 'DELIVERED'),
       can_dispute: canDispute,
       can_review: act && o.state === 'COMPLETED' && !o.review,
-      can_cancel:
-        ship &&
-        (o.state === 'CONFIRMED' || o.state === 'PROCESSING') &&
-        !o.sellerCancelRequestedAt &&
-        o.settlementState !== 'IN_PAYOUT' &&
-        o.settlementState !== 'PAID_OUT',
+      can_cancel: ship && unshipped && !pending && !settled,
+      can_request_cancel: act && unshipped && !pending && !o.buyerCancelState && !settled,
+      can_decide_cancel: ship && unshipped && o.buyerCancelState === 'SUPPLIER_REVIEW',
     },
   };
 }

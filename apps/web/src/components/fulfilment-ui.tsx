@@ -128,6 +128,17 @@ export function FulfilmentCard({
           })}
         </Alert>
       ) : null}
+      {f.buyer_cancel ? (
+        <Alert kind={f.buyer_cancel.state === 'DECLINED' ? 'info' : 'warning'}>
+          <span data-testid="buyer-cancel-status">
+            {t(`bcancel.state.${f.buyer_cancel.state}` as MessageKey, {
+              date: formatDubaiTime(f.buyer_cancel.requested_at, locale),
+              reason: f.buyer_cancel.reason,
+            })}
+            {f.buyer_cancel.decision_reason ? ` ${f.buyer_cancel.decision_reason}` : ''}
+          </span>
+        </Alert>
+      ) : null}
       {s ? null : <p className="muted">{t('ful.no_shipment')}</p>}
       {rows.length ? <DefinitionList items={rows} /> : null}
       {f.dispute ? (
@@ -150,6 +161,51 @@ export function FulfilmentCard({
           ) : null}
           {a.can_cancel ? (
             <CancelOrder path={`${orderApi}/cancel`} number={o.number} onDone={onUpdated} />
+          ) : null}
+          {a.can_request_cancel ? (
+            <CancelOrder
+              path={`${orderApi}/cancel-request`}
+              number={o.number}
+              onDone={onUpdated}
+              variant="secondary"
+              labels={{
+                button: 'bcancel.request',
+                title: 'bcancel.request_title',
+                body: 'bcancel.request_body',
+                reason: 'bcancel.reason',
+              }}
+            />
+          ) : null}
+          {a.can_decide_cancel ? (
+            <div className="cluster" data-testid="buyer-cancel-decision">
+              <CancelOrder
+                path={`${orderApi}/buyer-cancel/decision`}
+                number={o.number}
+                onDone={onUpdated}
+                variant="primary"
+                extra={{ accept: true }}
+                reasonOptional
+                labels={{
+                  button: 'bcancel.accept',
+                  title: 'bcancel.accept_title',
+                  body: 'bcancel.accept_body',
+                  reason: 'bcancel.note',
+                }}
+              />
+              <CancelOrder
+                path={`${orderApi}/buyer-cancel/decision`}
+                number={o.number}
+                onDone={onUpdated}
+                variant="secondary"
+                extra={{ accept: false }}
+                labels={{
+                  button: 'bcancel.decline',
+                  title: 'bcancel.decline_title',
+                  body: 'bcancel.decline_body',
+                  reason: 'bcancel.decline_reason',
+                }}
+              />
+            </div>
           ) : null}
           {a.can_review ? <ReviewForm path={`${orderApi}/review`} onDone={onUpdated} /> : null}
           {a.can_dispute ? (
@@ -198,10 +254,23 @@ function CancelOrder({
   path,
   number,
   onDone,
+  labels = {
+    button: 'order.cancel',
+    title: 'order.cancel_title',
+    body: 'order.cancel_body',
+    reason: 'order.cancel_reason',
+  },
+  extra = {},
+  variant = 'danger',
+  reasonOptional = false,
 }: {
   path: string;
   number: string;
   onDone: (o: OrderDetail) => void;
+  labels?: { button: MessageKey; title: MessageKey; body: MessageKey; reason: MessageKey };
+  extra?: Record<string, unknown>;
+  variant?: 'danger' | 'secondary' | 'primary';
+  reasonOptional?: boolean;
 }) {
   const t = useT();
   const m = useMutation();
@@ -210,13 +279,13 @@ function CancelOrder({
   const [reason, setReason] = useState('');
   return (
     <div>
-      <Button variant="danger" onClick={() => setOpen(true)}>
-        {t('order.cancel')}
+      <Button variant={variant} onClick={() => setOpen(true)}>
+        {t(labels.button)}
       </Button>
       <ConfirmDialog
         open={open}
-        title={t('order.cancel_title', { number })}
-        confirmLabel={t('order.cancel')}
+        title={t(labels.title, { number })}
+        confirmLabel={t(labels.button)}
         busy={m.busy}
         error={m.error && Object.keys(m.error.fieldErrors).length === 0 ? m.error : null}
         onClose={() => {
@@ -224,19 +293,22 @@ function CancelOrder({
           m.setError(null);
         }}
         onConfirm={async () => {
-          const r = await m.run<OrderDetail>(path, { method: 'POST', body: { reason } });
+          const r = await m.run<OrderDetail>(path, {
+            method: 'POST',
+            body: { ...extra, ...(reason.trim() || !reasonOptional ? { reason } : {}) },
+          });
           if (r.ok) {
             setOpen(false);
             onDone(r.data);
           }
         }}
       >
-        <p>{t('order.cancel_body')}</p>
+        <p>{t(labels.body)}</p>
         <TextArea
-          label={t('order.cancel_reason')}
+          label={t(labels.reason)}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          required
+          required={!reasonOptional}
           rows={2}
           error={fe('reason')}
         />

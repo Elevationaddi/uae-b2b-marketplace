@@ -4,6 +4,38 @@
  */
 export const financialPolicyEn = {
   'order.reason.cancelled_by_supplier': 'Cancelled by the supplier (refunded in full)',
+  'bcancel.request': 'Request cancellation',
+  'bcancel.request_title': 'Ask to cancel order {number}?',
+  'bcancel.request_body':
+    'You can ask to cancel before the order is dispatched. Ready-stock orders go to a full refund that finance reviews. Custom or made-to-order goods are reviewed by the supplier first and are never refunded automatically.',
+  'bcancel.reason': 'Reason',
+  'bcancel.accept': 'Accept cancellation',
+  'bcancel.accept_title': 'Accept the buyer’s cancellation of {number}?',
+  'bcancel.accept_body':
+    'A full refund is requested for finance approval. You cannot process or dispatch the order while it is pending.',
+  'bcancel.note': 'Note for the buyer',
+  'bcancel.decline': 'Decline cancellation',
+  'bcancel.decline_title': 'Decline the buyer’s cancellation of {number}?',
+  'bcancel.decline_body': 'The order stays active and you can continue fulfilment.',
+  'bcancel.decline_reason': 'Reason for the buyer',
+  'bcancel.state.SUPPLIER_REVIEW':
+    'The buyer asked to cancel on {date}: {reason}. Waiting for the supplier’s decision.',
+  'bcancel.state.REFUND_REVIEW':
+    'The buyer asked to cancel on {date}: {reason}. A full refund is awaiting finance approval.',
+  'bcancel.state.DECLINED': 'The cancellation requested on {date} was declined.',
+  'bcancel.state.REFUNDED': 'Cancelled at the buyer’s request and refunded in full.',
+  'order.event.order.buyer_cancel_requested': 'Buyer asked to cancel',
+  'order.event.order.buyer_cancel_accepted': 'Supplier accepted the cancellation; full refund requested',
+  'order.event.order.buyer_cancel_declined': 'Supplier declined the cancellation',
+  'order.event.order.buyer_cancel_rejected': 'Finance refused the cancellation refund',
+  'notif.type.order.buyer_cancel_requested':
+    'The buyer asked to cancel {number}; a full refund is awaiting approval',
+  'notif.type.order.buyer_cancel_review': 'The buyer asked to cancel {number}; please decide',
+  'notif.type.order.cancel_declined': 'Your cancellation of {number} was declined',
+  'notif.type.order.cancel_refund_review':
+    'The supplier accepted your cancellation of {number}; the refund awaits approval',
+  'error.order.cancel_after_dispatch': 'Orders can only be cancelled before dispatch.',
+  'error.order.cancel_already_requested': 'A cancellation was already requested for this order.',
   'order.reason.refunded_in_full': 'Refunded in full',
   'order.event.order.seller_cancel_requested': 'Supplier asked to cancel; full refund requested',
   'order.event.order.seller_cancel_rejected': 'Finance refused the supplier’s cancellation',
@@ -149,6 +181,36 @@ export const financialPolicyEn = {
 
 export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> = {
   'order.reason.cancelled_by_supplier': 'ألغاه المورد (استرداد كامل)',
+  'bcancel.request': 'طلب الإلغاء',
+  'bcancel.request_title': 'هل تريد طلب إلغاء الطلب {number}؟',
+  'bcancel.request_body':
+    'يمكنك طلب الإلغاء قبل شحن الطلب. تُحال طلبات البضاعة الجاهزة إلى استرداد كامل تراجعه المالية. أما البضائع المخصصة أو المصنوعة حسب الطلب فيراجعها المورد أولاً ولا تُسترد تلقائياً.',
+  'bcancel.reason': 'السبب',
+  'bcancel.accept': 'قبول الإلغاء',
+  'bcancel.accept_title': 'هل تقبل طلب المشتري إلغاء {number}؟',
+  'bcancel.accept_body':
+    'سيُطلب استرداد كامل بموافقة المالية. لا يمكنك تجهيز الطلب أو شحنه أثناء انتظار القرار.',
+  'bcancel.note': 'ملاحظة للمشتري',
+  'bcancel.decline': 'رفض الإلغاء',
+  'bcancel.decline_title': 'هل ترفض طلب المشتري إلغاء {number}؟',
+  'bcancel.decline_body': 'يبقى الطلب نشطاً ويمكنك متابعة التنفيذ.',
+  'bcancel.decline_reason': 'السبب للمشتري',
+  'bcancel.state.SUPPLIER_REVIEW': 'طلب المشتري الإلغاء في {date}: {reason}. بانتظار قرار المورد.',
+  'bcancel.state.REFUND_REVIEW':
+    'طلب المشتري الإلغاء في {date}: {reason}. الاسترداد الكامل بانتظار موافقة المالية.',
+  'bcancel.state.DECLINED': 'رُفض طلب الإلغاء المقدم في {date}.',
+  'bcancel.state.REFUNDED': 'أُلغي بطلب المشتري واسترد المبلغ بالكامل.',
+  'order.event.order.buyer_cancel_requested': 'طلب المشتري الإلغاء',
+  'order.event.order.buyer_cancel_accepted': 'قبل المورد الإلغاء؛ وطُلب استرداد كامل',
+  'order.event.order.buyer_cancel_declined': 'رفض المورد الإلغاء',
+  'order.event.order.buyer_cancel_rejected': 'رفضت المالية استرداد الإلغاء',
+  'notif.type.order.buyer_cancel_requested':
+    'طلب المشتري إلغاء {number}؛ والاسترداد الكامل بانتظار الموافقة',
+  'notif.type.order.buyer_cancel_review': 'طلب المشتري إلغاء {number}؛ يرجى اتخاذ القرار',
+  'notif.type.order.cancel_declined': 'رُفض طلب إلغاء {number}',
+  'notif.type.order.cancel_refund_review': 'قبل المورد إلغاء {number}؛ والاسترداد بانتظار الموافقة',
+  'error.order.cancel_after_dispatch': 'لا يمكن إلغاء الطلب إلا قبل الشحن.',
+  'error.order.cancel_already_requested': 'سبق طلب إلغاء هذا الطلب.',
   'order.reason.refunded_in_full': 'تم الاسترداد بالكامل',
   'order.event.order.seller_cancel_requested': 'طلب المورد الإلغاء؛ وطُلب استرداد كامل',
   'order.event.order.seller_cancel_rejected': 'رفضت المالية إلغاء المورد',

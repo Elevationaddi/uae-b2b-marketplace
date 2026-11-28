@@ -1954,3 +1954,8 @@ textarea {
   font-size: 1.35rem;
   overflow-wrap: anywhere;
 }
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

@@ -111,6 +111,25 @@ const SUMMARY: Record<
       `The supplier asked to cancel ${p.order_number}; a full refund is awaiting finance approval`,
     ar: (p) => `طلب المورد إلغاء الطلب ${p.order_number}؛ والاسترداد الكامل بانتظار موافقة المالية`,
   },
+  'order.buyer_cancel_requested': {
+    en: (p) =>
+      `The buyer asked to cancel ${p.order_number}; a full refund is awaiting finance approval`,
+    ar: (p) =>
+      `طلب المشتري إلغاء الطلب ${p.order_number}؛ والاسترداد الكامل بانتظار موافقة المالية`,
+  },
+  'order.buyer_cancel_review': {
+    en: (p) => `The buyer asked to cancel ${p.order_number}; please accept or decline`,
+    ar: (p) => `طلب المشتري إلغاء الطلب ${p.order_number}؛ يرجى القبول أو الرفض`,
+  },
+  'order.cancel_declined': {
+    en: (p) => `The supplier declined your cancellation of ${p.order_number}`,
+    ar: (p) => `رفض المورد طلب إلغاء الطلب ${p.order_number}`,
+  },
+  'order.cancel_refund_review': {
+    en: (p) =>
+      `The supplier accepted your cancellation of ${p.order_number}; the refund awaits finance approval`,
+    ar: (p) => `قبل المورد إلغاء الطلب ${p.order_number}؛ والاسترداد بانتظار موافقة المالية`,
+  },
   'order.auto_completed': {
     en: (p) => `${p.order_number} was completed automatically after the dispute window ended`,
     ar: (p) => `اكتمل الطلب ${p.order_number} تلقائيًا بعد انتهاء فترة النزاع`,
