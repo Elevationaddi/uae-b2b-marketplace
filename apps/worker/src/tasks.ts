@@ -36,7 +36,8 @@ import {
  * - settlement.submit: sends dual-approved refunds and payouts to the provider adapter
  *   (idempotency key per refund/payout, so a retry never pays twice).
  * - settlement.sweep: auto-completion and payout eligibility (C-01, C-03).
- * - export.cleanup: deletes the bytes of report exports past their 24 h retention.
+ * - export.cleanup: deletes the bytes of report exports past their 24 h retention, and staging
+ *   mail-catcher emails older than 7 days.
  * - support.auto_close: closes resolved tickets after 7 days without a customer response (C-16).
  * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
  */
@@ -64,7 +65,7 @@ export function buildTasks(
   if (env.PAYMENT_MODE === 'live')
     throw new Error('PAYMENT_MODE=live: no live payment adapter is implemented (Phase 8 gate)');
   const psp = env.PAYMENT_MODE === 'mock' ? createSandboxPsp(prisma, env) : null;
-  const mailer = createMailer(env);
+  const mailer = createMailer(env, prisma);
   const tasks: TaskDef[] = [
     {
       name: TASK.heartbeat,
@@ -144,6 +145,11 @@ export function buildTasks(
       everySeconds: 600,
       run: async () => {
         const expired = await expireExports(prisma);
+        // Staging mail catcher keeps emails for 7 days only (they can hold one-time links).
+        const caught = await prisma.caughtEmail.deleteMany({
+          where: { createdAt: { lt: new Date(Date.now() - 7 * 86_400_000) } },
+        });
+        if (caught.count) log.info({ deleted: caught.count }, 'caught staging emails deleted');
         if (expired) log.info({ expired }, 'report exports expired');
         return { expired };
       },

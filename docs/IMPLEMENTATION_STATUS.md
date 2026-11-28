@@ -15,6 +15,23 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: protected staging profile and Vercel adaptations (C-20, C-21)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-staging-vercel`. Code only; nothing deployed, provisioned or connected.
+
+**Delivered** (details in `docs/phase-8/staging.md`)
+- `APP_ENV` deployment profile (`development`, `test`, `staging`, `production`). Staging is a production build that refuses live payments, email sending, missing protection or weak secrets; the labelled sandbox provider is allowed there and still refused in production.
+- Staging protection: HTTP Basic password on every web and admin page (`STAGING_ACCESS_PASSWORD`), registration limited to fictional domains (`STAGING_ALLOWED_EMAIL_DOMAINS`), staging banner (fictional data only, no real or confidential documents).
+- Mail catcher `EMAIL_PROVIDER=catcher`: emails stored 7 days in `caught_emails` and shown in the admin Staging mailbox; never allowed in production.
+- Redis is optional: rate limits and TOTP replay markers fall back to PostgreSQL (`rate_limit_buckets`); readiness checks the store in use. `rate-limiter-flexible` removed.
+- Vercel Blob storage driver (`STORAGE_DRIVER=vercel-blob`, private store, streamed through the API).
+- Vercel API entry (`apps/api/api/index.js`, `src/vercel.ts`, `vercel.json`): Nest app built once per instance, 503 on a failed cold start. Prisma engines for Vercel Functions.
+- Migration `20261209000000_phase8_staging_profile` (additive).
+
+**Tests actually run locally (2026-11-28)**
+- New: config staging tests (3), web staging-auth tests (3), Blob driver tests (3, SDK mocked), API staging integration tests (3: PostgreSQL rate limits and readiness without Redis, TOTP replay store, staging registration allowlist), worker mail-catcher tests (2).
+- Smoke test of the Vercel entry on a local HTTP server: readiness 200 without Redis, public config 200, invalid configuration answers 503.
+- Full API suite 164 passed before the last test fix (1 failure in the new test from counters left by an earlier local run; fixed and re-run twice: 3 of 3 passed). Lint, Prettier and typecheck clean.
+
 ## Phase 8: Vercel-first architecture at zero added cost (founder message 2026-11-28 09:28 UTC)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-vercel-docs`. Documentation only; nothing provisioned, connected or subscribed.
 

@@ -1954,3 +1954,11 @@ textarea {
   font-size: 1.35rem;
   overflow-wrap: anywhere;
 }
+
+/* Staging mail catcher */
+.mail-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  margin-block-start: var(--space-2);
+}

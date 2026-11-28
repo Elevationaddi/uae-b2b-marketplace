@@ -19,6 +19,8 @@ import { SessionService } from './auth/session.service';
 import { UserTokenService } from './auth/tokens.service';
 import { CsrfMiddleware } from './common/csrf.middleware';
 import { ErrorEnvelopeFilter } from './common/error.filter';
+import { KvStore } from './common/kv-store';
+import { StagingMailboxController } from './operations/staging-mailbox.controller';
 import { RateLimitService } from './common/rate-limit.service';
 import { CompaniesController } from './companies/companies.controller';
 import { CompaniesService } from './companies/companies.service';
@@ -156,10 +158,12 @@ export class AppModule implements NestModule {
         AdminFinancialPolicyController,
         SupportController,
         AdminOperationsController,
+        StagingMailboxController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
         CsrfMiddleware,
+        KvStore,
         RateLimitService,
         PasswordService,
         SessionService,

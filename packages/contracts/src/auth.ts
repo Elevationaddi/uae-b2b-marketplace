@@ -76,4 +76,23 @@ export const publicConfigResponse = z.object({
   app_name: z.string(),
   sandbox: z.boolean(),
   upload_max_bytes: z.number().int(),
+  /** Protected staging profile: fictional data only, registration limited to these domains. */
+  staging: z.boolean(),
+  staging_email_domains: z.array(z.string()),
 });
+
+/** Staging mail catcher (C-20). */
+export const stagingMailboxQuery = z.object({
+  to: z.string().trim().max(200).optional(),
+  cursor: z.string().max(200).optional(),
+});
+export const caughtEmailItem = z.object({
+  id: z.string(),
+  to: z.string(),
+  subject: z.string(),
+  body: z.string(),
+  template: z.string(),
+  locale: z.string(),
+  created_at: z.string(),
+});
+export type CaughtEmailItem = z.infer<typeof caughtEmailItem>;

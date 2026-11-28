@@ -15,7 +15,7 @@ import {
 import { useMutation } from '@/lib/use-resource';
 
 export default function RegisterPage() {
-  const { locale } = useApp();
+  const { locale, staging, stagingEmailDomains } = useApp();
   const t = useT();
   const m = useMutation();
   const resend = useMutation();
@@ -93,6 +93,11 @@ export default function RegisterPage() {
           required
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
+          hint={
+            staging
+              ? t('auth.staging_domains', { domains: (stagingEmailDomains ?? []).join(', ') })
+              : undefined
+          }
           error={fe('email')}
         />
         <Field

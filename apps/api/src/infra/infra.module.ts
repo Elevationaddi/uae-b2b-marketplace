@@ -18,15 +18,15 @@ const logger = new Logger('Infra');
 class InfraShutdown implements OnApplicationShutdown {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    @Inject(REDIS) private readonly redis: Redis,
+    @Inject(REDIS) private readonly redis: Redis | null,
   ) {}
 
   async onApplicationShutdown(): Promise<void> {
-    await Promise.allSettled([this.prisma.$disconnect(), this.redis.quit()]);
+    await Promise.allSettled([this.prisma.$disconnect(), this.redis?.quit()]);
   }
 }
 
-/** Provides validated env, a Prisma client and a Redis connection to the whole API. */
+/** Provides validated env, a Prisma client and (when configured) a Redis connection. */
 @Global()
 @Module({})
 export class InfraModule {
@@ -38,7 +38,9 @@ export class InfraModule {
         { provide: PRISMA, useFactory: () => createPrismaClient(env.DATABASE_URL) },
         {
           provide: REDIS,
+          // Optional: without REDIS_URL, rate limits and one-time markers use PostgreSQL.
           useFactory: () => {
+            if (!env.REDIS_URL) return null;
             const redis = new Redis(env.REDIS_URL, {
               // Commands queue briefly while (re)connecting; readiness probes add their own timeout.
               maxRetriesPerRequest: 1,

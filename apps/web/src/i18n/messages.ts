@@ -45,7 +45,14 @@ const en = {
   'app.tagline': 'Verified UAE businesses sourcing from verified suppliers and manufacturers.',
   'app.sandbox_banner':
     'Sandbox environment: test adapters only. No real payments, and emails go to the local mail catcher.',
+  'app.staging_banner':
+    'Staging: fictional companies and documents only. Never upload real or confidential documents. Payments are simulated and no email is sent.',
   'app.skip_to_content': 'Skip to main content',
+  'admin.nav.mailbox': 'Staging mailbox',
+  'mailbox.intro':
+    'Staging only: emails the platform would have sent, kept for 7 days. Nothing is sent outside staging.',
+  'mailbox.filter_to': 'Recipient contains',
+  'mailbox.empty': 'No emails caught yet.',
   'app.admin_portal': 'Admin portal',
 
   'status.heading': 'System status',
@@ -395,6 +402,8 @@ const en = {
   'emirate.FUJAIRAH': 'Fujairah',
 
   'field.required': 'This field is required.',
+  'field.staging_domain': 'Staging accepts only fictional test email addresses.',
+  'auth.staging_domains': 'Staging: use a fictional address ending in {domains}.',
   'field.min': 'Too short.',
   'field.max': 'Too long.',
   'field.email': 'Enter a valid email address.',
@@ -494,7 +503,14 @@ const ar: Messages = {
   'app.tagline': 'شركات إماراتية موثقة تتعامل مع موردين ومصنّعين موثقين.',
   'app.sandbox_banner':
     'بيئة تجريبية: محولات اختبار فقط. لا مدفوعات حقيقية، وتصل الرسائل إلى صندوق البريد المحلي.',
+  'app.staging_banner':
+    'بيئة الاختبار: شركات ومستندات وهمية فقط. لا ترفع أبداً مستندات حقيقية أو سرية. المدفوعات محاكاة ولا تُرسل أي رسائل بريد.',
   'app.skip_to_content': 'تخطَّ إلى المحتوى الرئيسي',
+  'admin.nav.mailbox': 'صندوق بريد الاختبار',
+  'mailbox.intro':
+    'بيئة الاختبار فقط: رسائل البريد التي كانت المنصة سترسلها، محفوظة لمدة 7 أيام. لا يُرسل أي شيء خارج بيئة الاختبار.',
+  'mailbox.filter_to': 'المستلم يحتوي على',
+  'mailbox.empty': 'لا توجد رسائل بعد.',
   'app.admin_portal': 'بوابة الإدارة',
 
   'status.heading': 'حالة النظام',
@@ -835,6 +851,8 @@ const ar: Messages = {
   'emirate.FUJAIRAH': 'الفجيرة',
 
   'field.required': 'هذا الحقل مطلوب.',
+  'field.staging_domain': 'لا تقبل بيئة الاختبار إلا عناوين بريد اختبارية وهمية.',
+  'auth.staging_domains': 'بيئة الاختبار: استخدم عنواناً وهمياً ينتهي بـ {domains}.',
   'field.min': 'قصير جداً.',
   'field.max': 'طويل جداً.',
   'field.email': 'أدخل بريداً إلكترونياً صالحاً.',
