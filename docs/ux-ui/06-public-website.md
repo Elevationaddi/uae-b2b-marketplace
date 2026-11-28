@@ -15,7 +15,7 @@ Global page frame (all public pages): marketplace header (text logo placeholder 
 | Search results | `/{locale}/search?q=` | Implemented | PUB-04 |
 | Manufacturer profiles | `/{locale}/suppliers/[id]` | Implemented | PUB-10 |
 | Product detail | `/{locale}/products/[id]` | Implemented | PUB-07 |
-| Pricing (fees) | `/{locale}/pricing` | Recommended (copy blocked by FD-05/FD-06) | PUB-18 |
+| Pricing (fees) | `/{locale}/pricing` | Recommended (copy needs legal and tax adviser review; FD-05 and FD-06 answered) | PUB-18 |
 | FAQ | `/{locale}/faq` | Recommended | PUB-19 |
 | Contact | `/{locale}/contact` | Recommended | PUB-21 |
 | Help centre | `/{locale}/help` | Recommended | PUB-20 |
@@ -57,13 +57,13 @@ See section 10 for full detail. Guests see "Price filters are available after si
 Directory then category landing: name, description, image, subcategories, supplier requirements for REVIEW_REQUIRED categories, embedded results with category attribute filters.
 
 ## 6.7 Manufacturer profile (existing, PUB-10)
-Cover and logo, name, verified badge and "verified since", business type, emirate/city, year established; tabs or sections About, Capabilities (specialisation, capabilities, production capacity, custom manufacturing, private label, white label, samples), Factory and warehouse (gallery), Certifications "(declared by supplier)", Product catalogue, Buyer reviews ("Average {avg} from {count} reviews", label "Verified buyer"; founder wants "verified business buyer", G-25). Note: "Contact details, documents and bank information are never shown publicly." CTAs: Request quotation (approved buyers), Message supplier (approved buyers), Save supplier.
+Cover and logo, name, verified badge and "verified since", business type, emirate/city, year established; tabs or sections About, Capabilities (specialisation, capabilities, production capacity, custom manufacturing, private label, white label, samples), Factory and warehouse (gallery), Certifications "(declared by supplier)", Product catalogue, Return policy (EN/AR, PR #17), Buyer reviews ("Average {avg} from {count} reviews", label "Verified business buyer", PR #16, FD-15). Note: "Contact details, documents and bank information are never shown publicly." CTAs: Request quotation (approved buyers), Request a sample (planned, when the supplier offers samples; FD-13), Message supplier (approved buyers), Save supplier.
 
 ## 6.8 Product detail (existing, PUB-07)
 See section 10.7.
 
 ## 6.9 Pricing (recommended, PUB-18)
-Purpose: explain that the marketplace is free to join with no subscriptions, and that suppliers pay a commission on completed merchandise sales. **Do not publish a rate until the founder approves public copy** (10% is an approved internal decision, configurable; FD-05). Sections: "Free for buyers", "For suppliers: commission on merchandise, excluding VAT and delivery", "When suppliers are paid" (weekly schedule, after dispute window — pending FD-04), "Taxes" (pending FD-06), FAQ. CTA: Become a supplier.
+Purpose: explain that the marketplace is free to join with no subscriptions, and that suppliers pay a commission on completed merchandise sales. **Do not publish a rate until the founder approves public copy** (10% is an approved internal decision, configurable; FD-05). Sections: "Free for buyers", "For suppliers: commission on merchandise, excluding VAT and delivery", "When suppliers are paid" (weekly, every Monday at 10:00 Dubai time, after the 14-day dispute window; FD-04), "Taxes" (disclosed-intermediary model, FD-06; wording after tax adviser review), FAQ. CTA: Become a supplier.
 
 ## 6.10 FAQ (recommended, PUB-19)
 Accordion grouped by Buyers, Suppliers, Payments, Verification, Disputes, Account. Search box. Each answer links to the help article. Questions must reflect implemented behaviour (e.g. "Prices are visible after you verify your email", "Stock is held for 15 minutes while you pay", "Quote payments are due within 72 hours of acceptance").

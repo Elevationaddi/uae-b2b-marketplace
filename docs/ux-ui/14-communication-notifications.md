@@ -1,5 +1,7 @@
 # 14. Communication and notifications
 
+Channels: **in-app and email only** (FD-20). No SMS or WhatsApp; no paid notification services.
+
 ## 14.1 In-app messaging (implemented)
 - **Who:** buyer OWNER/PROCUREMENT and seller OWNER/SALES (`messaging` capability); sending is trading-gated (approved, ACTIVE workspace). VIEWER, WAREHOUSE and FINANCE have no messages.
 - **Start:** buyer from a storefront ("Message supplier", MSG-03); seller from a visible RFQ ("Ask the buyer a question", SEL-25). One conversation per buyer–seller pair (and RFQ context), "start or continue".
@@ -50,6 +52,22 @@ Email categories per user: **RFQs** (default on), **Quotes and orders** (default
 
 Order-related email notifications are sent through the generic "activity" email (subject = notification summary) when the recipient's category is enabled and their email is verified.
 
+New events from the founder answers (to add with the planned screens; in-app and email):
+
+| Event | Trigger | Recipients | Opens |
+|---|---|---|---|
+| counteroffer.received | Buyer sends a counteroffer (BUY-15) | Supplier OWNER, SALES | SEL-21 / SEL-40 |
+| counteroffer.answered | Supplier submits a revision or declines (SEL-40) | Buyer OWNER, PROCUREMENT | BUY-05 / BUY-34 |
+| sample.requested | Buyer sends a sample request (BUY-32) | Supplier OWNER, SALES | SEL-21 |
+| order.cancellation_requested | Buyer asks to cancel (BUY-31) | Supplier OWNER, SALES | SEL-28 / SEL-41 |
+| order.cancellation_decided | Supplier decides (SEL-41) | Buyer OWNER, PROCUREMENT | BUY-24 |
+| order.supplier_cancellation | Supplier cancels (SEL-36); finance decides | Buyer; supplier on decision | BUY-24 / SEL-28 |
+| delivery.verified | Proof or receipt verifies delivery | Buyer and supplier | BUY-24 / SEL-28 |
+| order.auto_completed | Window ends without issues | Buyer and supplier | BUY-24 / SEL-28 |
+| delivery.review_decided | Admin decides on contested proof (ADM-59) | Buyer and supplier | BUY-24 / SEL-28 |
+| commission.notice | New commission version, 30 days before it applies (FD-05) | Supplier OWNER, FINANCE | SEL-32 |
+| policy.reacceptance_required | Material change to a legal policy (FD-16) | All users | ACC-18 |
+
 ## 14.5 System emails (worker templates, EN/AR plain text today)
 
 | Template | Trigger | Recipient | Status |
@@ -72,5 +90,5 @@ Order-related email notifications are sent through the generic "activity" email 
 | Branded HTML templates (17 families, EN/AR, Resend) | Founder decision 3; production email | All | Blocked (Phase 8) |
 
 
-## 14.6 Email design requirements (Resend, EN/AR, founder decision; blocked until Phase 8)
+## 14.6 Email design requirements (Resend, EN/AR; templates prepared without real sending until the founder approves)
 17 template families to design (bilingual, RTL for Arabic, text-only fallback, no tracking pixels without consent): verify email, sign-up attempt, password reset, password changed, invitation, verification submitted, verification decided (approved / needs info / rejected variants), licence expiring, licence expired, company suspended / reactivated, listing decision, listing/storefront enforcement, RFQ and quote activity, order activity (paid, received, dispatched, delivered, completed, cancelled, refunded), dispute activity, payout activity, support reply/resolved. Layout: text logo placeholder, one-sentence summary, key facts table, one primary button (link to the exact screen), footer with preferences link (for non-transactional categories) and support link.

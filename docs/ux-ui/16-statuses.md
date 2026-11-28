@@ -59,6 +59,8 @@ See section 11.12 for diagrams.
 | Quote | WITHDRAWN | Withdrawn | Seller | X |
 | Quote | EXPIRED | Expired | Worker | X |
 | Quote version | + SUPERSEDED | Superseded | System on revision | X |
+| RFQ type (planned) | STANDARD, SAMPLE | Request for quotation, Sample request | Buyer (FD-13) | N / I |
+| Counteroffer (planned) | OPEN, ANSWERED, DECLINED, EXPIRED | Waiting for supplier (round {n} of 3), Answered with a revision, Declined, Expired | Buyer, supplier, system (FD-10) | P, S, D, X |
 
 ## 16.5 Checkout, orders and payments
 | Entity | Status | Label | Changed by | Tone |
@@ -76,7 +78,12 @@ See section 11.12 for diagrams.
 | Payment | CANCELLED | Cancelled | System | X |
 | Payment | PARTIALLY_REFUNDED | Partly refunded | Refund success | W |
 | Payment | REFUNDED | Refunded | Refund success | X |
-| Settlement | NOT_ELIGIBLE, ELIGIBLE, HELD, IN_PAYOUT, PAID_OUT | Not yet eligible, Eligible for payout, Held (dispute), In payout, Paid out | System | N, S, W, P, S |
+| Settlement | NOT_ELIGIBLE, ELIGIBLE, HELD, IN_PAYOUT, PAID_OUT | Not yet eligible, Eligible for payout, Held, In payout, Paid out | System (P8-2: eligible only after verified delivery and the end of the dispute window, with no dispute, hold, reconciliation case or pending refund) | N, S, W, P, S |
+| Delivery verification (order fields) | Not verified / verified by proof of delivery / verified by buyer receipt | "Delivery verified {date} (proof of delivery \| buyer confirmed receipt)" | Seller proof or buyer, whichever first (P8-1, FD-03) | N / V |
+| Dispute window (derived) | Starts when delivery is verified / Open until {date} / Ended {date} | as shown | System | N / I / X |
+| Order hold (`OrderHoldKind`) | COMPLIANCE, FRAUD, RECONCILIATION, PAYMENT_INVESTIGATION; active or released | Compliance, Fraud, Reconciliation, Payment investigation | COMPLIANCE, FINANCE, FINANCE_APPROVER (ADM-57) | W |
+| Supplier cancellation (order fields) | Requested / approved (order CANCELLED) / rejected | "Cancellation requested on {date}: {reason}…" | Seller, then finance approver | W |
+| Buyer cancellation request (planned) | OPEN, ACCEPTED, ACCEPTED_PARTIAL, DECLINED | Cancellation requested, Accepted, Accepted with deduction, Declined | Buyer, then supplier (SEL-41) | W, S, W, D |
 | Shipment | DISPATCHED / DELIVERED | Dispatched / Delivered | Seller | I / S |
 | Stock reservation | HELD, CONSUMED, RELEASED | (internal) | System | — |
 
@@ -120,7 +127,13 @@ Dispute types: Not received, Damaged goods, Wrong items, Short quantity, Quality
 ## 16.9 Operations
 | Entity | Statuses | Labels |
 |---|---|---|
+| Company VAT registration (`VatRegistrationStatus`) | UNKNOWN, REGISTERED, NOT_REGISTERED; confirmed or not | Not stated, Registered for VAT, Not registered for VAT; "Confirmed by compliance on {date}" / "Not yet confirmed by compliance" |
+| Commission policy | Versions 1…n (append-only) | "Policy version {version}" or "From configuration" |
+| Weekly payout run (derived) | Week Monday–Sunday (Dubai); run opens Monday 10:00 | "This week's payout run" |
+| Background task | Running, Not run yet, Overdue, Failing ({count} in a row) | ADM-01 task health (PR #15) |
+| Support ticket limit | Default (10) / Exception | "{open} open of {limit} allowed" |
 | Export | READY, EXPIRED | Ready, Expired |
 | Reconciliation case | OPEN, RESOLVED | (kinds in section 13.10) |
 | Payment webhook event | RECEIVED, PROCESSED, IGNORED, QUARANTINED | Internal; "Quarantined webhooks (7 days)" count on ADM-01 |
 | Outbox (email) | PENDING, DONE, DEAD | Internal |
+| Policy acceptance (planned, FD-16) | Accepted version per user and policy | Re-acceptance required after a material change |

@@ -28,7 +28,7 @@ Native-speaker Arabic review has **not** been done (listed as outstanding in `do
 
 **Date and time:** store UTC, display Asia/Dubai. English "28 Nov 2026, 12:00 PM"; Arabic "28‏/11‏/2026، 12:00 م". Time inputs labelled "(Dubai time)". Relative times ("2 hours ago") are not used today; if added, show the absolute time on hover/focus. Week starts: Monday (UAE business week is Monday–Friday).
 
-**Digits:** current formatting produces Western digits for `ar-AE` in Node; decide whether Arabic-Indic digits are wanted (FD-18 related). Search accepts both.
+**Digits:** current formatting produces Western digits for `ar-AE` in Node; keep Western digits (the founder did not ask for Arabic-Indic digits). Search accepts both.
 
 **UAE phone numbers:** stored E.164 (`+9715XXXXXXXX`); display "+971 50 123 4567"; input with fixed "+971" prefix option and validation message "Enter a UAE number in international format, for example +971501234567". Always LTR inside RTL text.
 
@@ -38,4 +38,6 @@ Native-speaker Arabic review has **not** been done (listed as outstanding in `do
 
 **Long translated text:** buttons allow two lines on mobile; tables wrap; badges never truncate (use shorter labels where needed); test with 30% expansion.
 
-**Multilingual product descriptions:** Arabic fields are optional for sellers today; when missing, show English content with `lang="en" dir="ltr"` inside the Arabic page and a subtle "Available in English only" note (recommended). Seller forms show EN and AR side by side with a character counter for each.
+**Multilingual product descriptions (FD-18, answered A):** Arabic product listings are optional for suppliers; the application interface itself stays fully bilingual. When a supplier has not provided an Arabic description, the Arabic page shows the English text with `lang="en" dir="ltr"` under the note "لم يقدّم المورد وصفاً بالعربية" ("Arabic description not provided by the supplier"). Seller forms show EN and AR side by side with a character counter for each and mark which listing fields have no Arabic text.
+
+**Fonts (FD-17):** keep the temporary font; use only free, open-licence fonts with Arabic support (for example from Google Fonts). No paid fonts, icon subscriptions or stock image subscriptions.

@@ -1,6 +1,6 @@
 # 22. UX copy library
 
-The application already has 1718 English and 1718 Arabic strings (typed keys, parity tested). This library groups the existing copy for designers and flags strings that are stale or depend on pending decisions. Keep the tone: professional, plain, specific, in sentence case; say what happened and what to do next; never blame the user; use "supplier" for the seller side in buyer-facing copy and "buyer" for the buying company. Use Dubai time explicitly where a time is entered. Do not invent policy (rates, windows) in copy; reference the configured values.
+The application already has 1864 English and 1864 Arabic strings (typed keys, parity tested). This library groups the existing copy for designers and flags strings that are stale or depend on pending decisions. Keep the tone: professional, plain, specific, in sentence case; say what happened and what to do next; never blame the user; use "supplier" for the seller side in buyer-facing copy and "buyer" for the buying company. Use Dubai time explicitly where a time is entered. Do not invent policy (rates, windows) in copy; reference the configured values.
 
 ## 22.1 Voice and style rules
 
@@ -21,13 +21,11 @@ The application already has 1718 English and 1718 Arabic strings (typed keys, pa
 | Key | Current English | Issue |
 |---|---|---|
 | seller.quote.accepted_body | The buyer accepted your quote. Orders and payment open in the next release; nothing has been charged. | Stale: orders and payment exist now |
-| finance.reconciliation_note | Late captures, amount mismatches, unknown references and rejected signatures. Resolution tools arrive with refunds. | Stale: resolution tools not built |
+| finance.reconciliation_note | Late captures, amount mismatches, unknown references and rejected signatures. Resolution tools arrive with refunds. | Stale: resolution exists since PR #13 (ADM-31) |
 | home.next.APPROVED | Verified. Marketplace features will appear here as they are released. | Stale: features exist now |
 | pd.trading.phase_unavailable | Request a quotation from this supplier. Direct ordering opens in a later release. | Stale: refers to a release phase |
-| ful.no_auto_complete | Orders are completed only when the buyer confirms receipt; nothing completes automatically. | Will change with FD-02 |
-| review.verified_buyer | Verified buyer | Founder: "verified business buyer" |
-| dispute.window_note | Disputes can be opened until 14 days after receipt is confirmed and never after the supplier is paid out. | Founder F07: window starts at verified delivery, not receipt confirmation (G-14) |
-| company.terms_pending_note | Final legal terms are pending legal review. | Until legal terms are approved |
+| ful.no_auto_complete | Orders are completed only when the buyer confirms receipt; nothing completes automatically. | Stale since PR #13: orders now complete automatically after the dispute window (P8-3) |
+| company.terms_pending_note | Final legal terms are pending legal review. | Keep until legal texts are approved (FD-16, legal adviser pending) |
 
 
 ## 22.3 Suggested new copy (not in the app yet)
@@ -35,16 +33,23 @@ The application already has 1718 English and 1718 Arabic strings (typed keys, pa
 | Context | Suggested English |
 |---|---|
 | Buyer dashboard empty | Your company is verified. Search the marketplace or post a request for quotation to get started. |
-| Order completion success | Thank you. The order is complete. You can rate the supplier or open a dispute within 14 days. |
-| Auto-complete notice (after FD-02) | This order completes automatically on {date} unless you open a dispute. |
-| Weekly payout (after FD-04) | Available for the payout on {date}. |
+| Receipt confirmed (FD-02) | Receipt confirmed. You can still open a dispute until {date}. |
+| Auto-complete notice (P8-3) | This order completes automatically on {date} unless you open a dispute. |
+| Weekly payout (FD-04) | Next payout run: Monday {date}, 10:00 (Dubai time). |
 | Upload type error | This file type is not accepted. Upload a PDF, PNG or JPEG up to 10 MB. |
 | Forbidden page | You do not have access to this page. If you think this is wrong, ask your company owner. |
 | Not found page | We could not find this page. It may have been removed or you may not have access. |
 | Error summary | Fix {count} fields to continue. |
-| English-only content in Arabic UI | Available in English only. |
-| Counteroffer sent (after FD-10) | Counteroffer sent to {company}. |
-| Cancellation requested (planned) | Cancellation requested. The supplier and our team will review it. |
+| Arabic description missing (FD-18) | لم يقدّم المورد وصفاً بالعربية (Arabic description not provided by the supplier) |
+| Counteroffer sent (FD-10) | Counteroffer sent. The supplier has been notified. |
+| Counteroffer rounds | Round {n} of 3 |
+| Cancellation requested (founder Q12) | Cancellation request sent. The supplier will review it. |
+| Made-to-order cancellation notice | This order is made to your specification. The supplier may decline or deduct committed production costs, and no refund is automatic. |
+| Sample request sent (FD-13) | Sample request sent. |
+| Delivery option unavailable (FD-08) | Does not deliver to {emirate} |
+| Collection (FD-08) | Collect from supplier: free |
+| Commission notice (FD-05) | From {date} the platform commission will be {rate}% of merchandise value. |
+| Spending note (FD-21) | Figures include only orders paid through the platform. Sandbox amounts are test data. |
 | Session expired with return | Your session has ended. Sign in again to continue where you left off. |
 
 
@@ -52,7 +57,7 @@ The application already has 1718 English and 1718 Arabic strings (typed keys, pa
 
 Each key appears once, in the first matching category. Arabic is the current translation (native-speaker review pending).
 
-### Page titles and headings (88)
+### Page titles and headings (99)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -128,6 +133,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | sfin.title | Finance | المالية |  |
 | support.title | Support | الدعم |  |
 | support.new_title | Open a support ticket | فتح تذكرة دعم |  |
+| support.limit_title | Open support tickets | تذاكر الدعم المفتوحة |  |
 | support.number_title | Ticket {number} | التذكرة {number} |  |
 | support.close_title | Close this ticket? | إغلاق هذه التذكرة؟ |  |
 | ops.title | Operations | العمليات |  |
@@ -144,9 +150,19 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | seller.quote.title | Your quote | عرضك |  |
 | seller.quote.submit_title | Submit this quote? | تقديم هذا العرض؟ |  |
 | seller.quote.withdraw_title | Withdraw this quote? | سحب هذا العرض؟ |  |
+| order.cancel_title | Cancel order {number}? | إلغاء الطلب {number}؟ |  |
+| refund.split_title | Which part of the order does this cover? (optional) | ما الجزء الذي يغطيه هذا الاسترداد من الطلب؟ (اختياري) |  |
+| payout.run_title | This week’s payout run | دورة التحويلات لهذا الأسبوع |  |
+| hold.title | Settlement holds | تعليق التسويات |  |
+| hold.release_title | Release the hold on {number}? | رفع التعليق عن {number}؟ |  |
+| commission.title | Commission | العمولة |  |
+| finance.resolve_title | Resolve this reconciliation case? | حلّ حالة التسوية هذه؟ |  |
+| invoice.title | Invoice draft for {number} | مسودة فاتورة الطلب {number} |  |
+| invoice.commission_title | Platform commission (draft) | عمولة المنصة (مسودة) |  |
+| admin.vat.title | VAT registration | التسجيل في ضريبة القيمة المضافة |  |
 
 
-### Navigation labels (55)
+### Navigation labels (57)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -205,9 +221,11 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | nav.notifications | Notifications | الإشعارات |  |
 | nav.unread | {count} unread | {count} غير مقروءة |  |
 | admin.nav.rfqs | Requests for quotation | طلبات عروض الأسعار |  |
+| admin.nav.holds | Settlement holds | تعليق التسويات |  |
+| admin.nav.commission | Commission | العمولة |  |
 
 
-### Button labels (96)
+### Button labels (101)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -307,6 +325,11 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | notif.type.message.new | New message from {company} | رسالة جديدة من {company} |  |
 | admin.rfq.hide | Hide request | إخفاء الطلب |  |
 | admin.rfq.unhide | Restore request | استعادة الطلب |  |
+| order.cancel | Cancel order | إلغاء الطلب |  |
+| commission.new | Record a new rate | تسجيل نسبة جديدة |  |
+| commission.save | Save new rate | حفظ النسبة الجديدة |  |
+| finance.resolve | Resolve | حلّ الحالة |  |
+| invoice.open | Invoice draft | مسودة الفاتورة |  |
 
 
 ### Form labels (72)
@@ -387,7 +410,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | quote.po_reference | Your PO reference | مرجع أمر الشراء لديك |  |
 
 
-### Placeholder and hint text (27)
+### Placeholder and hint text (31)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -418,6 +441,10 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | quote.deviations_hint | Describe anything that differs from the buyer’s specifications. | صف أي اختلاف عن مواصفات المشتري. |  |
 | seller.rfq.ask_hint | Only the buyer sees this conversation. | لا يرى هذه المحادثة إلا المشتري. |  |
 | settings.email_prefs_hint | In-app notifications are always kept. Security emails are always sent. | تبقى الإشعارات داخل التطبيق دائماً، وتُرسل رسائل الأمان دائماً. |  |
+| storefront.return_policy_hint | Shown to buyers before they pay. Say whether change-of-mind returns are accepted, the time limit and the condition required. Customised goods are generally excluded. | تظهر للمشترين قبل الدفع. وضّح هل تقبل الإرجاع لتغيير الرأي، والمدة، وحالة البضاعة المطلوبة. تُستثنى البضائع المخصصة عادةً. |  |
+| refund.split_hint | Leave all three blank to spread the refund over merchandise, delivery and VAT in proportion. Commission is reversed only on the merchandise part. | اترك الحقول الثلاثة فارغة لتوزيع الاسترداد على البضاعة والتوصيل وضريبة القيمة المضافة بالتناسب. تُعكس العمولة على جزء البضاعة فقط. |  |
+| commission.rate_hint | For example 10 or 7.5. At most 50%. | مثلاً 10 أو 7.5. بحد أقصى 50%. |  |
+| company.vat_status_hint | Registered suppliers must give their TRN. Our compliance team confirms the status before it is used for VAT. | يجب على الموردين المسجلين إدخال رقم التسجيل الضريبي. يؤكد فريق الامتثال الحالة قبل استخدامها في الضريبة. |  |
 
 
 ### Onboarding and instructions (18)
@@ -435,7 +462,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | address.intro | Delivery addresses in the UAE for this buying workspace. | عناوين التسليم داخل الإمارات لمساحة الشراء هذه. |  |
 | order.seller_intro | Orders appear when a buyer checks out or accepts your quotation. Open a paid order to record dispatch and delivery. | تظهر الطلبات عندما يتم المشتري الشراء أو يقبل عرض السعر الخاص بك. افتح طلباً مدفوعاً لتسجيل الشحن والتسليم. |  |
 | refund.intro | Refunds go through the payment provider. A second finance user approves each request; the ledger changes only when the provider confirms. | تتم المبالغ المستردة عبر مزود الدفع. يوافق مستخدم مالية ثانٍ على كل طلب، ولا يتغير الدفتر إلا عند تأكيد المزود. |  |
-| payout.intro | Payouts move eligible, undisputed, completed orders to suppliers through the payment provider. A second finance user approves each request; orders are marked paid only on the provider confirmation. | تحوّل التحويلات مبالغ الطلبات المكتملة المؤهلة غير المتنازع عليها إلى الموردين عبر مزود الدفع. يوافق مستخدم مالية ثانٍ على كل طلب، ولا تُعلَّم الطلبات مدفوعة إلا عند تأكيد المزود. |  |
+| payout.intro | Payouts pay suppliers for orders whose dispute window has ended after verified delivery, through the payment provider. A second finance user approves each request; orders are marked paid only on the provider confirmation. | تدفع التحويلات للموردين مستحقات الطلبات التي انتهت فترة النزاع فيها بعد التحقق من التسليم، عبر مزود الدفع. يوافق مستخدم مالية ثانٍ على كل طلب، ولا تُعلَّم الطلبات مدفوعة إلا عند تأكيد المزود. |  |
 | sfin.intro | Amounts for paid orders of this workspace. Payouts are made by the platform through the payment provider. | مبالغ الطلبات المدفوعة لمساحة العمل هذه. تتم التحويلات من المنصة عبر مزود الدفع. |  |
 | support.intro | Ask the platform team for help with your account, verification, orders, payments or listings. Everyone in this workspace can follow its tickets. | اطلب المساعدة من فريق المنصة بشأن حسابك أو التحقق أو الطلبات أو المدفوعات أو المنتجات. يمكن لجميع أعضاء مساحة العمل متابعة تذاكرها. |  |
 | export.intro | Download CSV reports. Each export needs a reason and a current authenticator code, is recorded in the audit log and can be downloaded only by you for 24 hours. | نزّل تقارير CSV. يتطلب كل تصدير سبباً ورمزاً حالياً من تطبيق المصادقة، ويُسجَّل في سجل التدقيق، ولا يمكن تنزيله إلا من قِبلك خلال 24 ساعة. |  |
@@ -444,7 +471,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | seller.quote.intro | Prepare a draft. The buyer sees it only after you submit. | جهّز مسودة. لا يراها المشتري إلا بعد تقديمها. |  |
 
 
-### Success messages (37)
+### Success messages (41)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -471,7 +498,10 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | ful.saved | Saved. | تم الحفظ. |  |
 | dispute.sent | Message sent. | تم إرسال الرسالة. |  |
 | refund.created | Refund requested. Another finance user must approve it. | تم طلب الاسترداد. يجب أن يوافق عليه مستخدم مالية آخر. |  |
+| support.limit_saved | Ticket limit saved. | تم حفظ حد التذاكر. |  |
 | support.sent | Reply sent. | تم إرسال الرد. |  |
+| ops.tasks_ok | All background tasks are running on schedule. | تعمل جميع المهام الخلفية في موعدها. |  |
+| ops.task_ok | Running | تعمل |  |
 | export.created | Export ready. Download it below. | التصدير جاهز. نزّله أدناه. |  |
 | rfq.created | Draft saved. Review it and publish when ready. | تم حفظ المسودة. راجعها وانشرها عندما تكون جاهزة. |  |
 | rfq.saved | Changes saved. | تم حفظ التغييرات. |  |
@@ -485,9 +515,10 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | seller.quote.withdrawn | Quote withdrawn. | تم سحب العرض. |  |
 | seller.quote.file_added | Attachment added. | تمت إضافة المرفق. |  |
 | seller.quote.file_removed | Attachment removed. | تمت إزالة المرفق. |  |
+| commission.saved | New commission rate saved. It applies to new checkouts. | تم حفظ نسبة العمولة الجديدة. تنطبق على عمليات الدفع الجديدة. |  |
 
 
-### Empty states (53)
+### Empty states (56)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -520,7 +551,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | finance.no_payments | No payments yet. | لا توجد مدفوعات بعد. |  |
 | finance.no_cases | No open cases. | لا توجد حالات مفتوحة. |  |
 | ful.no_shipment | Not dispatched yet. | لم يتم الشحن بعد. |  |
-| ful.no_auto_complete | Orders are completed only when the buyer confirms receipt; nothing completes automatically. | لا يكتمل الطلب إلا عندما يؤكد المشتري الاستلام؛ لا يكتمل أي طلب تلقائياً. | Will change with FD-02 |
+| ful.no_auto_complete | Orders are completed only when the buyer confirms receipt; nothing completes automatically. | لا يكتمل الطلب إلا عندما يؤكد المشتري الاستلام؛ لا يكتمل أي طلب تلقائياً. | Stale since PR #13: orders now complete automatically after the dispute window (P8-3) |
 | review.none | No reviews yet. | لا توجد تقييمات بعد. |  |
 | review.empty_admin | No reviews yet. | لا توجد تقييمات بعد. |  |
 | dispute.empty | No disputes. | لا توجد نزاعات. |  |
@@ -544,16 +575,19 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | messages.empty_buyer | No conversations yet. Message a supplier from their storefront or a quote. | لا توجد محادثات بعد. راسل مورداً من صفحته أو من عرضه. |  |
 | messages.empty_seller | No conversations yet. Buyers can message you, and you can ask about requests you can see. | لا توجد محادثات بعد. يمكن للمشترين مراسلتك، ويمكنك السؤال عن الطلبات التي تراها. |  |
 | notif.empty | You have no notifications. | لا توجد لديك إشعارات. |  |
+| checkout.no_return_policy | This supplier has not stated a return policy. Change-of-mind returns may not be accepted; disputes still cover damaged, wrong, short or missing goods. | لم يحدد هذا المورد سياسة إرجاع. قد لا يُقبل الإرجاع لتغيير الرأي، لكن النزاعات تشمل البضائع التالفة أو الخاطئة أو الناقصة أو المفقودة. |  |
+| hold.empty | No holds. | لا توجد تعليقات. |  |
+| commission.empty | No policy versions recorded yet. | لم يُسجَّل أي إصدار سياسة بعد. |  |
 
 
-### Confirmation dialogs (16)
+### Confirmation dialogs (17)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
 | address.remove_body | The address is removed from this list. Orders already placed keep their copy. | سيُزال العنوان من هذه القائمة. تحتفظ الطلبات السابقة بنسختها. |  |
 | checkout.cancelled_body | This checkout was cancelled and the stock released. | تم إلغاء عملية الشراء وإعادة المخزون. |  |
 | checkout.cancel_body | The orders are cancelled and the held stock is released. | سيتم إلغاء الطلبات وإعادة المخزون المحجوز. |  |
-| ful.confirm_receipt_body | This completes the order. You can still open a dispute for 14 days after confirming. | يؤدي ذلك إلى إكمال الطلب. يمكنك فتح نزاع خلال 14 يوماً بعد التأكيد. |  |
+| ful.confirm_receipt_body | This records verified delivery. You can still open a dispute until the dispute window ends (14 days from verified delivery). | يسجّل ذلك التسليم الموثّق. يمكنك فتح نزاع حتى انتهاء مهلة النزاع (14 يوماً من التسليم الموثّق). |  |
 | support.close_body | A closed ticket cannot be reopened. Open a new ticket if you need more help. | لا يمكن إعادة فتح التذكرة المغلقة. افتح تذكرة جديدة إذا احتجت إلى مساعدة أخرى. |  |
 | rfq.cancel_body | Suppliers who quoted will be told. Open quotes are closed. This cannot be undone. | سيُبلَّغ الموردون الذين قدموا عروضاً وتُغلق العروض المفتوحة. لا يمكن التراجع عن ذلك. |  |
 | quote.accept_body | You are accepting version {version} from {company}. Other quotes will be declined. This cannot be undone. | أنت تقبل النسخة {version} من {company}. سيتم رفض العروض الأخرى. لا يمكن التراجع عن ذلك. |  |
@@ -566,6 +600,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | seller.quote.declined_body | This quote was declined or the request was awarded to another supplier. | تم رفض هذا العرض أو ترسية الطلب على مورد آخر. |  |
 | admin.rfq.hide_body | Suppliers will no longer see this request and cannot quote. The buyer is told. A reason is required and audited. | لن يرى الموردون هذا الطلب ولن يمكنهم تقديم عروض، وسيُبلَّغ المشتري. السبب مطلوب ويُسجَّل. |  |
 | admin.rfq.unhide_body | The request becomes visible to eligible suppliers again. A reason is required and audited. | يعود الطلب مرئياً للموردين المؤهلين. السبب مطلوب ويُسجَّل. |  |
+| order.cancel_body | The buyer is refunded in full to the original payment method once finance approves. You can no longer process or dispatch this order while the cancellation is pending. | يُسترد المبلغ كاملاً للمشتري إلى وسيلة الدفع الأصلية بعد موافقة المالية. لا يمكنك تجهيز الطلب أو شحنه أثناء انتظار الإلغاء. |  |
 
 
 ### Verification instructions (25)
@@ -578,7 +613,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | company.scan.INFECTED | Blocked: malware detected | محظور: تم اكتشاف برمجية خبيثة |  |
 | company.scan.PENDING | Scanning | قيد الفحص |  |
 | company.terms_accept | I confirm the information is accurate and I accept the platform terms (version {version}). | أؤكد صحة المعلومات وأوافق على شروط المنصة (الإصدار {version}). |  |
-| company.terms_pending_note | Final legal terms are pending legal review. | الشروط القانونية النهائية قيد المراجعة القانونية. | Until legal terms are approved |
+| company.terms_pending_note | Final legal terms are pending legal review. | الشروط القانونية النهائية قيد المراجعة القانونية. | Keep until legal texts are approved (FD-16, legal adviser pending) |
 | invite.body | You are invited to the {kind} workspace of {company} as {role}. | تمت دعوتك إلى مساحة {kind} لشركة {company} بدور {role}. |  |
 | invite.for_email | This invitation is for {email}. | هذه الدعوة موجهة إلى {email}. |  |
 | invite.sign_in_first | Sign in or create an account with {email} to accept. | سجّل الدخول أو أنشئ حساباً بالبريد {email} لقبول الدعوة. |  |
@@ -599,7 +634,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | cstatus.CLOSED | Closed | مغلق |  |
 
 
-### Payment instructions (56)
+### Payment instructions (58)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -659,9 +694,11 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | sandbox.complete_success | Simulate provider success | محاكاة نجاح المزود |  |
 | sandbox.complete_failure | Simulate provider failure | محاكاة فشل المزود |  |
 | sandbox.operation_note | SANDBOX: no money moves. These buttons stand in for the provider finishing the operation. | بيئة تجريبية: لا تتحرك أي أموال. تحل هذه الأزرار محل إتمام المزود للعملية. |  |
+| checkout.return_policy | Returns | الإرجاع |  |
+| checkout.issue.supplier_vat_unconfirmed | This supplier’s VAT registration has not been confirmed yet, so it cannot be checked out. | لم يتم تأكيد تسجيل هذا المورد في ضريبة القيمة المضافة بعد، لذا لا يمكن إتمام الشراء منه. |  |
 
 
-### Order status explanations (21)
+### Order status explanations (23)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -679,13 +716,15 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | order.reason.cancelled_by_buyer | Cancelled by the buyer | ألغاه المشتري |  |
 | settlement.state.NOT_ELIGIBLE | Not yet eligible | غير مؤهل بعد |  |
 | settlement.state.ELIGIBLE | Eligible for payout | مؤهل للتحويل |  |
-| settlement.state.HELD | Held (dispute) | معلّق (نزاع) |  |
+| settlement.state.HELD | On hold | معلّق |  |
 | settlement.state.IN_PAYOUT | In payout | قيد التحويل |  |
 | settlement.state.PAID_OUT | Paid out | تم التحويل |  |
 | ful.buyer_next_dispatched | The supplier has dispatched this order. Confirm receipt once the goods arrive. | شحن المورد هذا الطلب. أكد الاستلام عند وصول البضائع. |  |
 | ful.seller_next_confirmed | Payment is confirmed. Prepare the goods and record dispatch. | تم تأكيد الدفع. جهّز البضائع وسجّل الشحن. |  |
 | ful.seller_waiting_receipt | Waiting for the buyer to confirm receipt. | بانتظار تأكيد المشتري للاستلام. |  |
 | ful.payout_note | Eligible orders are paid out by finance through the payment provider after dual approval. Nothing is paid automatically. | يحوّل فريق المالية مبالغ الطلبات المؤهلة عبر مزود الدفع بعد موافقة شخصين. لا يتم أي دفع تلقائياً. |  |
+| order.reason.cancelled_by_supplier | Cancelled by the supplier (refunded in full) | ألغاه المورد (استرداد كامل) |  |
+| order.reason.refunded_in_full | Refunded in full | تم الاسترداد بالكامل |  |
 
 
 ### Status labels (60)
@@ -754,7 +793,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | quote.state.SUPERSEDED | Superseded | نسخة سابقة |  |
 
 
-### Notification messages (29)
+### Notification messages (31)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -765,6 +804,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | notif.type.order.dispatched | {number} has been dispatched | تم شحن الطلب {number} |  |
 | notif.type.order.delivered | The supplier reported {number} as delivered | أبلغ المورد بتسليم الطلب {number} |  |
 | notif.type.order.completed | The buyer confirmed receipt of {number} | أكد المشتري استلام الطلب {number} |  |
+| notif.type.order.auto_completed | {number} was completed automatically after the dispute window ended | اكتمل الطلب {number} تلقائيًا بعد انتهاء فترة النزاع |  |
 | notif.type.order.refunded | A refund was confirmed for {number} | تم تأكيد استرداد مبلغ للطلب {number} |  |
 | notif.type.dispute.opened | A dispute was opened on {number} | تم فتح نزاع على الطلب {number} |  |
 | notif.type.dispute.updated | A dispute on {number} was updated | تم تحديث نزاع على الطلب {number} |  |
@@ -787,9 +827,10 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | notif.type.quote.declined | Your quote on {number} was declined | تم رفض عرضك على {number} |  |
 | notif.type.quote.accepted | Your quote on {number} was accepted | تم قبول عرضك على {number} |  |
 | notif.type.quote.expired | A quote on {number} expired | انتهت صلاحية عرض على {number} |  |
+| notif.type.order.supplier_cancelled | The supplier asked to cancel {number}; a full refund is awaiting approval | طلب المورد إلغاء الطلب {number}؛ والاسترداد الكامل بانتظار الموافقة |  |
 
 
-### Error messages (159)
+### Error messages (171)
 
 | Key | English | Arabic | Note |
 |---|---|---|---|
@@ -915,7 +956,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | error.payout.self_approval | You requested this payout; another finance user must decide. | أنت من طلب هذا التحويل؛ يجب أن يقرر مستخدم مالية آخر. |  |
 | error.payout.invalid_transition | This payout has already been decided. | تم البت في هذا التحويل بالفعل. |  |
 | error.payout.order_disputed | An order in this payout has an open dispute. | يوجد نزاع مفتوح على أحد طلبات هذا التحويل. |  |
-| error.support.too_many_open | This workspace has too many open tickets. Close resolved ones before opening another. | لدى مساحة العمل هذه عدد كبير من التذاكر المفتوحة. أغلق التذاكر المحلولة قبل فتح تذكرة جديدة. |  |
+| error.support.too_many_open | Your company has reached its limit of open tickets. Close resolved ones before opening another, or choose payment, security or compliance for an urgent case. | بلغت شركتك الحد الأقصى للتذاكر المفتوحة. أغلق التذاكر المحلولة قبل فتح تذكرة جديدة، أو اختر الدفع أو الأمن أو الامتثال للحالات العاجلة. |  |
 | error.support.not_open | This ticket is not open for replies. | هذه التذكرة غير متاحة للرد. |  |
 | error.support.closed | This ticket is closed. | هذه التذكرة مغلقة. |  |
 | error.support.not_resolved | Only a resolved ticket can be reopened. | لا يمكن إعادة فتح إلا التذكرة المحلولة. |  |
@@ -952,9 +993,21 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | error.trading.company_suspended | Your company is suspended. Trading is paused. | شركتك موقوفة والتداول متوقف. |  |
 | error.trading.workspace_inactive | This workspace is inactive. | مساحة العمل هذه غير نشطة. |  |
 | error.trading.seller_not_eligible | This supplier is not eligible to trade. | هذا المورد غير مؤهل للتداول. |  |
+| error.order.cancellation_pending | A cancellation is pending for this order. | يوجد طلب إلغاء قيد الانتظار لهذا الطلب. |  |
+| error.refund.exceeds_component | A part is more than what remains refundable of it, or the parts do not add up to the amount. | أحد الأجزاء أكبر من المتبقي القابل للاسترداد منه، أو أن الأجزاء لا تساوي المبلغ. |  |
+| error.payout.already_in_run | This supplier already has a payout in this week’s run. | لدى هذا المورد تحويل في دورة هذا الأسبوع بالفعل. |  |
+| error.payout.order_held | An order in this payout is on hold, has an open reconciliation case or pending refund, or is still inside its dispute window. | أحد طلبات هذا التحويل معلّق أو لديه حالة تسوية مفتوحة أو استرداد معلّق، أو ما زال ضمن فترة النزاع. |  |
+| error.payout.order_changed | An order in this payout changed after it was requested. Reject it and request again. | تغيّر أحد طلبات هذا التحويل بعد طلبه. ارفضه واطلبه من جديد. |  |
+| error.payout.insufficient_balance | The available provider balance is lower than this payout. It cannot be approved now. | الرصيد المتاح لدى مزود الدفع أقل من هذا التحويل. لا يمكن اعتماده الآن. |  |
+| error.hold.order_paid_out | This order has already been paid out. | تم تحويل مستحقات هذا الطلب بالفعل. |  |
+| error.hold.exists | This order already has an active hold of that type. | لدى هذا الطلب تعليق نشط من هذا النوع بالفعل. |  |
+| error.hold.already_released | This hold has already been released. | تم رفع هذا التعليق بالفعل. |  |
+| error.reconciliation.not_open | This case is already resolved. | تم حل هذه الحالة بالفعل. |  |
+| error.quote.supplier_vat_unconfirmed | Your company’s VAT registration must be confirmed by compliance before you can submit quotes. | يجب أن يؤكد فريق الامتثال تسجيل شركتك في ضريبة القيمة المضافة قبل تقديم العروض. |  |
+| error.quote.vat_not_registered | Your company is not registered for VAT, so the quote cannot charge standard-rate VAT. | شركتك غير مسجلة في ضريبة القيمة المضافة، لذا لا يمكن أن يتضمن العرض الضريبة بالنسبة الأساسية. |  |
 
 
-### Other UI strings (906)
+### Other UI strings (1004)
 
 | Key | English | Arabic |
 |---|---|---|
@@ -1605,7 +1658,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | order.checkout | Checkout | عملية الشراء |
 | order.pay_by | Pay by | آخر موعد للدفع |
 | order.confirmed_at | Confirmed | تاريخ التأكيد |
-| order.cancel_reason | Cancellation reason | سبب الإلغاء |
+| order.cancel_reason | Reason for the buyer | السبب للمشتري |
 | order.commission | Platform commission | عمولة المنصة |
 | order.seller_payable | Payable to supplier | المستحق للمورد |
 | order.timeline | Timeline | السجل الزمني |
@@ -1647,6 +1700,7 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | order.event.order.dispatched | Dispatched | تم الشحن |
 | order.event.order.delivered | Delivery reported by supplier | أبلغ المورد عن التسليم |
 | order.event.order.completed | Receipt confirmed by buyer | أكد المشتري الاستلام |
+| order.event.order.auto_completed | Completed automatically after the dispute window | اكتمل تلقائيًا بعد انتهاء فترة النزاع |
 | order.event.order.refunded | Refund confirmed by provider | أكد مزود الدفع الاسترداد |
 | order.event.order.paid_out | Paid out to supplier | تم التحويل إلى المورد |
 | order.event.dispute.opened | Dispute opened | تم فتح نزاع |
@@ -1663,10 +1717,10 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | review.public_note | Reviews are shown publicly without your company name. | تُعرض التقييمات للعامة دون اسم شركتك. |
 | review.section | Buyer reviews | تقييمات المشترين |
 | review.average | Average {avg} from {count} reviews | المتوسط {avg} من {count} تقييمات |
-| review.verified_buyer | Verified buyer | مشترٍ موثق |
+| review.verified_buyer | Verified business buyer | مشترٍ تجاري موثّق |
 | review.reason | Reason (recorded in the audit log) | السبب (يُسجل في سجل التدقيق) |
 | review.admin_intro | Buyer reviews of suppliers. Hide reviews that break the content rules; the text is never edited. | تقييمات المشترين للموردين. أخفِ التقييمات المخالفة لقواعد المحتوى؛ لا يتم تعديل النص أبداً. |
-| dispute.window_note | Disputes can be opened until 14 days after receipt is confirmed and never after the supplier is paid out. | يمكن فتح النزاع خلال 14 يوماً من تأكيد الاستلام، ولا يمكن فتحه بعد التحويل إلى المورد. |
+| dispute.window_note | Disputes can be opened until 14 days after verified delivery (proof of delivery or your receipt confirmation, whichever comes first). | يمكن فتح النزاع خلال 14 يوماً من التسليم الموثّق (إثبات التسليم أو تأكيد استلامك، أيهما أسبق). |
 | dispute.view | View dispute {number} | عرض النزاع {number} |
 | dispute.list_intro | Disputes on orders for this workspace. | النزاعات على طلبات مساحة العمل هذه. |
 | dispute.col | Dispute | النزاع |
@@ -1702,9 +1756,9 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | sfin.commission | Platform commission | عمولة المنصة |
 | sfin.refunded | Refunded to buyers | المسترد للمشترين |
 | sfin.net | Net payable | صافي المستحق |
-| sfin.not_yet | Not yet eligible (awaiting receipt) | غير مؤهل بعد (بانتظار الاستلام) |
+| sfin.not_yet | Not yet eligible (awaiting verified delivery and the end of the dispute window) | غير مؤهل بعد (بانتظار التحقق من التسليم وانتهاء فترة النزاع) |
 | sfin.eligible | Eligible for payout | مؤهل للتحويل |
-| sfin.held | Held by disputes | معلّق بسبب نزاعات |
+| sfin.held | Held (dispute, hold, reconciliation or pending refund) | معلّق (نزاع أو تعليق أو تسوية أو استرداد معلّق) |
 | sfin.in_payout | In payout | قيد التحويل |
 | sfin.paid_out | Paid out | تم التحويل |
 | sfin.payouts | Payouts | التحويلات |
@@ -1716,6 +1770,16 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | support.category.RFQ | Request for quotation | طلب عرض سعر |
 | support.category.CATALOG | Products and storefront | المنتجات والمتجر |
 | support.category.OTHER | Something else | موضوع آخر |
+| support.category.SECURITY | Security concern (urgent) | مسألة أمنية (عاجلة) |
+| support.category.COMPLIANCE | Compliance concern (urgent) | مسألة امتثال (عاجلة) |
+| support.limit_note | Each company can have up to {limit} open tickets. Payment, security and compliance cases are always accepted. Resolved tickets close automatically after 7 days without a reply. | يمكن لكل شركة فتح ما يصل إلى {limit} تذاكر. تُقبل حالات الدفع والأمن والامتثال دائماً. تُغلق التذاكر المحلولة تلقائياً بعد 7 أيام دون رد. |
+| support.limit_current | {open} open of {limit} allowed | {open} مفتوحة من أصل {limit} مسموح بها |
+| support.limit_default | Default limit ({limit}) | الحد الافتراضي ({limit}) |
+| support.limit_exception | Exception for this company | استثناء لهذه الشركة |
+| support.limit_value | Limit (1 to 100) | الحد (من 1 إلى 100) |
+| support.limit_reason | Reason | السبب |
+| support.limit_save | Save limit | حفظ الحد |
+| support.limit_clear | Restore default | استعادة الافتراضي |
 | support.filter_all | All | الكل |
 | support.col | Ticket | التذكرة |
 | support.company | Company | الشركة |
@@ -1760,6 +1824,15 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | ops.quarantined | Quarantined webhooks (7 days) | إشعارات دفع معزولة (7 أيام) |
 | ops.refunds_waiting | Refunds awaiting approval | استردادات بانتظار الموافقة |
 | ops.payouts_waiting | Payouts awaiting approval | تحويلات بانتظار الموافقة |
+| ops.tasks | Background tasks | المهام الخلفية |
+| ops.tasks_none | No background task has run yet. Start the worker or configure the scheduled function (cron). | لم تعمل أي مهمة خلفية بعد. شغّل العامل أو اضبط المهمة المجدولة (cron). |
+| ops.tasks_problem | {count} background task(s) need attention. | {count} من المهام الخلفية تحتاج إلى متابعة. |
+| ops.task | Task | المهمة |
+| ops.task_last | Last finished | آخر انتهاء |
+| ops.task_next | Next run | التشغيل التالي |
+| ops.task_never | Not run yet | لم تعمل بعد |
+| ops.task_overdue | Overdue | متأخرة |
+| ops.task_failed | Failing ({count} in a row) | تفشل ({count} مرات متتالية) |
 | ops.range_note | Figures for {from} to {to}. Owed to sellers is the balance right now. | الأرقام من {from} إلى {to}. المستحق للموردين هو الرصيد الحالي. |
 | export.type.orders | Orders | الطلبات |
 | export.type.refunds | Refunds | الاستردادات |
@@ -1864,3 +1937,81 @@ Each key appears once, in the first matching category. Arabic is the current tra
 | admin.rfq.intro | Request metadata for moderation. Quote prices stay private to buyer and supplier. | بيانات الطلبات للإشراف. تبقى أسعار العروض خاصة بالمشتري والمورد. |
 | admin.rfq.search | Search by title, reference or buyer | ابحث بالعنوان أو المرجع أو المشتري |
 | admin.rfq.prices_private | Quote prices and documents are not shown to platform staff. | لا تظهر أسعار العروض ومستنداتها لموظفي المنصة. |
+| order.event.order.seller_cancel_requested | Supplier asked to cancel; full refund requested | طلب المورد الإلغاء؛ وطُلب استرداد كامل |
+| order.event.order.seller_cancel_rejected | Finance refused the supplier’s cancellation | رفضت المالية إلغاء المورد |
+| order.cancel_pending | Cancellation requested on {date}: {reason}. A full refund is awaiting finance approval. | طُلب الإلغاء في {date}: {reason}. الاسترداد الكامل بانتظار موافقة المالية. |
+| storefront.return_policy_en | Return policy (English) | سياسة الإرجاع (بالإنجليزية) |
+| storefront.return_policy_ar | Return policy (Arabic) | سياسة الإرجاع (بالعربية) |
+| ful.delivery_verified | Delivery verified | تم التحقق من التسليم |
+| ful.verified.PROOF_OF_DELIVERY | {date} (proof of delivery) | {date} (إثبات التسليم) |
+| ful.verified.BUYER_CONFIRMED | {date} (buyer confirmed receipt) | {date} (أكد المشتري الاستلام) |
+| ful.window_ends | Dispute window | فترة النزاع |
+| ful.window_open | Open until {date} | مفتوحة حتى {date} |
+| ful.window_closed | Ended {date} | انتهت في {date} |
+| ful.window_pending | Starts when delivery is verified (proof of delivery or buyer receipt) | تبدأ عند التحقق من التسليم (إثبات التسليم أو تأكيد المشتري للاستلام) |
+| refund.merchandise | Merchandise (AED) | البضاعة (درهم) |
+| refund.shipping | Delivery (AED) | التوصيل (درهم) |
+| refund.tax | VAT (AED) | ضريبة القيمة المضافة (درهم) |
+| refund.parts | Merchandise {merchandise} · Delivery {shipping} · VAT {tax} | البضاعة {merchandise} · التوصيل {shipping} · الضريبة {tax} |
+| refund.parts_legacy | Split in proportion to the order total (before Phase 8) | موزع بالتناسب مع إجمالي الطلب (قبل المرحلة 8) |
+| field.split_mismatch | The three parts must add up to the refund amount. | يجب أن يساوي مجموع الأجزاء الثلاثة مبلغ الاسترداد. |
+| payout.run_week | Week of {start} to {end} (Dubai) | أسبوع {start} إلى {end} (بتوقيت دبي) |
+| payout.run_note | Payouts are made weekly: at most one payout per supplier per week, approved by a second finance user. Orders become eligible only after verified delivery and the end of the dispute window, with no dispute, hold, open reconciliation case or pending refund. | تتم التحويلات أسبوعياً: تحويل واحد كحد أقصى لكل مورد في الأسبوع، بموافقة مستخدم مالية ثانٍ. لا تصبح الطلبات مؤهلة إلا بعد التحقق من التسليم وانتهاء فترة النزاع، ودون نزاع أو تعليق أو حالة تسوية مفتوحة أو استرداد معلّق. |
+| payout.run_count | Payouts this week | تحويلات هذا الأسبوع |
+| payout.run_amount | Requested this week | المطلوب هذا الأسبوع |
+| payout.available | Available provider balance | الرصيد المتاح لدى مزود الدفع |
+| payout.available_sandbox | SANDBOX: worked out from the ledger, not reported by a provider. | بيئة تجريبية: محسوب من دفتر الأستاذ، وليس من مزود دفع. |
+| payout.week | Week of {date} | أسبوع {date} |
+| hold.intro | A hold stops an order’s supplier payout until it is released. Use it for compliance, fraud, reconciliation or payment investigations. Every hold and release is recorded with its reason. | يوقف التعليق تحويل مستحقات المورد عن الطلب حتى يُرفع. استخدمه لتحقيقات الامتثال أو الاحتيال أو التسوية أو الدفع. يُسجَّل كل تعليق ورفع مع سببه. |
+| hold.place | Place a hold | إضافة تعليق |
+| hold.order_id | Order ID | رقم الطلب (المعرّف) |
+| hold.kind | Type | النوع |
+| hold.reason | Reason | السبب |
+| hold.placed | Hold placed. The order cannot be paid out until it is released. | تمت إضافة التعليق. لا يمكن تحويل مستحقات الطلب حتى يُرفع. |
+| hold.kind.COMPLIANCE | Compliance | امتثال |
+| hold.kind.FRAUD | Fraud | احتيال |
+| hold.kind.RECONCILIATION | Reconciliation | تسوية |
+| hold.kind.PAYMENT_INVESTIGATION | Payment investigation | تحقيق في الدفع |
+| hold.filter.active | Active | نشط |
+| hold.filter.released | Released | مرفوع |
+| hold.placed_by | Placed by {name} | أضافه {name} |
+| hold.released_by | Released by {name} | رفعه {name} |
+| hold.release | Release | رفع التعليق |
+| hold.release_reason | Reason for releasing | سبب الرفع |
+| hold.order | Order | الطلب |
+| commission.intro | The platform commission is a percentage of merchandise value, excluding VAT and delivery. A new rate applies to checkouts created after it is saved; existing orders keep the rate they were priced with. | عمولة المنصة نسبة من قيمة البضاعة دون ضريبة القيمة المضافة والتوصيل. تنطبق النسبة الجديدة على عمليات الدفع التي تُنشأ بعد حفظها، وتحتفظ الطلبات الحالية بالنسبة التي سُعّرت بها. |
+| commission.current | Current rate | النسبة الحالية |
+| commission.source.policy | Policy version {version} | إصدار السياسة {version} |
+| commission.source.configuration | From configuration (no policy version recorded yet) | من الإعدادات (لم يُسجَّل أي إصدار سياسة بعد) |
+| commission.rate | Rate (%) | النسبة (%) |
+| commission.reason | Reason for the change | سبب التغيير |
+| commission.totp | Authenticator code | رمز تطبيق المصادقة |
+| commission.history | History | السجل |
+| commission.readonly | Only a finance approver can change the rate. | يمكن لمعتمد المالية فقط تغيير النسبة. |
+| commission.version | Version {version} | الإصدار {version} |
+| finance.resolution | How was it resolved? | كيف تم الحل؟ |
+| company.vat_status | VAT registration | التسجيل في ضريبة القيمة المضافة |
+| vat.UNKNOWN | Not stated | غير محدد |
+| vat.REGISTERED | Registered for VAT | مسجل في ضريبة القيمة المضافة |
+| vat.NOT_REGISTERED | Not registered for VAT | غير مسجل في ضريبة القيمة المضافة |
+| company.vat_confirmed | Confirmed by compliance on {date} | أكده فريق الامتثال في {date} |
+| company.vat_unconfirmed | Not yet confirmed by compliance | لم يؤكده فريق الامتثال بعد |
+| field.trn_required | Enter the 15-digit TRN for a VAT-registered company. | أدخل رقم التسجيل الضريبي المكوّن من 15 رقماً للشركة المسجلة. |
+| tax.provisional_note | VAT is shown at a provisional development rate. It is not a professionally approved tax calculation. | تُعرض ضريبة القيمة المضافة بنسبة تجريبية مؤقتة، وليست حساباً ضريبياً معتمداً من مختص. |
+| tax.code | VAT rule | قاعدة الضريبة |
+| taxcode.PROVISIONAL_STANDARD | Provisional standard rate (development) | النسبة الأساسية المؤقتة (تجريبية) |
+| taxcode.STANDARD | Standard rate (supplier VAT registered) | النسبة الأساسية (المورد مسجل) |
+| taxcode.NO_VAT_NOT_REGISTERED | No VAT (supplier not registered) | بدون ضريبة (المورد غير مسجل) |
+| taxcode.ZERO_RATED | Zero-rated | خاضع لنسبة صفر |
+| taxcode.EXEMPT | Exempt | معفى |
+| invoice.not_tax_invoice | Draft for review only. This is not a tax invoice: it has no invoice number or issue date, and binding invoices are disabled until the tax rules are approved by a tax professional. | مسودة للمراجعة فقط. هذه ليست فاتورة ضريبية: لا تحمل رقماً أو تاريخ إصدار، والفواتير الملزمة معطلة حتى يعتمد مختص ضريبي قواعد الضريبة. |
+| invoice.supplier | Supplier | المورد |
+| invoice.buyer | Buyer | المشتري |
+| invoice.trn | TRN | رقم التسجيل الضريبي |
+| invoice.vat_status | VAT registration | التسجيل الضريبي |
+| invoice.vat_unconfirmed | (not confirmed) | (غير مؤكد) |
+| invoice.commission_vat_pending | VAT on the commission is pending professional advice and is not shown. | ضريبة القيمة المضافة على العمولة بانتظار رأي مختص ولا تُعرض. |
+| invoice.rate | Rate | النسبة |
+| admin.vat.confirm | Confirm VAT status | تأكيد الحالة الضريبية |
+| admin.vat.reason | Reason and evidence checked | السبب والمستندات التي تم التحقق منها |
+| admin.vat.confirmed | VAT status confirmed. | تم تأكيد الحالة الضريبية. |

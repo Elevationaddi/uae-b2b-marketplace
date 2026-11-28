@@ -1,6 +1,6 @@
 # 15. Forms and data requirements
 
-91 forms, taken from the zod contracts in `packages/contracts/src/*.ts` (validated identically on the server) and the screens in section 4. All text inputs are trimmed; money is entered in AED with up to 2 decimals and stored as integer fils; dates/times are entered in Dubai time and stored in UTC. Uploads: documents and attachments PDF/PNG/JPEG up to `UPLOAD_MAX_BYTES` (10 MB default); product/storefront images PNG/JPEG/WebP ≥200×200 px, ≤10 MB, re-encoded with metadata removed. Every file is malware-scanned (Pending → Clean / Blocked) and private files are only served after authorisation.
+103 forms, taken from the zod contracts in `packages/contracts/src/*.ts` (validated identically on the server) and the screens in section 4. All text inputs are trimmed; money is entered in AED with up to 2 decimals and stored as integer fils; dates/times are entered in Dubai time and stored in UTC. Uploads: documents and attachments PDF/PNG/JPEG up to `UPLOAD_MAX_BYTES` (10 MB default); product/storefront images PNG/JPEG/WebP ≥200×200 px, ≤10 MB, re-encoded with metadata removed. Every file is malware-scanned (Pending → Clean / Blocked) and private files are only served after authorisation.
 
 ## 15.1 Shared field validation messages (existing copy)
 
@@ -53,6 +53,8 @@
 | field.not_found | Not found in this workspace. | غير موجود في مساحة العمل هذه. |
 | field.range_too_long | The period can be at most 366 days. | لا يمكن أن تتجاوز الفترة 366 يوماً. |
 | field.too_many_rows | Too many rows. Choose a shorter period. | عدد الصفوف كبير. اختر فترة أقصر. |
+| field.split_mismatch | The three parts must add up to the refund amount. | يجب أن يساوي مجموع الأجزاء الثلاثة مبلغ الاسترداد. |
+| field.trn_required | Enter the 15-digit TRN for a VAT-registered company. | أدخل رقم التسجيل الضريبي المكوّن من 15 رقماً للشركة المسجلة. |
 
 
 ## 15.2 Form inventory
@@ -481,6 +483,24 @@
 
 **Possible server errors (existing copy keys):** `error.company.licence_exists`, `error.company.not_editable`, `error.company.licence_expiry_future`, `error.company.renewal_required`, `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`
 
+### ACC-19 · VAT registration (company section)
+
+**Roles / permissions:** Company OWNER edits; any change clears the confirmation.
+
+**Submits to:** PUT /companies/{id} (vat_status, trn) · **Stores in:** companies (vat_status, vat_confirmed_at, trn)
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| VAT registration | radio | Required | UNKNOWN, REGISTERED, NOT_REGISTERED |
+| TRN | text | Optional | 15 digits, required when registered |
+
+
+**Validation:** "Enter the 15-digit TRN for a VAT-registered company."
+
+**Submission behaviour:** Unconfirmed suppliers cannot submit quotes in supplier_status mode and block checkout.
+
+**Possible server errors (existing copy keys):** `error.company.licence_exists`, `error.company.not_editable`, `error.company.licence_expiry_future`, `error.company.renewal_required`, `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`
+
 ### ACC-09 · Team management
 
 **Roles / permissions:** Read: members. Manage: role OWNER only. Owners can only grant roles valid for the workspace kind (buyer: OWNER, PROCUREMENT, VIEWER; seller: OWNER, SALES, WAREHOUSE, FINANCE, VIEWER).
@@ -624,6 +644,23 @@
 **Validation:** —
 
 **Submission behaviour:** Immutable issued documents.
+
+**Possible server errors (existing copy keys):** `error.company.licence_exists`, `error.company.not_editable`, `error.company.licence_expiry_future`, `error.company.renewal_required`, `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`
+
+### ACC-18 · Policy acceptance and re-acceptance (clickwrap)
+
+**Roles / permissions:** Any signed-in company user; acceptance recorded per user with version, time (UTC) and IP.
+
+**Submits to:** New: GET /me/policies; POST /me/policies/accept · **Stores in:** New policy_versions, policy_acceptances
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| I accept the {policy} version {version} | checkbox | Required | one per changed policy |
+
+
+**Validation:** All changed policies must be ticked.
+
+**Submission behaviour:** Blocks trading actions until accepted; acceptance is audited; checkout records the version accepted.
 
 **Possible server errors (existing copy keys):** `error.company.licence_exists`, `error.company.not_editable`, `error.company.licence_expiry_future`, `error.company.renewal_required`, `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`
 
@@ -771,7 +808,7 @@
 
 **Validation:** Version must still be current (quote.superseded) and the RFQ OPEN (rfq.not_open).
 
-**Submission behaviour:** Idempotency-Key header; accepts the exact version_id; creates checkout (source QUOTE) and order with 72-hour payment deadline (D05). The delivery address (in the quoted emirate) is chosen when starting payment on BUY-18.
+**Submission behaviour:** Idempotency-Key header; accepts the exact version_id; creates checkout (source QUOTE) and order with 72-hour payment deadline (D05). The delivery address (in the quoted emirate) is chosen when starting payment on BUY-18. FD-10: only the latest eligible revision can be accepted; an older, expired or superseded revision shows "A newer revision exists" and the server refuses concurrent conflicting acceptances (version check).
 
 **Possible server errors (existing copy keys):** `error.address.limit_reached`, `error.cart.self_trade`, `error.cart.not_cart_eligible`, `error.cart.insufficient_stock`, `error.cart.limit_reached`, `error.checkout.payments_disabled`, `error.checkout.changed`, `error.checkout.blocked`, `error.checkout.insufficient_stock`, `error.checkout.not_payable`, `error.checkout.expired`, `error.checkout.address_emirate_mismatch`, `error.checkout.too_many_attempts`, `error.checkout.quote_cancel_unsupported`
 
@@ -813,19 +850,20 @@
 
 **Roles / permissions:** Buyer OWNER or PROCUREMENT in an ACTIVE (approved) buyer workspace (capability buyer.purchase). VIEWER read-only.
 
-**Submits to:** New: POST /buyer/workspaces/{ws}/quotes/{quoteId}/counter · **Stores in:** New quote_counteroffers table or event payload
+**Submits to:** New (C-14, being built): POST /buyer/workspaces/{ws}/quotes/{quoteId}/counteroffers; GET …/quotes/{quoteId}/negotiation · **Stores in:** New quote_counteroffers (round, proposed values, state) linked to quote_versions
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Proposed unit price (AED) | money | Required | fils integer |
-| Quantity | integer | Required | 1–10,000,000 |
-| Needed by | date | Optional |  |
-| Note | textarea | Optional | ≤2000 |
+| Proposed unit price (AED) | money | Required | > 0, integer fils, ≤ current unit price × 10 |
+| Requested quantity | integer | Required | ≥ 1 and within the RFQ quantity rules |
+| Proposed delivery date | date | Optional | today or later (Dubai) |
+| Customisation changes | textarea | Optional | ≤ 2000 |
+| Additional notes | textarea | Optional | ≤ 2000 |
 
 
-**Validation:** Server validates amounts and RFQ state.
+**Validation:** At least one of price, quantity or date must differ from the revision; RFQ open and revision current and not expired; rounds ≤ 3; integers only for money.
 
-**Submission behaviour:** Supplier answers by revising (new version) or declining.
+**Submission behaviour:** Creates counteroffer round n on the latest revision; the supplier is notified (in-app + email) and answers in SEL-40 by submitting a new revision or declining. While a counteroffer is open the buyer cannot accept the countered revision. After round 3 the action is replaced by "Final round reached: accept or decline the latest revision".
 
 **Possible server errors (existing copy keys):** `error.address.limit_reached`, `error.cart.self_trade`, `error.cart.not_cart_eligible`, `error.cart.insufficient_stock`, `error.cart.limit_reached`, `error.checkout.payments_disabled`, `error.checkout.changed`, `error.checkout.blocked`, `error.checkout.insufficient_stock`, `error.checkout.not_payable`, `error.checkout.expired`, `error.checkout.address_emirate_mismatch`, `error.checkout.too_many_attempts`, `error.checkout.quote_cancel_unsupported`
 
@@ -862,6 +900,23 @@
 **Validation:** Address emirate served; no blocking issues; terms accepted.
 
 **Submission behaviour:** Preview hash; 409 checkout.changed shows refreshed totals; creates checkout + orders + 15-minute reservation.
+
+**Possible server errors (existing copy keys):** `error.address.limit_reached`, `error.cart.self_trade`, `error.cart.not_cart_eligible`, `error.cart.insufficient_stock`, `error.cart.limit_reached`, `error.checkout.payments_disabled`, `error.checkout.changed`, `error.checkout.blocked`, `error.checkout.insufficient_stock`, `error.checkout.not_payable`, `error.checkout.expired`, `error.checkout.address_emirate_mismatch`, `error.checkout.too_many_attempts`, `error.checkout.quote_cancel_unsupported`
+
+### BUY-35 · Delivery method selection (checkout section)
+
+**Roles / permissions:** Buyer OWNER or PROCUREMENT in an ACTIVE (approved) buyer workspace (capability buyer.purchase). VIEWER read-only.
+
+**Submits to:** Existing POST /buyer/workspaces/{ws}/checkouts (+ delivery_method per supplier, C-10) · **Stores in:** checkouts, orders (+ delivery method snapshot), storefronts (delivery settings)
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Delivery method | radio | Required | per supplier: delivery (emirate enabled) or collection (offered) |
+
+
+**Validation:** Address emirate must be served for delivery; collection only where offered.
+
+**Submission behaviour:** Selection re-prices the checkout on the server; the chosen method, fee and terms are snapshotted on each order.
 
 **Possible server errors (existing copy keys):** `error.address.limit_reached`, `error.cart.self_trade`, `error.cart.not_cart_eligible`, `error.cart.insufficient_stock`, `error.cart.limit_reached`, `error.checkout.payments_disabled`, `error.checkout.changed`, `error.checkout.blocked`, `error.checkout.insufficient_stock`, `error.checkout.not_payable`, `error.checkout.expired`, `error.checkout.address_emirate_mismatch`, `error.checkout.too_many_attempts`, `error.checkout.quote_cancel_unsupported`
 
@@ -927,19 +982,20 @@
 
 ### BUY-31 · Request order cancellation (buyer)
 
-**Roles / permissions:** buyer.orders.act
+**Roles / permissions:** Buyer OWNER or PROCUREMENT in an ACTIVE (approved) buyer workspace (capability buyer.purchase). VIEWER read-only.
 
-**Submits to:** New endpoints · **Stores in:** New cancellation_requests
+**Submits to:** New (being built): POST /buyer/workspaces/{ws}/orders/{id}/cancellation-requests · **Stores in:** New order_cancellation_requests (reason, details, state, decided_by, decision_reason) + refunds
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Reason | select | Required |  |
-| Details | textarea | Optional | ≤2000 |
+| Reason | select | Required | Ordered by mistake; Found a better price; No longer needed; Delivery date too late; Other |
+| Details | textarea | Required | 10–2000 characters |
+| Acknowledge policy | checkbox | Required | "I have read the supplier's cancellation policy" |
 
 
-**Validation:** —
+**Validation:** Order is Confirmed or Processing and not dispatched; one open request per order; not while a supplier cancellation or refund is pending.
 
-**Submission behaviour:** Supplier/admin decides; refund via finance dual control.
+**Submission behaviour:** Creates a cancellation request; order shows "Cancellation requested"; supplier is notified and decides in SEL-41; an accepted request creates a refund that a second finance user approves (dual control, ADM-32/ADM-34); a rejected request records the supplier's reason and the buyer can open a dispute after delivery or a support ticket.
 
 **Possible server errors (existing copy keys):** `error.address.limit_reached`, `error.cart.self_trade`, `error.cart.not_cart_eligible`, `error.cart.insufficient_stock`, `error.cart.limit_reached`, `error.checkout.payments_disabled`, `error.checkout.changed`, `error.checkout.blocked`, `error.checkout.insufficient_stock`, `error.checkout.not_payable`, `error.checkout.expired`, `error.checkout.address_emirate_mismatch`, `error.checkout.too_many_attempts`, `error.checkout.quote_cancel_unsupported`
 
@@ -947,17 +1003,25 @@
 
 **Roles / permissions:** Buyer OWNER or PROCUREMENT in an ACTIVE (approved) buyer workspace (capability buyer.purchase). VIEWER read-only.
 
-**Submits to:** Could reuse RFQ with a "sample" flag · **Stores in:** rfqs
+**Submits to:** New (being built): POST /buyer/workspaces/{ws}/rfqs with type=SAMPLE and product_id; existing RFQ and quote endpoints · **Stores in:** rfqs (+ type, product_id, variant_id), quotes, quote_versions
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Quantity | integer | Required |  |
-| Note | textarea | Optional |  |
+| Product | reference | Required | prefilled; eligible product with samples offered |
+| Product variant | select | Optional | variants of the product |
+| Sample quantity | integer | Required | 1–(supplier max sample quantity) |
+| Material or colour preferences | textarea | Optional | ≤ 1000 |
+| Customisation requirements | textarea | Optional | ≤ 2000 |
+| Delivery or collection | radio | Required | Deliver to address (emirate served) / Collect from supplier (if offered) |
+| Delivery address | select | Optional | required when delivery is chosen |
+| Required by | date | Optional | today + 1 or later |
+| Additional notes | textarea | Optional | ≤ 2000 |
+| Attachments | file | Optional | PDF, PNG, JPEG ≤ 10 MB each, max 5; malware scan; fictional documents only in staging |
 
 
-**Validation:** —
+**Validation:** Supplier offers samples for the product; quantity within the supplier maximum; delivery emirate served or collection offered; attachment security rules.
 
-**Submission behaviour:** —
+**Submission behaviour:** Creates an RFQ of type SAMPLE sent privately to that supplier; the supplier answers with a sample quotation (SEL-22 in sample mode, price 0 for free samples); the buyer accepts it as any quotation and pays through checkout if paid.
 
 **Possible server errors (existing copy keys):** `error.address.limit_reached`, `error.cart.self_trade`, `error.cart.not_cart_eligible`, `error.cart.insufficient_stock`, `error.cart.limit_reached`, `error.checkout.payments_disabled`, `error.checkout.changed`, `error.checkout.blocked`, `error.checkout.insufficient_stock`, `error.checkout.not_payable`, `error.checkout.expired`, `error.checkout.address_emirate_mismatch`, `error.checkout.too_many_attempts`, `error.checkout.quote_cancel_unsupported`
 
@@ -1067,16 +1131,19 @@
 
 **Roles / permissions:** Seller OWNER or SALES (seller.catalog.edit); trading-gated: needs an ACTIVE workspace.
 
-**Submits to:** PATCH /seller/workspaces/{ws}/storefront · **Stores in:** storefronts
+**Submits to:** Existing: PUT /seller/workspaces/{ws}/storefront; new fields with C-10 · **Stores in:** storefronts
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Delivery fee per order (AED) | money | Optional | fils |
-| Typical delivery time (days) | integer | Optional | 0–90 |
-| Emirates you deliver to | checkboxes | Optional | ≤7 |
+| Deliver to {emirate} | toggle | Optional | per emirate |
+| Delivery fee {emirate} (AED) | money | Required | 0 or more, integer fils; required when the emirate is enabled |
+| Typical days {emirate} | integer range | Optional | 1–90 |
+| Offer buyer collection | toggle | Optional |  |
+| Collection address | textarea | Required | required when collection is on |
+| Collection instructions | textarea | Optional | ≤ 1000; shown after payment only |
 
 
-**Validation:** —
+**Validation:** At least one emirate or collection must be enabled to sell ready stock; fee integer fils.
 
 **Submission behaviour:** Without terms, checkout shows "This supplier has not set delivery terms yet."
 
@@ -1193,9 +1260,29 @@
 
 **Possible server errors (existing copy keys):** `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`, `error.file.scanning_unavailable`, `error.catalog.pending_review_locked`, `error.catalog.product_locked`, `error.catalog.sku_exists`, `error.catalog.sku_identity_locked`, `error.catalog.media_limit`, `error.catalog.pricing_invalid`, `error.catalog.submission_incomplete`, `error.catalog.restricted_term`, `error.catalog.invalid_transition`
 
+### SEL-39 · Sample settings (product section)
+
+**Roles / permissions:** Seller OWNER or SALES (seller.catalog.edit); trading-gated: needs an ACTIVE workspace.
+
+**Submits to:** PATCH /seller/workspaces/{ws}/products/{id} (+ sample policy) · **Stores in:** products (+ sample_policy)
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Samples | radio | Required | FREE, PAID, UNAVAILABLE |
+| Maximum sample quantity | integer | Optional | 1–1000 when offered |
+| Sample lead time (days) | integer | Optional | 1–90 |
+| Note to buyers | textarea | Optional | ≤ 500 (EN and AR) |
+
+
+**Validation:** Quantity required when offered.
+
+**Submission behaviour:** Controls the "Request a sample" action on PUB-07 and PUB-10.
+
+**Possible server errors (existing copy keys):** `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`, `error.file.scanning_unavailable`, `error.catalog.pending_review_locked`, `error.catalog.product_locked`, `error.catalog.sku_exists`, `error.catalog.sku_identity_locked`, `error.catalog.media_limit`, `error.catalog.pricing_invalid`, `error.catalog.submission_incomplete`, `error.catalog.restricted_term`, `error.catalog.invalid_transition`
+
 ### SEL-16 · Stock adjustment dialog
 
-**Roles / permissions:** Seller OWNER, SALES or WAREHOUSE (seller.inventory.ship); trading-gated.
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated.
 
 **Submits to:** POST /seller/workspaces/{ws}/inventory/{skuId}/adjust · **Stores in:** inventory, stock_movements
 
@@ -1214,7 +1301,7 @@
 
 ### SEL-17 · Low-stock threshold and restock date
 
-**Roles / permissions:** Seller OWNER, SALES or WAREHOUSE (seller.inventory.ship); trading-gated.
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated.
 
 **Submits to:** PATCH /seller/workspaces/{ws}/inventory/{skuId} · **Stores in:** inventory
 
@@ -1274,9 +1361,26 @@
 
 **Possible server errors (existing copy keys):** `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`, `error.file.scanning_unavailable`, `error.catalog.pending_review_locked`, `error.catalog.product_locked`, `error.catalog.sku_exists`, `error.catalog.sku_identity_locked`, `error.catalog.media_limit`, `error.catalog.pricing_invalid`, `error.catalog.submission_incomplete`, `error.catalog.restricted_term`, `error.catalog.invalid_transition`
 
+### SEL-40 · Respond to a counteroffer
+
+**Roles / permissions:** Seller OWNER or SALES (seller.catalog.edit); trading-gated: needs an ACTIVE workspace.
+
+**Submits to:** New: GET /seller/workspaces/{ws}/quotes/{id}/negotiation; POST …/counteroffers/{cid}/decline · **Stores in:** quote_counteroffers, quote_versions
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Decline reason | textarea | Optional | ≤ 1000 |
+
+
+**Validation:** Round must be open; RFQ open.
+
+**Submission behaviour:** A new revision supersedes the previous one and highlights changes for the buyer (BUY-34); declining keeps the current revision open until it expires.
+
+**Possible server errors (existing copy keys):** `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`, `error.file.scanning_unavailable`, `error.catalog.pending_review_locked`, `error.catalog.product_locked`, `error.catalog.sku_exists`, `error.catalog.sku_identity_locked`, `error.catalog.media_limit`, `error.catalog.pricing_invalid`, `error.catalog.submission_incomplete`, `error.catalog.restricted_term`, `error.catalog.invalid_transition`
+
 ### SEL-29 · Record dispatch dialog
 
-**Roles / permissions:** Seller OWNER, SALES or WAREHOUSE (seller.inventory.ship); trading-gated. Paid orders only.
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated. Paid orders only.
 
 **Submits to:** POST /seller/workspaces/{ws}/orders/{id}/dispatch · **Stores in:** shipments, orders
 
@@ -1295,7 +1399,7 @@
 
 ### SEL-30 · Report delivery dialog
 
-**Roles / permissions:** Seller OWNER, SALES or WAREHOUSE (seller.inventory.ship); trading-gated.
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated.
 
 **Submits to:** POST /seller/workspaces/{ws}/orders/{id}/deliver · **Stores in:** shipments, files
 
@@ -1313,7 +1417,7 @@
 
 ### SEL-31 · Open dispute (seller)
 
-**Roles / permissions:** Seller OWNER, SALES or WAREHOUSE (seller.inventory.ship); trading-gated.
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated.
 
 **Submits to:** POST /seller/workspaces/{ws}/orders/{id}/disputes · **Stores in:** disputes
 
@@ -1331,19 +1435,38 @@
 
 ### SEL-36 · Supplier order cancellation
 
-**Roles / permissions:** seller.inventory.ship
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated.
 
-**Submits to:** — · **Stores in:** orders, refunds
+**Submits to:** POST /seller/workspaces/{ws}/orders/{id}/cancel · **Stores in:** orders, refunds, order_events
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Reason | select | Required |  |
-| Details | textarea | Optional |  |
+| Reason for the buyer | textarea | Required | required, ≤ 1000 |
 
 
-**Validation:** —
+**Validation:** Order Confirmed or Processing; no pending cancellation ("A cancellation is pending for this order.").
 
-**Submission behaviour:** —
+**Submission behaviour:** Order shows "Cancellation requested on {date}: {reason}. A full refund is awaiting finance approval."; buyer notified; finance approves (order Cancelled, reason "Cancelled by the supplier (refunded in full)") or rejects (fulfilment continues).
+
+**Possible server errors (existing copy keys):** `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`, `error.file.scanning_unavailable`, `error.catalog.pending_review_locked`, `error.catalog.product_locked`, `error.catalog.sku_exists`, `error.catalog.sku_identity_locked`, `error.catalog.media_limit`, `error.catalog.pricing_invalid`, `error.catalog.submission_incomplete`, `error.catalog.restricted_term`, `error.catalog.invalid_transition`
+
+### SEL-41 · Review a buyer cancellation request
+
+**Roles / permissions:** Seller OWNER or WAREHOUSE (seller.inventory.ship); trading-gated.
+
+**Submits to:** New: POST /seller/workspaces/{ws}/orders/{id}/cancellation-requests/{rid}/decide · **Stores in:** order_cancellation_requests, refunds
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Decision | radio | Required | ACCEPT_FULL, ACCEPT_PARTIAL, DECLINE |
+| Committed costs (AED) | money | Optional | required for partial; ≤ captured merchandise |
+| Evidence | file | Optional | PDF/PNG/JPEG ≤ 10 MB, scanned |
+| Reason for the buyer | textarea | Required | ≤ 1000 |
+
+
+**Validation:** Order still undispatched; request open.
+
+**Submission behaviour:** Accept creates a refund request (supplier as requester) that a finance approver decides; decline notifies the buyer with the reason; every decision is audited.
 
 **Possible server errors (existing copy keys):** `error.file.required`, `error.file.type_not_allowed`, `error.file.too_large`, `error.file.not_clean`, `error.file.scanning_unavailable`, `error.catalog.pending_review_locked`, `error.catalog.product_locked`, `error.catalog.sku_exists`, `error.catalog.sku_identity_locked`, `error.catalog.media_limit`, `error.catalog.pricing_invalid`, `error.catalog.submission_incomplete`, `error.catalog.restricted_term`, `error.catalog.invalid_transition`
 
@@ -1397,6 +1520,41 @@
 **Validation:** —
 
 **Submission behaviour:** —
+
+**Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
+
+### ADM-54 · Confirm VAT status dialog
+
+**Roles / permissions:** admin.verification.review
+
+**Submits to:** POST /admin/companies/{id}/vat-status · **Stores in:** companies, audit_events
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Reason and evidence checked | textarea | Required | required |
+
+
+**Validation:** —
+
+**Submission behaviour:** Shows "VAT status confirmed."; enables checkout and quoting for that supplier.
+
+**Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
+
+### ADM-55 · Support ticket limit exception
+
+**Roles / permissions:** admin.support.manage
+
+**Submits to:** GET/POST /admin/companies/{id}/support-limit · **Stores in:** support_limits, audit_events
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Limit (1 to 100) | integer | Required | 1–100 |
+| Reason | textarea | Required |  |
+
+
+**Validation:** —
+
+**Submission behaviour:** "Ticket limit saved."; urgent categories are never blocked.
 
 **Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
 
@@ -1593,14 +1751,13 @@
 
 ### ADM-31 · Reconciliation case resolution
 
-**Roles / permissions:** admin.finance.read; resolution needs new capability with dual control
+**Roles / permissions:** admin.reconciliation.resolve (FINANCE_APPROVER)
 
-**Submits to:** New endpoints · **Stores in:** reconciliation_cases, ledger_entries
+**Submits to:** POST /admin/finance/reconciliation/{id}/resolve · **Stores in:** reconciliation_cases, ledger_entries
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Resolution | select | Required |  |
-| Note | textarea | Required |  |
+| How was it resolved? | textarea | Required | required, ≤ 1000 |
 
 
 **Validation:** —
@@ -1617,10 +1774,13 @@
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Order ID | text | Required | uuid (recommended: picker from ADM-29) |
-| Amount (AED) | money | Required | ≤ remaining refundable |
+| Order ID | uuid | Required |  |
+| Amount (AED) | money | Required | ≤ remaining capture |
+| Merchandise (AED) | money | Optional | parts must add up |
+| Delivery (AED) | money | Optional |  |
+| VAT (AED) | money | Optional |  |
+| Dispute ID | uuid | Optional | optional |
 | Reason | textarea | Required |  |
-| Dispute ID | text | Optional | optional |
 
 
 **Validation:** Amount ≤ refundable
@@ -1699,6 +1859,24 @@
 
 **Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
 
+### ADM-59 · Delivery proof review
+
+**Roles / permissions:** Proposed new capability; decisions audited.
+
+**Submits to:** New: GET /admin/deliveries; POST /admin/deliveries/{orderId}/decision · **Stores in:** orders (delivery_verified_at, source), shipments, delivery_reviews (new), audit_events
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Decision | radio | Required | ACCEPT, REJECT, MORE_EVIDENCE |
+| Reason | textarea | Required |  |
+
+
+**Validation:** —
+
+**Submission behaviour:** Rejecting proof clears delivery verification from proof; the window then starts at buyer receipt or accepted new proof. Buyer and supplier notified.
+
+**Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
+
 ### ADM-41 · Supplier reviews moderation
 
 **Roles / permissions:** admin.reviews.moderate
@@ -1774,7 +1952,7 @@
 
 **Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
 
-### ADM-47 · Platform settings and commission
+### ADM-47 · Platform settings: payout schedule and policy windows
 
 **Roles / permissions:** New restricted capability with dual control
 
@@ -1782,14 +1960,73 @@
 
 | Field | Type | Required | Rules / options |
 |---|---|---|---|
-| Commission (%) | decimal→basis points | Required |  |
-| Effective from | datetime | Required |  |
-| Reason | textarea | Required |  |
+| Payout day | select | Required | Monday–Sunday (default Monday) |
+| Payout time (Dubai) | time | Required | default 10:00 |
+| Public holidays | date list | Optional | UAE public holidays entered by finance |
+| Minimum payout (AED) | money | Optional | default 0 |
+| Reason for change | textarea | Required |  |
+| Authenticator code | totp | Required | step-up |
 
 
 **Validation:** —
 
 **Submission behaviour:** —
+
+**Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
+
+### ADM-56 · Commission policy
+
+**Roles / permissions:** View: FINANCE, FINANCE_APPROVER; change: admin.commission.manage (FINANCE_APPROVER) with TOTP step-up and reason.
+
+**Submits to:** GET/POST /admin/finance/commission · **Stores in:** commission_policies (append-only), checkouts, orders
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Rate (%) | decimal | Required | > 0 and ≤ 50, e.g. 10 or 7.5 |
+| Reason for the change | textarea | Required |  |
+| Authenticator code | totp | Required | 6 digits |
+| Effective from (planned) | date | Optional | ≥ today + 30 days (FD-05) |
+
+
+**Validation:** Rate bounds; TOTP valid; reason required.
+
+**Submission behaviour:** "New commission rate saved. It applies to new checkouts."; existing orders keep their snapshot; planned: suppliers notified 30 days before the effective date.
+
+**Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
+
+### ADM-57 · Settlement holds
+
+**Roles / permissions:** admin.holds.manage (COMPLIANCE, FINANCE, FINANCE_APPROVER).
+
+**Submits to:** GET/POST /admin/holds · **Stores in:** order_holds (never deleted), audit_events
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Order ID | uuid | Required |  |
+| Type | select | Required | COMPLIANCE, FRAUD, RECONCILIATION, PAYMENT_INVESTIGATION |
+| Reason | textarea | Required |  |
+
+
+**Validation:** One active hold per kind per order.
+
+**Submission behaviour:** "Hold placed. The order cannot be paid out until it is released."; errors "already been paid out", "already has an active hold of that type".
+
+**Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
+
+### ADM-58 · Release hold dialog
+
+**Roles / permissions:** COMPLIANCE, FINANCE, FINANCE_APPROVER
+
+**Submits to:** POST /admin/holds/{id}/release · **Stores in:** order_holds
+
+| Field | Type | Required | Rules / options |
+|---|---|---|---|
+| Reason for releasing | textarea | Required |  |
+
+
+**Validation:** "This hold has already been released."
+
+**Submission behaviour:** Order is re-evaluated for payout eligibility.
 
 **Possible server errors (existing copy keys):** `error.verification.incomplete`, `error.verification.not_editable`, `error.verification.terms_outdated`, `error.verification.renewal_not_allowed`, `error.verification.case_open`, `error.verification.licence_expired`, `error.admin.mfa_required`, `error.admin.mfa_code_invalid`, `error.admin.forbidden`, `error.admin.no_role`, `error.admin.last_super_admin`, `error.admin.mfa_already_enrolled`, `error.admin.mfa_not_enrolled`, `error.catalog.pending_review_locked`
 
@@ -1919,7 +2156,7 @@
 | error.payout.self_approval | You requested this payout; another finance user must decide. | أنت من طلب هذا التحويل؛ يجب أن يقرر مستخدم مالية آخر. |
 | error.payout.invalid_transition | This payout has already been decided. | تم البت في هذا التحويل بالفعل. |
 | error.payout.order_disputed | An order in this payout has an open dispute. | يوجد نزاع مفتوح على أحد طلبات هذا التحويل. |
-| error.support.too_many_open | This workspace has too many open tickets. Close resolved ones before opening another. | لدى مساحة العمل هذه عدد كبير من التذاكر المفتوحة. أغلق التذاكر المحلولة قبل فتح تذكرة جديدة. |
+| error.support.too_many_open | Your company has reached its limit of open tickets. Close resolved ones before opening another, or choose payment, security or compliance for an urgent case. | بلغت شركتك الحد الأقصى للتذاكر المفتوحة. أغلق التذاكر المحلولة قبل فتح تذكرة جديدة، أو اختر الدفع أو الأمن أو الامتثال للحالات العاجلة. |
 | error.support.not_open | This ticket is not open for replies. | هذه التذكرة غير متاحة للرد. |
 | error.support.closed | This ticket is closed. | هذه التذكرة مغلقة. |
 | error.support.not_resolved | Only a resolved ticket can be reopened. | لا يمكن إعادة فتح إلا التذكرة المحلولة. |
@@ -1956,3 +2193,15 @@
 | error.trading.company_suspended | Your company is suspended. Trading is paused. | شركتك موقوفة والتداول متوقف. |
 | error.trading.workspace_inactive | This workspace is inactive. | مساحة العمل هذه غير نشطة. |
 | error.trading.seller_not_eligible | This supplier is not eligible to trade. | هذا المورد غير مؤهل للتداول. |
+| error.order.cancellation_pending | A cancellation is pending for this order. | يوجد طلب إلغاء قيد الانتظار لهذا الطلب. |
+| error.refund.exceeds_component | A part is more than what remains refundable of it, or the parts do not add up to the amount. | أحد الأجزاء أكبر من المتبقي القابل للاسترداد منه، أو أن الأجزاء لا تساوي المبلغ. |
+| error.payout.already_in_run | This supplier already has a payout in this week’s run. | لدى هذا المورد تحويل في دورة هذا الأسبوع بالفعل. |
+| error.payout.order_held | An order in this payout is on hold, has an open reconciliation case or pending refund, or is still inside its dispute window. | أحد طلبات هذا التحويل معلّق أو لديه حالة تسوية مفتوحة أو استرداد معلّق، أو ما زال ضمن فترة النزاع. |
+| error.payout.order_changed | An order in this payout changed after it was requested. Reject it and request again. | تغيّر أحد طلبات هذا التحويل بعد طلبه. ارفضه واطلبه من جديد. |
+| error.payout.insufficient_balance | The available provider balance is lower than this payout. It cannot be approved now. | الرصيد المتاح لدى مزود الدفع أقل من هذا التحويل. لا يمكن اعتماده الآن. |
+| error.hold.order_paid_out | This order has already been paid out. | تم تحويل مستحقات هذا الطلب بالفعل. |
+| error.hold.exists | This order already has an active hold of that type. | لدى هذا الطلب تعليق نشط من هذا النوع بالفعل. |
+| error.hold.already_released | This hold has already been released. | تم رفع هذا التعليق بالفعل. |
+| error.reconciliation.not_open | This case is already resolved. | تم حل هذه الحالة بالفعل. |
+| error.quote.supplier_vat_unconfirmed | Your company’s VAT registration must be confirmed by compliance before you can submit quotes. | يجب أن يؤكد فريق الامتثال تسجيل شركتك في ضريبة القيمة المضافة قبل تقديم العروض. |
+| error.quote.vat_not_registered | Your company is not registered for VAT, so the quote cannot charge standard-rate VAT. | شركتك غير مسجلة في ضريبة القيمة المضافة، لذا لا يمكن أن يتضمن العرض الضريبة بالنسبة الأساسية. |

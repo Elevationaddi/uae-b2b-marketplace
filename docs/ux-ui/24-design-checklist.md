@@ -1,24 +1,24 @@
 # 24. UI/UX design production checklist (Figma)
 
-331 checklist items in 19 groups. The same list, with tracking columns, is in **05 — Design Production Checklist.xlsx**.
+347 checklist items in 19 groups. The same list, with tracking columns, is in **05 — Design Production Checklist.xlsx**.
 
 ## 24.1 Totals
 
 | Measure | Total |
 |---|---|
-| Unique screens (section 4) | 197 |
-| …of which P0 / P1 / P2 | 116 / 57 / 24 |
+| Unique screens (section 4) | 213 |
+| …of which P0 / P1 / P2 | 129 / 61 / 23 |
 | Reusable components | 76 |
 | Component variants listed | 234 |
-| Screen state variations | 218 |
-| Estimated screen frames | 958 |
+| Screen state variations | 245 |
+| Estimated screen frames | 1053 |
 | Tablet frames | 12 |
 | Component documentation frames | 152 |
 | Foundation frames | 15 |
 | Email frames (17 families × EN/AR) | 34 |
-| **Estimated Figma frames in total** | **1171** |
+| **Estimated Figma frames in total** | **1266** |
 | Prototype flows | 12 |
-| User journeys covered | 31 |
+| User journeys covered | 33 |
 
 
 ## 24.2 How the totals were calculated
@@ -37,17 +37,17 @@
 | 2. Reusable UI components | 76 |
 | 3. Public website | 13 |
 | 4. Authentication | 13 |
-| 5. Buyer onboarding | 7 |
+| 5. Buyer onboarding | 9 |
 | 6. Manufacturer onboarding | 6 |
-| 7. Buyer dashboard | 13 |
+| 7. Buyer dashboard | 14 |
 | 8. Manufacturer dashboard | 16 |
 | 9. Marketplace discovery | 13 |
-| 10. RFQ and quotation workflows | 22 |
-| 11. Order management | 17 |
-| 12. Financial workflows | 9 |
+| 10. RFQ and quotation workflows | 25 |
+| 11. Order management | 20 |
+| 12. Financial workflows | 10 |
 | 13. Notifications and communication | 6 |
 | 14. Customer support and disputes | 6 |
-| 15. Administration portal | 53 |
+| 15. Administration portal | 59 |
 | 16. Mobile-responsive screens | 8 |
 | 17. Empty and error states | 18 |
 | 18. Interactive prototypes | 12 |
@@ -56,9 +56,9 @@
 
 | Priority | Items |
 |---|---|
-| P0 | 222 |
-| P1 | 81 |
-| P2 | 28 |
+| P0 | 235 |
+| P1 | 85 |
+| P2 | 27 |
 
 
 ## 1. Design system foundations
@@ -213,6 +213,8 @@
 | ☐ | ACC-06 Submit for verification (terms) (Section) | ACC-06 | P0 | To design | 3 |
 | ☐ | ACC-07 Licence renewal (Section) | ACC-07 | P0 | To design | 3 |
 | ☐ | ACC-08 Remove document dialog (Dialog) | ACC-08 | P1 | To design | 2 |
+| ☐ | ACC-18 Policy acceptance and re-acceptance (clickwrap) (Dialog) | ACC-18 | P0 | Blocked – design placeholder | 4 |
+| ☐ | ACC-19 VAT registration (company section) (Section) | ACC-19 | P0 | To design | 3 |
 
 
 ## 6. Manufacturer onboarding
@@ -222,7 +224,7 @@
 | ☐ | PUB-26 Become a supplier (Page) | PUB-26 | P1 | To design | 2 |
 | ☐ | SEL-02 Storefront editor (Page) | SEL-02 | P0 | To design | 8 |
 | ☐ | SEL-03 Storefront media manager (Section) | SEL-03 | P1 | To design | 2 |
-| ☐ | SEL-04 Delivery terms (Section) | SEL-04 | P0 | To design | 3 |
+| ☐ | SEL-04 Delivery terms (Section) | SEL-04 | P0 | To design | 5 |
 | ☐ | SEL-05 Publish or take storefront offline dialog (Dialog) | SEL-05 | P1 | To design | 2 |
 | ☐ | SEL-33 Payout account onboarding (Page) | SEL-33 | P0 | Blocked – design placeholder | 2 |
 
@@ -244,6 +246,7 @@
 | ☐ | BUY-20 Delivery addresses (Page) | BUY-20 | P0 | To design | 10 |
 | ☐ | BUY-21 Address form (Section) | BUY-21 | P0 | To design | 3 |
 | ☐ | BUY-22 Remove address dialog (Dialog) | BUY-22 | P1 | To design | 2 |
+| ☐ | BUY-33 Monthly spending (buyer dashboard section) (Section) | BUY-33 | P0 | To design | 7 |
 
 
 ## 8. Manufacturer dashboard
@@ -304,8 +307,9 @@
 | ☐ | BUY-12 Accept quote dialog (Dialog) | BUY-12 | P0 | To design | 3 |
 | ☐ | BUY-13 Request revision dialog (Dialog) | BUY-13 | P0 | To design | 3 |
 | ☐ | BUY-14 Decline quote dialog (Dialog) | BUY-14 | P0 | To design | 3 |
-| ☐ | BUY-15 Counteroffer to supplier (Dialog) | BUY-15 | P1 | To design | 2 |
-| ☐ | BUY-32 Request a sample (Action) | BUY-32 | P2 | To design | 2 |
+| ☐ | BUY-15 Counteroffer to supplier (Dialog) | BUY-15 | P0 | To design | 7 |
+| ☐ | BUY-32 Request a sample (Page) | BUY-32 | P1 | To design | 2 |
+| ☐ | BUY-34 Negotiation history and revision changes (Section) | BUY-34 | P0 | To design | 9 |
 | ☐ | SEL-20 Quotation requests inbox (Page) | SEL-20 | P0 | To design | 10 |
 | ☐ | SEL-21 Request detail (seller) (Page) | SEL-21 | P0 | To design | 20 |
 | ☐ | SEL-22 Quote form (Section) | SEL-22 | P0 | To design | 7 |
@@ -313,6 +317,8 @@
 | ☐ | SEL-24 Withdraw quote dialog (Dialog) | SEL-24 | P1 | To design | 2 |
 | ☐ | SEL-25 Ask the buyer a question (Dialog) | SEL-25 | P1 | To design | 2 |
 | ☐ | SEL-26 Quotes list (seller) (Page) | SEL-26 | P1 | To design | 5 |
+| ☐ | SEL-39 Sample settings (product section) (Section) | SEL-39 | P1 | To design | 2 |
+| ☐ | SEL-40 Respond to a counteroffer (Section) | SEL-40 | P0 | To design | 7 |
 
 
 ## 11. Order management
@@ -327,15 +333,18 @@
 | ☐ | BUY-26 Rate supplier form (Section) | BUY-26 | P1 | To design | 2 |
 | ☐ | BUY-27 Open dispute form (buyer) (Dialog) | BUY-27 | P0 | To design | 3 |
 | ☐ | BUY-30 Reorder (Action) | BUY-30 | P2 | To design | 2 |
-| ☐ | BUY-31 Request order cancellation (buyer) (Dialog) | BUY-31 | P1 | To design | 2 |
+| ☐ | BUY-31 Request order cancellation (buyer) (Dialog) | BUY-31 | P0 | To design | 7 |
+| ☐ | BUY-35 Delivery method selection (checkout section) (Section) | BUY-35 | P0 | To design | 9 |
+| ☐ | BUY-36 Collection instructions (order section) (Section) | BUY-36 | P1 | To design | 2 |
 | ☐ | SEL-27 Orders list (seller) (Page) | SEL-27 | P0 | To design | 10 |
 | ☐ | SEL-28 Order detail (seller) (Page) | SEL-28 | P0 | To design | 18 |
 | ☐ | SEL-29 Record dispatch dialog (Dialog) | SEL-29 | P0 | To design | 3 |
 | ☐ | SEL-30 Report delivery dialog (Dialog) | SEL-30 | P0 | To design | 3 |
 | ☐ | SEL-31 Open dispute (seller) (Dialog) | SEL-31 | P2 | To design | 2 |
-| ☐ | SEL-36 Supplier order cancellation (Dialog) | SEL-36 | P1 | To design | 2 |
+| ☐ | SEL-36 Supplier order cancellation (Dialog) | SEL-36 | P0 | To design | 3 |
 | ☐ | SEL-37 Returns handling (Page) | SEL-37 | P2 | To design | 2 |
 | ☐ | SEL-38 Production milestones (made to order) (Section) | SEL-38 | P2 | To design | 2 |
+| ☐ | SEL-41 Review a buyer cancellation request (Dialog) | SEL-41 | P0 | To design | 7 |
 
 
 ## 12. Financial workflows
@@ -346,6 +355,7 @@
 | ☐ | BUY-19 Cancel checkout dialog (Dialog) | BUY-19 | P0 | To design | 3 |
 | ☐ | BUY-28 Invoices and tax documents (buyer) (Page) | BUY-28 | P1 | Blocked – design placeholder | 2 |
 | ☐ | BUY-29 Payment history (buyer) (Page) | BUY-29 | P2 | To design | 2 |
+| ☐ | BUY-37 Invoice draft (order section) (Section) | BUY-37 | P1 | To design | 2 |
 | ☐ | FIN-01 Sandbox payment page (Page) | FIN-01 | P0 | To design | 4 |
 | ☐ | FIN-02 Live payment provider checkout (External page) | FIN-02 | P0 | Blocked – design placeholder | 1 |
 | ☐ | FIN-03 Bank transfer instructions (Page) | FIN-03 | P1 | Blocked – design placeholder | 2 |
@@ -411,7 +421,7 @@
 | ☐ | ADM-28 Orders (admin) (Page) | ADM-28 | P0 | To design | 10 |
 | ☐ | ADM-29 Order detail (admin) (Page) | ADM-29 | P0 | To design | 10 |
 | ☐ | ADM-30 Finance overview (Page) | ADM-30 | P0 | To design | 4 |
-| ☐ | ADM-31 Reconciliation case resolution (Page) | ADM-31 | P0 | To design | 4 |
+| ☐ | ADM-31 Reconciliation case resolution (Dialog) | ADM-31 | P0 | To design | 3 |
 | ☐ | ADM-32 Refunds (Page) | ADM-32 | P0 | To design | 10 |
 | ☐ | ADM-33 Request refund form (Section) | ADM-33 | P0 | To design | 3 |
 | ☐ | ADM-34 Approve or reject refund dialog (Dialog) | ADM-34 | P0 | To design | 3 |
@@ -427,13 +437,19 @@
 | ☐ | ADM-44 Reports (scoped CSV exports) (Page) | ADM-44 | P1 | To design | 5 |
 | ☐ | ADM-45 Audit log (Page) | ADM-45 | P1 | To design | 5 |
 | ☐ | ADM-46 Staff and roles (Page) | ADM-46 | P1 | To design | 5 |
-| ☐ | ADM-47 Platform settings and commission (Page) | ADM-47 | P0 | To design | 4 |
+| ☐ | ADM-47 Platform settings: payout schedule and policy windows (Page) | ADM-47 | P1 | To design | 2 |
 | ☐ | ADM-48 Logistics and delivery settings (Page) | ADM-48 | P2 | To design | 2 |
 | ☐ | ADM-49 System health and webhooks (Page) | ADM-49 | P2 | To design | 2 |
 | ☐ | ADM-50 Tax configuration and invoicing (Page) | ADM-50 | P1 | Blocked – design placeholder | 2 |
 | ☐ | ADM-51 Data requests, account closure and legal hold (Page) | ADM-51 | P1 | To design | 2 |
 | ☐ | ADM-52 Executive analytics (Page) | ADM-52 | P2 | To design | 2 |
 | ☐ | ADM-53 Sandbox provider simulator (Action) | ADM-53 | P2 | To design | 2 |
+| ☐ | ADM-54 Confirm VAT status dialog (Dialog) | ADM-54 | P0 | To design | 3 |
+| ☐ | ADM-55 Support ticket limit exception (Section) | ADM-55 | P1 | To design | 2 |
+| ☐ | ADM-56 Commission policy (Page) | ADM-56 | P0 | To design | 10 |
+| ☐ | ADM-57 Settlement holds (Page) | ADM-57 | P0 | To design | 10 |
+| ☐ | ADM-58 Release hold dialog (Dialog) | ADM-58 | P0 | To design | 3 |
+| ☐ | ADM-59 Delivery proof review (Page) | ADM-59 | P1 | To design | 5 |
 
 
 ## 16. Mobile-responsive screens

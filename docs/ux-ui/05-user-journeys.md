@@ -1,6 +1,6 @@
 # 5. Detailed user journeys
 
-31 journeys, one per item requested in the brief. Each lists start point, steps, screens (IDs from section 4), decisions, system responses, outcomes, failures, alternatives and permissions, with a Mermaid diagram. The journey status says how much of it works today.
+33 journeys, one per item requested in the brief. Each lists start point, steps, screens (IDs from section 4), decisions, system responses, outcomes, failures, alternatives and permissions, with a Mermaid diagram. The journey status says how much of it works today.
 
 | ID | Journey | Roles | Status |
 |---|---|---|---|
@@ -18,23 +18,25 @@
 | J-12 | Submitting a request for quotation | Buyer OWNER, PROCUREMENT | Implemented |
 | J-13 | Receiving quotations | Buyer OWNER, PROCUREMENT; seller OWNER, SALES | Implemented |
 | J-14 | Comparing quotations | Buyer OWNER, PROCUREMENT, VIEWER | Implemented |
-| J-15 | Accepting or rejecting quotations | Buyer OWNER, PROCUREMENT | Implemented |
+| J-15 | Accepting, rejecting or countering quotations | Buyer OWNER, PROCUREMENT | Partial (counteroffers approved, being built) |
 | J-16 | Creating an order | Buyer OWNER, PROCUREMENT | Implemented |
-| J-17 | Completing checkout | Buyer OWNER, PROCUREMENT | Implemented |
+| J-17 | Completing checkout | Buyer OWNER, PROCUREMENT | Partial (per-emirate delivery and collection being built) |
 | J-18 | Making payments | Buyer OWNER, PROCUREMENT | Partial (sandbox only) |
 | J-19 | Managing production | Seller OWNER, SALES, WAREHOUSE | Partial |
 | J-20 | Tracking order progress | Buyer OWNER, PROCUREMENT, VIEWER | Implemented |
 | J-21 | Managing fulfilment | Seller OWNER, SALES, WAREHOUSE | Implemented |
-| J-22 | Confirming order completion | Buyer OWNER, PROCUREMENT | Implemented (auto-complete pending decision) |
-| J-23 | Requesting cancellations | Buyer, seller | Partial |
+| J-22 | Confirming receipt and order completion | Buyer OWNER, PROCUREMENT | Implemented |
+| J-23 | Requesting cancellations | Buyer, seller | Partial (supplier cancellation built; buyer requests approved, to build) |
 | J-24 | Requesting refunds | Buyer (via dispute), finance | Implemented (sandbox) |
 | J-25 | Opening disputes | Buyer OWNER, PROCUREMENT; seller | Implemented |
 | J-26 | Resolving disputes | Platform SUPPORT, FINANCE | Implemented (sandbox refunds) |
-| J-27 | Receiving payouts | Seller OWNER, FINANCE; platform finance | Implemented (sandbox, manual) |
+| J-27 | Receiving payouts | Seller OWNER, FINANCE; platform finance | Implemented (sandbox; weekly run built) |
 | J-28 | Contacting customer support | Any workspace member (not VIEWER for writing) | Implemented |
 | J-29 | Managing account settings | Any company user | Implemented |
 | J-30 | Administrative approval and verification | Platform COMPLIANCE | Implemented |
-| J-31 | Financial reconciliation | Platform FINANCE, FINANCE_APPROVER | Partial (cases visible; no resolution) |
+| J-31 | Financial reconciliation | Platform FINANCE, FINANCE_APPROVER | Implemented (sandbox) |
+| J-32 | Requesting a product sample | Buyer OWNER, PROCUREMENT; seller OWNER, SALES | Planned (FD-13 approved) |
+| J-33 | Negotiating with structured counteroffers | Buyer OWNER, PROCUREMENT; seller OWNER, SALES | Planned (FD-10 approved, being built) |
 
 
 ## J-01 · Visiting the marketplace for the first time
@@ -413,6 +415,7 @@ B -->|No| E[Reason: sign in / register company]
 2. Invites suppliers (≤20) and attaches files (≤5).
 3. Saves draft → reviews detail (BUY-05).
 4. Publishes (BUY-07) → OPEN; invited and matching suppliers notified.
+5. Chooses the audience: "Matching suppliers" (public to eligible verified suppliers in matching categories) or invited suppliers only (FD-11).
 
 | Aspect | Detail |
 |---|---|
@@ -502,27 +505,28 @@ C --> F[Decline BUY-14]
 C --> G[Counteroffer BUY-15 planned]
 ```
 
-## J-15 · Accepting or rejecting quotations
+## J-15 · Accepting, rejecting or countering quotations
 
-**Roles:** Buyer OWNER, PROCUREMENT · **Status:** Implemented
+**Roles:** Buyer OWNER, PROCUREMENT · **Status:** Partial (counteroffers approved, being built)
 
 **Starting point:** Comparison (BUY-10).
 
 **Steps:**
 
-1. Accept: confirms the exact version and an optional PO reference (BUY-12).
-2. System awards RFQ, declines other quotes, creates checkout (source QUOTE) and order with 72-hour payment window.
-3. Buyer chooses a delivery address in the quoted emirate when starting payment (BUY-18).
-4. Decline: confirms (BUY-14); seller notified.
+1. Reviews the latest revision of each quote (BUY-10, BUY-34: what changed in each revision is highlighted).
+2. Accept: confirms the exact current revision and an optional PO reference (BUY-12). Only the latest eligible revision can be accepted; a concurrent acceptance of an older revision is refused (FD-10).
+3. System awards the RFQ, declines other quotes, creates the checkout (source QUOTE) and the order with the 72-hour payment window.
+4. Counter: sends a structured counteroffer (BUY-15) with proposed unit price, quantity, delivery date, customisation changes and notes; at most three rounds per supplier (J-33).
+5. Decline: confirms (BUY-14); supplier notified.
 
 | Aspect | Detail |
 |---|---|
-| Required screens | BUY-12, BUY-14, BUY-18 |
-| User decisions | Accept vs decline vs revise. |
+| Required screens | BUY-10, BUY-34, BUY-12, BUY-15, BUY-14, BUY-18 |
+| User decisions | Accept vs counter vs decline vs ask for a revision. |
 | System responses | Idempotent accept; quote.accepted / rfq.awarded_other / quote.declined notifications. |
 | Success outcome | AWARDED RFQ with order awaiting payment. |
-| Failure scenarios | Version superseded or expired; address emirate mismatch at payment; checkout disabled ("No order was created…"). |
-| Alternative pathways | Request revision instead. |
+| Failure scenarios | Revision superseded or expired ("A newer revision exists"); round limit reached; address emirate mismatch at payment; checkout disabled. |
+| Alternative pathways | Request a revision without figures (BUY-13). |
 | Permissions and restrictions | buyer.purchase. |
 
 
@@ -566,23 +570,24 @@ A -->|Quotation| E[Accept BUY-12] --> F[Checkout status BUY-18]
 
 ## J-17 · Completing checkout
 
-**Roles:** Buyer OWNER, PROCUREMENT · **Status:** Implemented
+**Roles:** Buyer OWNER, PROCUREMENT · **Status:** Partial (per-emirate delivery and collection being built)
 
 **Starting point:** Cart › Continue to checkout (BUY-17).
 
 **Steps:**
 
-1. Selects UAE address (or adds one).
-2. Reviews per-supplier delivery, tax and totals; enters PO reference; accepts terms.
-3. Places order and pays → checkout PENDING_PAYMENT, 15-minute stock reservation.
+1. Selects a UAE address (or adds one).
+2. Per supplier chooses the delivery method (BUY-35): delivery to the address emirate at that supplier's fee, or free collection where offered; quote orders use the delivery charge agreed in the quotation (FD-08).
+3. Reviews per-supplier VAT rule (confirmed supplier VAT status), return policy and server totals; enters PO reference; accepts the current terms version (FD-16, ACC-18).
+4. Places order and pays → checkout PENDING_PAYMENT, 15-minute stock reservation; delivery method and charges are snapshotted on each order.
 
 | Aspect | Detail |
 |---|---|
-| Required screens | BUY-17, BUY-20, BUY-21, BUY-18, BUY-19 |
-| User decisions | Address; accept terms. |
+| Required screens | BUY-17, BUY-35, BUY-20, BUY-21, ACC-18, BUY-18, BUY-19 |
+| User decisions | Address; delivery or collection per supplier; accept terms. |
 | System responses | Preview hash; 409 if prices or stock changed; reservation. |
 | Success outcome | Checkout created; redirected to payment. |
-| Failure scenarios | Emirate not served; no delivery terms; prices changed; stock gone. |
+| Failure scenarios | Emirate not served and no collection; supplier VAT status not confirmed; prices, stock or delivery charges changed; stock gone. |
 | Alternative pathways | Cancel checkout (BUY-19). |
 | Permissions and restrictions | buyer.purchase. |
 
@@ -591,9 +596,12 @@ A -->|Quotation| E[Accept BUY-12] --> F[Checkout status BUY-18]
 flowchart TD
 A[BUY-17] --> B{Address chosen?}
 B -->|No| C[Add address BUY-21] --> A
-B -->|Yes| D[Preview totals] --> E{Changed since preview?}
+B -->|Yes| M[Delivery method per supplier BUY-35]
+M --> N{Emirate served or collection offered?}
+N -->|No| O[Change address or remove items] --> A
+N -->|Yes| D[Preview totals from server] --> E{Changed since preview?}
 E -->|Yes| F[Show updated totals] --> D
-E -->|No| G[Create checkout + reserve 15 min] --> H[Pay FIN-01/FIN-02]
+E -->|No| G[Accept terms version ACC-18] --> H[Create checkout + reserve 15 min] --> I[Pay FIN-01]
 ```
 
 ## J-18 · Making payments
@@ -720,63 +728,74 @@ S->>P: Report delivery + proof
 P->>B: order.delivered
 ```
 
-## J-22 · Confirming order completion
+## J-22 · Confirming receipt and order completion
 
-**Roles:** Buyer OWNER, PROCUREMENT · **Status:** Implemented (auto-complete pending decision)
+**Roles:** Buyer OWNER, PROCUREMENT · **Status:** Implemented
 
 **Starting point:** Order detail (BUY-24).
 
 **Steps:**
 
-1. Clicks Confirm receipt (BUY-25) → COMPLETED.
-2. Settlement becomes ELIGIBLE unless a dispute is open.
-3. Rates supplier (BUY-26).
+1. Delivery becomes verified by the supplier's clean proof of delivery or by the buyer's Confirm receipt (BUY-25), whichever comes first (FD-03).
+2. Confirm receipt records delivery only; the 14-day dispute window stays open until the date shown (FD-02).
+3. If nothing is disputed, held or pending, the order completes automatically after the window and the supplier settlement becomes eligible for the next weekly payout.
+4. Buyer can rate the supplier (BUY-26), shown publicly as "Verified business buyer".
 
 | Aspect | Detail |
 |---|---|
-| Required screens | BUY-24, BUY-25, BUY-26 |
-| User decisions | Confirm now or open dispute. |
-| System responses | order.completed notification to seller. |
-| Success outcome | Order COMPLETED; review published anonymously. |
-| Failure scenarios | — |
-| Alternative pathways | Founder auto-complete rule (FD-02) not implemented. |
+| Required screens | BUY-24, BUY-25, BUY-26, BUY-27, SEL-30, ADM-59 |
+| User decisions | Confirm receipt, wait, or open a dispute within the window. |
+| System responses | Delivery verification stored with its source; auto-completion sweep; order.completed notification. |
+| Success outcome | Order completed and settlement eligible after the window. |
+| Failure scenarios | Proof contested or suspicious → admin delivery review (ADM-59). |
+| Alternative pathways | Open a dispute (BUY-27) before the window ends. |
 | Permissions and restrictions | buyer.orders.act. |
 
 
 ```mermaid
 flowchart TD
-A[DISPATCHED/DELIVERED] --> B{Goods OK?}
-B -->|Yes| C[Confirm receipt BUY-25] --> D[COMPLETED] --> E[Review BUY-26]
-B -->|No| F[Open dispute BUY-27]
+A[DISPATCHED] --> B{First of}
+B -->|Supplier proof SEL-30| C[Delivery verified]
+B -->|Buyer confirms BUY-25| C
+C --> D[14-day dispute window]
+D -->|Dispute BUY-27| E[Dispute process]
+D -->|Window ends, no hold| F[Completed automatically] --> G[Eligible for weekly payout]
 ```
 
 ## J-23 · Requesting cancellations
 
-**Roles:** Buyer, seller · **Status:** Partial
+**Roles:** Buyer, seller · **Status:** Partial (supplier cancellation built; buyer requests approved, to build)
 
 **Starting point:** Checkout status (BUY-18) or order detail.
 
 **Steps:**
 
-1. Unpaid: buyer cancels checkout (BUY-19) → orders CANCELLED, stock released.
-2. Unpaid and deadline passed: system cancels (reason "Not paid before the deadline").
-3. Paid (planned): buyer request (BUY-31) or supplier cancellation (SEL-36) → refund via finance.
+1. Unpaid: buyer cancels the checkout (BUY-19) → orders CANCELLED, stock released; unpaid past the deadline is cancelled automatically.
+2. Paid and not dispatched, buyer side: requests cancellation (BUY-31) with reason and policy acknowledgement.
+3. Supplier reviews (SEL-41). Ready stock: accept to request a full refund. Made to order: decide against production status, quote terms, disclosed policy and committed costs (accept, accept with deduction, or decline); no automatic refund.
+4. Paid and not dispatched, supplier side: supplier cancels (SEL-36) and a full refund is requested.
+5. Any refund is requested and approved by two different finance users (ADM-32, ADM-34); every step is audited.
 
 | Aspect | Detail |
 |---|---|
-| Required screens | BUY-19, BUY-31, SEL-36, SHR-04 |
-| User decisions | Cancel or keep. |
-| System responses | Reservation release; order.cancelled notification. |
-| Success outcome | Order cancelled cleanly. |
-| Failure scenarios | Paid orders today require a dispute or support ticket. |
-| Alternative pathways | Support ticket (SHR-04). |
-| Permissions and restrictions | buyer.purchase; planned seller.inventory.ship. |
+| Required screens | BUY-19, BUY-31, SEL-41, SEL-36, ADM-32, ADM-34, SHR-04 |
+| User decisions | Buyer: request or keep. Supplier: accept, deduct committed costs, or decline. Finance: approve or reject the refund. |
+| System responses | Order shows "Cancellation requested"; notifications in-app and by email; refund split by merchandise, delivery and VAT; commission reversed on merchandise only. |
+| Success outcome | Order cancelled with the right refund, or the request declined with a recorded reason. |
+| Failure scenarios | Already dispatched; request already open; supplier cancellation pending. |
+| Alternative pathways | After delivery: dispute (BUY-27). Questions: support ticket (SHR-04). |
+| Permissions and restrictions | buyer.purchase; seller.orders.manage; admin.refunds.request / approve. |
 
 
 ```mermaid
 flowchart TD
 A{Paid?} -->|No| B[Cancel checkout BUY-19] --> C[CANCELLED + stock released]
-A -->|Yes| D[Planned: request BUY-31 / SEL-36] --> E[Refund via finance]
+A -->|Yes, not dispatched| D{Who cancels?}
+D -->|Buyer| E[Request BUY-31] --> F{Supplier review SEL-41}
+F -->|Decline| G[Order continues, reason recorded]
+F -->|Accept or deduct costs| H[Refund request]
+D -->|Supplier| I[Cancel SEL-36] --> H
+H --> J[Finance approver ADM-34] --> K[CANCELLED + refund]
 ```
 
 ## J-24 · Requesting refunds
@@ -829,7 +848,7 @@ SUBMITTED --> FAILED
 |---|---|
 | Required screens | BUY-27, SEL-31, SHR-02 |
 | User decisions | Type of problem. |
-| System responses | Window: 14 days after receipt (P5-3); never after payout. |
+| System responses | Window: 14 days after verified delivery (proof of delivery or buyer receipt, whichever first; P8-1, FD-03); never after payout; settlement held while open. |
 | Success outcome | Dispute opened; payout held. |
 | Failure scenarios | Window passed; already paid out; one open dispute per order. |
 | Alternative pathways | Support ticket instead. |
@@ -881,22 +900,23 @@ RESOLUTION_PROPOSED --> CLOSED: close (no action proposal)
 
 ## J-27 · Receiving payouts
 
-**Roles:** Seller OWNER, FINANCE; platform finance · **Status:** Implemented (sandbox, manual)
+**Roles:** Seller OWNER, FINANCE; platform finance · **Status:** Implemented (sandbox; weekly run built)
 
 **Starting point:** Seller finance (SEL-32) / admin payouts (ADM-35).
 
 **Steps:**
 
-1. Completed undisputed orders become ELIGIBLE.
-2. FINANCE requests a payout for all eligible orders of a seller (ADM-36).
-3. FINANCE_APPROVER approves (ADM-37) → PENDING at provider.
-4. Provider confirms PAID (or FAILED) → seller notified; settlements PAID_OUT.
+1. Orders become eligible after verified delivery and the end of the 14-day dispute window, with no dispute, hold, reconciliation case or pending refund.
+2. Every Monday at 10:00 Dubai (next working day after UAE public holidays) the scheduler opens the weekly payout run for the previous Monday–Sunday week (FD-04).
+3. FINANCE requests one payout per supplier for the week (ADM-36); no minimum amount at launch.
+4. A different FINANCE_APPROVER approves (ADM-37) after balance and hold re-checks (FD-01).
+5. Provider confirms PAID or FAILED; supplier notified (SEL-32).
 
 | Aspect | Detail |
 |---|---|
-| Required screens | SEL-32, SEL-33, ADM-35, ADM-36, ADM-37 |
+| Required screens | SEL-32, SEL-33, ADM-35, ADM-36, ADM-37, ADM-57, ADM-47 |
 | User decisions | Approve or reject. |
-| System responses | Founder wants weekly runs after the window (FD-04); payout onboarding blocked (SEL-33). |
+| System responses | PostgreSQL scheduler (Vercel Cron) creates the run only; finance approval is never bypassed. |
 | Success outcome | Seller paid (sandbox). |
 | Failure scenarios | Provider failure → PAYOUT_FAILED case. |
 | Alternative pathways | — |
@@ -1009,15 +1029,15 @@ E --> F[APPROVED] & G[NEEDS_INFO] & H[REJECTED]
 
 ## J-31 · Financial reconciliation
 
-**Roles:** Platform FINANCE, FINANCE_APPROVER · **Status:** Partial (cases visible; no resolution)
+**Roles:** Platform FINANCE, FINANCE_APPROVER · **Status:** Implemented (sandbox)
 
 **Starting point:** Finance overview (ADM-30).
 
 **Steps:**
 
-1. System opens cases: late capture, amount/currency mismatch, unknown reference, invalid signature, refund failed, payout failed.
-2. Finance reviews cases and ledger balances (provider clearing, payable to suppliers, platform commission, unallocated receipts).
-3. (Planned) resolves a case with dual control (ADM-31): refund, allocate, write-off.
+1. System opens cases: late capture, amount or currency mismatch, unknown reference, invalid signature, refund failed, payout failed.
+2. Finance reviews cases and ledger balances.
+3. FINANCE_APPROVER resolves a case with a reason (ADM-31); orders it held are re-evaluated for payout.
 
 | Aspect | Detail |
 |---|---|
@@ -1025,7 +1045,7 @@ E --> F[APPROVED] & G[NEEDS_INFO] & H[REJECTED]
 | User decisions | Resolution type. |
 | System responses | Webhooks verified and stored once; quarantined if invalid. |
 | Success outcome | Ledger and provider balances agree. |
-| Failure scenarios | No resolution tooling today (G-12). |
+| Failure scenarios | Case cannot be resolved without provider data → keep open and place a hold (ADM-57). |
 | Alternative pathways | Export reports (ADM-44). |
 | Permissions and restrictions | admin.finance.read; resolution capability to be defined. |
 
@@ -1035,4 +1055,80 @@ flowchart TD
 A[Webhook / provider event] --> B{Matches open checkout?}
 B -->|Yes| C[Normal capture]
 B -->|No| D[Reconciliation case OPEN] --> E[Finance review ADM-30] --> F[Planned resolution ADM-31] --> G[RESOLVED]
+```
+
+## J-32 · Requesting a product sample
+
+**Roles:** Buyer OWNER, PROCUREMENT; seller OWNER, SALES · **Status:** Planned (FD-13 approved)
+
+**Starting point:** "Request a sample" on a product (PUB-07) or storefront (PUB-10) where the supplier offers samples.
+
+**Steps:**
+
+1. Supplier has set samples to Free or Paid for the product (SEL-39).
+2. Buyer opens Request a sample (BUY-32): product, variant, quantity, material or colour, customisation, delivery or collection, required date, notes, attachments.
+3. A sample request (RFQ of type SAMPLE) is sent privately to that supplier; it appears in SEL-20 with the "Sample request" badge.
+4. Supplier answers with a sample quotation (SEL-22): AED 0 for free samples, a price for paid ones, or declines.
+5. Buyer accepts (BUY-12) and, if paid, pays through the normal checkout; fulfilment, disputes and support work as for any order.
+
+| Aspect | Detail |
+|---|---|
+| Required screens | SEL-39, PUB-07, PUB-10, BUY-32, SEL-20, SEL-22, BUY-12, BUY-17 |
+| User decisions | Buyer: request, accept or decline. Supplier: offer free, paid or decline. |
+| System responses | Reuses RFQ, quotation, checkout and order models; no separate payment module. |
+| Success outcome | Sample order created and fulfilled. |
+| Failure scenarios | Samples not offered; quantity above the supplier maximum; emirate not served. |
+| Alternative pathways | Standard RFQ (BUY-03) or message the supplier (MSG-03). |
+| Permissions and restrictions | buyer.purchase; seller.catalog.edit. |
+
+
+```mermaid
+flowchart TD
+A[Supplier sets samples SEL-39] --> B[Buyer: Request a sample BUY-32]
+B --> C[Sample request in SEL-20]
+C --> D{Supplier}
+D -->|Free| E[Quote AED 0 SEL-22]
+D -->|Paid| F[Quote with price SEL-22]
+D -->|Decline| G[Buyer notified]
+E --> H[Buyer accepts BUY-12] --> I[Order]
+F --> H
+```
+
+## J-33 · Negotiating with structured counteroffers
+
+**Roles:** Buyer OWNER, PROCUREMENT; seller OWNER, SALES · **Status:** Planned (FD-10 approved, being built)
+
+**Starting point:** A submitted quotation on BUY-05 / BUY-10.
+
+**Steps:**
+
+1. Buyer sends counteroffer round 1 (BUY-15): proposed unit price, quantity, delivery date, customisation changes, notes.
+2. Supplier sees it in SEL-21 / SEL-40 and either submits a new revision (prefilled SEL-22) or declines.
+3. Buyer sees the new revision with changed fields highlighted (BUY-34) and accepts, declines or counters again.
+4. After round 3 the buyer can only accept or decline the latest revision.
+5. Only the latest eligible revision can be accepted; conflicting simultaneous acceptances are refused.
+
+| Aspect | Detail |
+|---|---|
+| Required screens | BUY-05, BUY-10, BUY-15, BUY-34, SEL-21, SEL-40, SEL-22, BUY-12 |
+| User decisions | Counter, accept or decline (buyer); revise or decline (supplier). |
+| System responses | Rounds counted per buyer–supplier negotiation; full history kept; in-app and email notifications. |
+| Success outcome | A revision both sides agree on is accepted. |
+| Failure scenarios | Revision expired or superseded; RFQ closed; round limit. |
+| Alternative pathways | Request revision without figures (BUY-13); message (MSG-02). |
+| Permissions and restrictions | buyer.purchase; seller.catalog.edit. |
+
+
+```mermaid
+sequenceDiagram
+participant B as Buyer
+participant S as Supplier
+S->>B: Quotation v1
+B->>S: Counteroffer round 1 (BUY-15)
+S->>B: Revision v2, changes highlighted (SEL-40)
+B->>S: Counteroffer round 2
+S->>B: Revision v3
+B->>S: Counteroffer round 3
+S->>B: Revision v4 (final round)
+B->>S: Accept latest revision (BUY-12)
 ```

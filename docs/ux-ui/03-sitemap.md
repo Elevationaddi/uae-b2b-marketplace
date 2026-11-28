@@ -129,6 +129,7 @@ The code has a single **seller workspace** used by manufacturers, factories, who
   - **ACC-05** Verification document upload (section) **[S]** — `Section of ACC-03` — Implemented
   - **ACC-06** Submit for verification (terms) (section) **[S]** — `Section of ACC-03` — Implemented
   - **ACC-07** Licence renewal (section) **[S]** — `Section of ACC-03` — Implemented
+  - **ACC-19** VAT registration (company section) (section) **[S]** — `Section of ACC-03 / ACC-04` — Implemented
   - **ACC-08** Remove document dialog (dialog) **[S]** — `Dialog on ACC-03` — Implemented
 - **ACC-09** Team management **[S]** — `/{locale}/app/team/[workspaceId]` — Implemented
   - **ACC-10** Invite team member form (section) **[S]** — `Section of ACC-09` — Implemented
@@ -138,6 +139,7 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 - **ACC-15** Workspace switcher **[S]** — `Header control (all /app pages)` — Implemented
 - **ACC-16** Account closure and data requests **[S]** — `Not built` — Planned
 - **ACC-17** Billing, invoices and statements **[S]** — `Not built (spec /account/billing, /finance/invoices)` — Blocked
+  - **ACC-18** Policy acceptance and re-acceptance (clickwrap) (dialog) **[S]** — `Dialog shown at sign-in when a material policy version changes; checkbox on AUTH-03, ACC-06 and BUY-17` — Blocked
 
 ### Communication (shared)
 
@@ -149,7 +151,8 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 
 ### Buyer experience
 
-- **BUY-01** Buyer dashboard — `/{locale}/app/buyer/[workspaceId]` — Recommended
+- **BUY-01** Buyer dashboard — `/{locale}/app/buyer/[workspaceId]` — Planned
+  - **BUY-33** Monthly spending (buyer dashboard section) (section) — `Section of BUY-01` — Planned
 - **BUY-02** Requests for quotation list — `/{locale}/app/buyer/[workspaceId]/rfqs` — Implemented
 - **BUY-03** New request for quotation — `/{locale}/app/buyer/[workspaceId]/rfqs/new` — Implemented
 - **BUY-04** Request quotation entry (workspace chooser) — `/{locale}/app/rfqs/new` — Implemented
@@ -160,12 +163,14 @@ The code has a single **seller workspace** used by manufacturers, factories, who
   - **BUY-09** Invite suppliers picker (section) — `Panel in BUY-03/BUY-06` — Implemented
   - **BUY-10** Quote comparison (section) — `Section of BUY-05` — Implemented
   - **BUY-11** Quote detail and version history (section) — `Expandable within BUY-05` — Implemented
+  - **BUY-34** Negotiation history and revision changes (section) — `Section of BUY-05 (per supplier)` — Planned
   - **BUY-12** Accept quote dialog (dialog) — `Dialog on BUY-05` — Implemented
   - **BUY-13** Request revision dialog (dialog) — `Dialog on BUY-05` — Implemented
   - **BUY-14** Decline quote dialog (dialog) — `Dialog on BUY-05` — Implemented
   - **BUY-15** Counteroffer to supplier (dialog) — `Dialog on BUY-05 (proposed)` — Planned
 - **BUY-16** Cart — `/{locale}/app/buyer/[workspaceId]/cart` — Implemented
 - **BUY-17** Checkout — `/{locale}/app/buyer/[workspaceId]/checkout` — Implemented
+  - **BUY-35** Delivery method selection (checkout section) (section) — `Section of BUY-17 (per supplier group)` — Planned
 - **BUY-18** Checkout status and payment — `/{locale}/app/buyer/[workspaceId]/checkouts/[checkoutId]` — Implemented
   - **BUY-19** Cancel checkout dialog (dialog) — `Dialog on BUY-18` — Implemented
 - **BUY-20** Delivery addresses — `/{locale}/app/buyer/[workspaceId]/addresses` — Implemented
@@ -173,6 +178,8 @@ The code has a single **seller workspace** used by manufacturers, factories, who
   - **BUY-22** Remove address dialog (dialog) — `Dialog on BUY-20` — Implemented
 - **BUY-23** Orders list (buyer) — `/{locale}/app/buyer/[workspaceId]/orders` — Implemented
 - **BUY-24** Order detail (buyer) — `/{locale}/app/buyer/[workspaceId]/orders/[orderId]` — Implemented
+  - **BUY-36** Collection instructions (order section) (section) — `Section of BUY-24` — Planned
+  - **BUY-37** Invoice draft (order section) (section) — `Section of BUY-24 (also SEL-28, ADM-29)` — Implemented
   - **BUY-25** Confirm receipt dialog (dialog) — `Dialog on BUY-24` — Implemented
   - **BUY-26** Rate supplier form (section) — `Section of BUY-24` — Implemented
   - **BUY-27** Open dispute form (buyer) (dialog) — `Dialog on BUY-24` — Implemented
@@ -180,7 +187,7 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 - **BUY-29** Payment history (buyer) — `/{locale}/app/buyer/[workspaceId]/payments (proposed)` — Recommended
   - **BUY-30** Reorder (action) — `Action on BUY-24 (proposed)` — Planned
   - **BUY-31** Request order cancellation (buyer) (dialog) — `Dialog on BUY-24 (proposed)` — Planned
-  - **BUY-32** Request a sample (action) — `Action on PUB-07 (proposed)` — Recommended
+- **BUY-32** Request a sample — `/{locale}/app/buyer/[workspaceId]/rfqs/new?type=sample&product={id} (from PUB-07 or PUB-10)` — Planned
 
 ### Customer support and disputes (shared)
 
@@ -202,7 +209,7 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 - **SEL-01** Seller overview (dashboard) — `/{locale}/app/seller/[workspaceId]` — Implemented
 - **SEL-02** Storefront editor — `/{locale}/app/seller/[workspaceId]/storefront` — Implemented
   - **SEL-03** Storefront media manager (section) — `Section of SEL-02` — Implemented
-  - **SEL-04** Delivery terms (section) — `Section of SEL-02` — Implemented
+  - **SEL-04** Delivery terms (section) — `Section of SEL-02` — Partial
   - **SEL-05** Publish or take storefront offline dialog (dialog) — `Dialog on SEL-02` — Implemented
 - **SEL-06** Product list — `/{locale}/app/seller/[workspaceId]/products` — Implemented
 - **SEL-07** Add product — `/{locale}/app/seller/[workspaceId]/products/new` — Implemented
@@ -213,6 +220,7 @@ The code has a single **seller workspace** used by manufacturers, factories, who
   - **SEL-12** Submit for review dialog (dialog) — `Dialog on SEL-08` — Implemented
   - **SEL-13** Listing lifecycle dialogs (dialog) — `Dialogs on SEL-08` — Implemented
   - **SEL-14** Moderation history (section) — `Section of SEL-08` — Implemented
+  - **SEL-39** Sample settings (product section) (section) — `Section of SEL-08` — Planned
 - **SEL-15** Inventory — `/{locale}/app/seller/[workspaceId]/inventory` — Implemented
   - **SEL-16** Stock adjustment dialog (dialog) — `Dialog on SEL-15` — Implemented
   - **SEL-17** Low-stock threshold and restock date (section) — `Inline form on SEL-15` — Implemented
@@ -224,17 +232,19 @@ The code has a single **seller workspace** used by manufacturers, factories, who
   - **SEL-23** Submit quote dialog (dialog) — `Dialog on SEL-21` — Implemented
   - **SEL-24** Withdraw quote dialog (dialog) — `Dialog on SEL-21` — Implemented
   - **SEL-25** Ask the buyer a question (dialog) — `Dialog on SEL-21` — Implemented
+  - **SEL-40** Respond to a counteroffer (section) — `Section of SEL-21` — Planned
 - **SEL-26** Quotes list (seller) — `/{locale}/app/seller/[workspaceId]/quotes` — Implemented
 - **SEL-27** Orders list (seller) — `/{locale}/app/seller/[workspaceId]/orders` — Implemented
 - **SEL-28** Order detail (seller) — `/{locale}/app/seller/[workspaceId]/orders/[orderId]` — Implemented
-  - **SEL-29** Record dispatch dialog (dialog) — `Dialog on SEL-28` — Implemented
+  - **SEL-29** Record dispatch dialog (dialog) — `Dialog on SEL-28` — Partial
   - **SEL-30** Report delivery dialog (dialog) — `Dialog on SEL-28` — Implemented
   - **SEL-31** Open dispute (seller) (dialog) — `Dialog on SEL-28` — Implemented
 - **SEL-32** Seller finance — `/{locale}/app/seller/[workspaceId]/finance` — Implemented
 - **SEL-33** Payout account onboarding — `/{locale}/app/seller/[workspaceId]/finance/payout-account (proposed)` — Blocked
 - **SEL-34** Statements and commission invoices — `/{locale}/app/seller/[workspaceId]/finance/statements (proposed)` — Blocked
 - **SEL-35** Seller analytics — `/{locale}/app/seller/[workspaceId]/analytics (proposed)` — Planned
-  - **SEL-36** Supplier order cancellation (dialog) — `Dialog on SEL-28 (proposed)` — Planned
+  - **SEL-36** Supplier order cancellation (dialog) — `Dialog on SEL-28` — Implemented
+  - **SEL-41** Review a buyer cancellation request (dialog) — `Dialog on SEL-28` — Planned
 - **SEL-37** Returns handling — `/{locale}/app/seller/[workspaceId]/returns (proposed)` — Planned
   - **SEL-38** Production milestones (made to order) (section) — `Section of SEL-28 (proposed)` — Recommended
 
@@ -247,6 +257,8 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 - **ADM-05** Companies — `/{locale}/admin/companies` — Implemented
 - **ADM-06** Company detail (admin) — `/{locale}/admin/companies/[companyId]` — Implemented
   - **ADM-07** Suspend or reactivate company dialog (dialog) — `Dialog on ADM-06` — Implemented
+  - **ADM-54** Confirm VAT status dialog (dialog) — `Dialog on ADM-06` — Implemented
+  - **ADM-55** Support ticket limit exception (section) — `Section of ADM-06` — Implemented
 - **ADM-08** Users — `/{locale}/admin/users` — Implemented
   - **ADM-09** Revoke sessions dialog (dialog) — `Dialog on ADM-08` — Implemented
 - **ADM-10** Catalogue moderation overview — `/{locale}/admin/catalog` — Implemented
@@ -270,9 +282,9 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 - **ADM-28** Orders (admin) — `/{locale}/admin/orders` — Implemented
 - **ADM-29** Order detail (admin) — `/{locale}/admin/orders/[orderId]` — Implemented
 - **ADM-30** Finance overview — `/{locale}/admin/finance` — Implemented
-- **ADM-31** Reconciliation case resolution — `/{locale}/admin/finance/reconciliation/[id] (proposed)` — Planned
+  - **ADM-31** Reconciliation case resolution (dialog) — `Dialog on ADM-30` — Implemented
 - **ADM-32** Refunds — `/{locale}/admin/refunds` — Implemented
-  - **ADM-33** Request refund form (section) — `Form on ADM-32` — Partial
+  - **ADM-33** Request refund form (section) — `Form on ADM-32` — Implemented
   - **ADM-34** Approve or reject refund dialog (dialog) — `Dialog on ADM-32` — Implemented
 - **ADM-35** Payouts — `/{locale}/admin/payouts` — Implemented
   - **ADM-36** Request payout dialog (dialog) — `Dialog on ADM-35` — Implemented
@@ -280,13 +292,17 @@ The code has a single **seller workspace** used by manufacturers, factories, who
 - **ADM-38** Disputes queue — `/{locale}/admin/disputes` — Implemented
 - **ADM-39** Dispute detail (admin) — `/{locale}/admin/disputes/[disputeId]` — Implemented
   - **ADM-40** Dispute action dialogs (dialog) — `Dialogs on ADM-39` — Implemented
+- **ADM-59** Delivery proof review — `/{locale}/admin/deliveries (proposed)` — Planned
 - **ADM-41** Supplier reviews moderation — `/{locale}/admin/supplier-reviews` — Implemented
 - **ADM-42** Support queue — `/{locale}/admin/support` — Implemented
 - **ADM-43** Ticket detail (admin) — `/{locale}/admin/support/[ticketId]` — Implemented
 - **ADM-44** Reports (scoped CSV exports) — `/{locale}/admin/reports` — Implemented
 - **ADM-45** Audit log — `/{locale}/admin/audit` — Implemented
 - **ADM-46** Staff and roles — `/{locale}/admin/staff` — Implemented
-- **ADM-47** Platform settings and commission — `/{locale}/admin/settings (proposed)` — Planned
+- **ADM-47** Platform settings: payout schedule and policy windows — `/{locale}/admin/settings (proposed)` — Planned
+- **ADM-56** Commission policy — `/{locale}/admin/commission` — Implemented
+- **ADM-57** Settlement holds — `/{locale}/admin/holds` — Implemented
+  - **ADM-58** Release hold dialog (dialog) — `Dialog on ADM-57` — Implemented
 - **ADM-48** Logistics and delivery settings — `/{locale}/admin/logistics (proposed)` — Planned
 - **ADM-49** System health and webhooks — `/{locale}/admin/system (proposed)` — Recommended
 - **ADM-50** Tax configuration and invoicing — `/{locale}/admin/tax (proposed)` — Blocked

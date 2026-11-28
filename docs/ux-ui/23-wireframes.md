@@ -90,7 +90,7 @@ sticky bottom bar: AED estimate + [Add to cart] / (Quote).
 │ Note: contact details, documents and bank information are never public       │
 ```
 
-## W-05 Buyer dashboard (BUY-01, recommended)
+## W-05 Buyer dashboard (BUY-01, planned: FD-21)
 ```
 ┌ app header: logo | workspace ▾ | Marketplace | Messages(2) | 🔔(5) | Account ┐
 ├ sidebar ──────┬──────────────────────────────────────────────────────────────┤
@@ -103,6 +103,9 @@ sticky bottom bar: AED estimate + [Add to cart] / (Quote).
 │ Support       │ • Pay ORD-1042 by 14:00                  │ ORD-1042 {Awaiting}│
 │ Addresses     │ • Compare 3 quotes on RFQ-221            │ ORD-1038 {Dispatch}│
 │ Company/Team  │ • Confirm receipt ORD-1031               │ View all ›         │
+│               │ ── Monthly spending (BUY-33) ── Period ◉6m ◯3m ◯12m        │
+│               │ AED 84,200.00 net this month   ▁▃▅▂▆█ (Jun→Nov)  [Table]   │
+│               │ Top suppliers: A 41% · B 22% · C 12%    (Export CSV)        │
 └───────────────┴──────────────────────────────────────────────────────────────┘
 MOBILE: tiles 2-up, task list, bottom tabs Dashboard | Marketplace | Requests |
 Orders | More.
@@ -237,4 +240,111 @@ DESKTOP two-pane                         │ MOBILE
 │ …                │ [Type a message ] │ │
 │                  │           [Send]  │ │
 └──────────────────┴───────────────────┘ │
+```
+
+## W-15 Monthly spending (BUY-33, planned: FD-21)
+```
+DESKTOP (section of BUY-01)
+┌ Monthly spending ────────────────────── Period [3m][6m][12m] Supplier ▾ Category ▾ ┐
+│ {Sandbox: test data}                                                              │
+│ ┌ Net this month ┐┌ Orders ┐┌ Refunds ┐┌ VAT ┐                                    │
+│ │ AED 84,200.00  ││ 12     ││ AED 900 ││ …   │                                    │
+│ ├ Chart (8 cols) ─────────────────────────────┬ Top suppliers (4 cols) ──────────┤ │
+│ │ █ bars per month, AED axis, values on focus │ 1 Supplier A  AED 34,500.00       │ │
+│ │ Jun Jul Aug Sep Oct Nov                     │ Top categories                    │ │
+│ ├─────────────────────────────────────────────┴───────────────────────────────────┤ │
+│ │ Month | Orders | Merchandise | Delivery | VAT | Refunds | Net spend  (row → BUY-23)│ │
+└───────────────────────────────────────────────────────────────────────────────────┘
+MOBILE: tiles 2-up → chart full width (labels every 2 months) → month cards.
+RTL: page mirrors; chart time axis stays left to right; AED in ar-AE inside isolates.
+EMPTY: "No paid orders in this period." (Browse marketplace)
+```
+
+## W-16 Structured counteroffer (BUY-15) and negotiation history (BUY-34), planned: FD-10
+```
+DESKTOP dialog (≈720px)
+┌ Counteroffer to Supplier A · RFQ-221 ·  Round 2 of 3 ─────────────────────── ✕ ┐
+│                     Supplier's revision v3      Your counteroffer               │
+│ Unit price (AED)    12.40                       [ 11.80        ]                │
+│ Quantity            5,000 pieces                [ 6,000        ]                │
+│ Delivery date       20 Jan 2027                 [ 15 Jan 2027 ▾]                │
+│ Customisation       Logo print 1 colour         [ 2 colours, kraft box     ]    │
+│ Notes                                           [                          ]    │
+│ Proposed subtotal (server, excl. delivery and VAT): AED 70,800.00               │
+│ ⓘ While your counteroffer is open you cannot accept revision v3.                │
+│                                        (Cancel)  [Review and send]              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+NEGOTIATION HISTORY (BUY-34, inside BUY-05 per supplier)
+│ ● Quotation v1        12.90 × 5,000 · 28 Jan       {Superseded}                │
+│ ● Counteroffer 1      11.50 · 15 Jan               {Answered}                   │
+│ ● Revision v2         ~~12.90~~ 12.60 · ~~28 Jan~~ 22 Jan   {Superseded}        │
+│ ● Counteroffer 2      11.80 × 6,000                {Waiting for supplier}       │
+│ ● Revision v3 ← current, valid until 3 Dec (Dubai)  [Accept] (Counter) (Decline)│
+MOBILE: full-height sheet; comparison as stacked rows label / current / yours.
+ROUND 3 USED: "You have used all three counteroffer rounds. Accept or decline the latest revision."
+```
+
+## W-17 Request a sample (BUY-32, planned: FD-13)
+```
+┌ Request a sample ───────────────────────────────────────────────────────────────┐
+│ ▢ Steel shelving unit 180cm · Supplier A {Verified} · Free sample               │
+│ Variant ▾ [Grey, 4 shelves]     Sample quantity [ 1 ] (max 2)                   │
+│ Material or colour preferences [                                    ]           │
+│ Customisation requirements     [                                    ]           │
+│ ◉ Deliver to [Warehouse JAFZA ▾] (Dubai)   ◯ Collect from supplier (free)       │
+│ Required by [ 10 Dec 2026 ▾]   Notes [                         ]                │
+│ Attachments [Choose files] spec.pdf {Scanning…}                                 │
+│ What happens next: the supplier replies with a sample quotation (AED 0 if free).│
+│                                       (Save draft) (Cancel) [Send sample request]│
+└─────────────────────────────────────────────────────────────────────────────────┘
+MOBILE: single column, sticky [Send sample request].
+SUPPLIER SIDE: SEL-20 row badge {Sample request}; SEL-39 settings ◉ Free ◯ Paid ◯ Not available.
+```
+
+## W-18 Delivery or collection at checkout (BUY-35, planned: FD-08)
+```
+┌ Checkout ─────────────────────────────────────────┬ Order summary (sticky) ────┐
+│ Delivery address ▾ [Warehouse JAFZA, Dubai]        │ Supplier A   AED 12,000.00 │
+│ ── Supplier A (3 items) ──                         │ Delivery     AED    150.00 │
+│ ◉ Delivery to Dubai: AED 150.00 · 2–4 days         │ VAT (standard, supplier    │
+│ ◯ Collect from supplier: free (Sharjah; address    │   VAT registered) AED …    │
+│   shown after payment)                             │ Supplier B   …             │
+│ Returns: "Unused items within 7 days…" (policy)    │ Total        AED …         │
+│ ── Supplier B (1 item) ──                          │ ☐ I accept Terms v1.0      │
+│ ◌ Delivery to Dubai — Does not deliver to Dubai    │ [Place order and pay]      │
+│ ◉ Collect from supplier: free                      │ Stock held 15 min          │
+│ ── From quotation ORD-1050 ── Delivery as agreed in the quotation: AED 900.00   │
+└────────────────────────────────────────────────────┴────────────────────────────┘
+MOBILE: supplier groups stacked; summary collapses into a sticky bottom bar.
+NO OPTION: "This supplier does not deliver to Dubai and does not offer collection…"
+SUPPLIER SETTINGS (SEL-04): table of 7 emirates | Deliver ☐ | Fee AED | Days; Buyer collection ☐; address; instructions.
+```
+
+## W-19 Buyer cancellation request (BUY-31) and supplier review (SEL-41), planned: founder Q12
+```
+BUYER dialog                                   │ SUPPLIER dialog
+┌ Request cancellation of ORD-1042 ─────── ✕ ┐ │ ┌ Cancellation request · ORD-1042 ──────── ✕ ┐
+│ {Confirmed} Made to order (from quotation)  │ │ │ Reason: Delivery date too late            │
+│ ⚠ This order is made to your specification. │ │ │ "We need it by 1 Dec…"                    │
+│ The supplier may decline or deduct committed│ │ │ Production status: materials secured      │
+│ production costs, and no refund is automatic│ │ │ ◉ Accept and request full refund          │
+│ Reason ▾ [Delivery date too late]           │ │ │ ◯ Accept with deduction  AED [  2,000 ]   │
+│ Details [                               ]   │ │ │   Evidence [Choose file]                  │
+│ ☐ I have read the supplier's policy         │ │ │ ◯ Decline                                 │
+│        (Keep the order) [Send request]      │ │ │ Reason for the buyer [               ]    │
+└─────────────────────────────────────────────┘ │ │              (Cancel) [Send decision]     │
+                                                │ └───────────────────────────────────────────┘
+AFTER: BUY-24 badge {Cancellation requested}; accepted → refund awaiting finance approval (ADM-34).
+```
+
+## W-20 Commission policy and settlement holds (ADM-56, ADM-57)
+```
+┌ Commission ──────────────────────────────────┐ ┌ Settlement holds ───────────────────────────┐
+│ Current: 10% · Policy version 3              │ │ Place a hold: Order [ORD-…] Type ▾ Reason [ ] │
+│ New rate (%) [ 9.5 ] Reason [            ]   │ │ [Place a hold]                                 │
+│ Effective from (planned) [ ≥ today + 30 d ]  │ │ (Active) (Released)                            │
+│ Authenticator code [ ______ ] [Save new rate]│ │ Order   Type        Reason   Placed by  (Release)│
+│ History: v3 10% · reason · actor · date      │ │ ORD-9   Compliance  …        A. Admin   (Release)│
+└──────────────────────────────────────────────┘ └────────────────────────────────────────────────┘
+Only FINANCE_APPROVER can save; suppliers see the rate on SEL-28/SEL-32 and get 30 days' notice (FD-05).
 ```

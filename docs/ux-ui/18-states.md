@@ -54,7 +54,21 @@ Copy marked **(existing)** is the current UI string; **(suggested)** is new copy
 | Successful submission (RFQ) | BUY-03/BUY-07 | (existing) "Draft saved. Review it and publish when ready." / "Request published." | — |
 | Successful submission (quote) | SEL-23 | (existing) "Quote submitted." | — |
 | Successful submission (verification) | ACC-06 | (existing) "Submitted. Compliance will review your documents." | — |
-| Successful order completion | BUY-25 | (suggested) "Thank you. The order is complete. You can rate the supplier or open a dispute within 14 days." | Rate supplier |
+| Receipt confirmed | BUY-25 | (suggested, FD-02) "Receipt confirmed. You can still open a dispute until {date}." | Rate supplier; Open a dispute |
+| Completed automatically | BUY-24, SEL-28 | (suggested) "Completed automatically after the dispute window on {date}." | — |
+| Counteroffer sent | BUY-15 | (suggested) "Counteroffer sent. The supplier has been notified." | — |
+| Round limit reached | BUY-15, BUY-34 | (suggested) "You have used all three counteroffer rounds. Accept or decline the latest revision." | Accept; Decline |
+| Newer revision exists | BUY-12, BUY-34 | (suggested) "A newer revision exists. Review it before accepting." | View latest revision |
+| Sample request sent | BUY-32 | (suggested) "Sample request sent." | View request |
+| Samples not offered | BUY-32 | (suggested) "This supplier does not offer samples for this product." | Request quotation |
+| Cancellation request sent | BUY-31 | (suggested) "Cancellation request sent. The supplier will review it." | — |
+| Cannot cancel after dispatch | BUY-31 | (suggested) "This order has already been dispatched, so it cannot be cancelled. You can open a dispute after delivery." | Open order |
+| No delivery option | BUY-35 | (suggested) "This supplier does not deliver to {emirate} and does not offer collection. Choose another address or remove these items." | Change address |
+| No spending yet | BUY-33 | (suggested) "No paid orders in this period." | Browse marketplace |
+| Settlement held | SEL-28, SEL-32 | (existing pattern) "Held" without the internal reason | — |
+| No holds | ADM-57 | (existing) "No holds." | Place a hold |
+| Unconfirmed supplier VAT | BUY-17 | (existing) "This supplier's VAT registration has not been confirmed yet…" | Remove items; contact supplier |
+| Ticket limit reached | SHR-04 | (existing pattern) "{open} open of {limit} allowed"; urgent categories always accepted | Choose an urgent category if it applies |
 | Successful save | Forms | (existing) "Saved." / "Changes saved." | — |
 | Sandbox | All money screens | (existing) "Sandbox payments: no real money." | — |
 

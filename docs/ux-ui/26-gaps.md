@@ -1,6 +1,21 @@
 # 26. Missing features and UX gaps
 
-41 findings from the audit. Severity: **Critical** blocks launch or creates legal/financial risk; **High** major journey gap; **Medium** noticeable friction or inconsistency; **Low** polish or post-launch. Design priority uses P0/P1/P2. Nothing here has been implemented; this is documentation only. Code conflicts with the founder decisions are also tracked for engineering as C-01…C-24 in `docs/phase-8/contradictions.md` (added by Phase 8A); the gaps below describe their effect on screens.
+41 findings from the audit, with their status after the code merged on `main` up to 9df2f0e (pull requests #13 to #19) and the founder answers of 28 November 2026. Severity: **Critical** blocks launch or creates legal/financial risk; **High** major journey gap; **Medium** noticeable friction or inconsistency; **Low** polish or post-launch. Design priority uses P0/P1/P2. Code conflicts with the founder decisions are tracked for engineering as C-01…C-24 in `docs/phase-8/contradictions.md`; the gaps below describe their effect on screens.
+
+## 26.1 Status
+
+| Status | Gaps |
+|---|---|
+| Resolved in code | 12 |
+| Partly resolved | 2 |
+| Approved, being built | 5 |
+| Approved, to build | 3 |
+| Waiting on legal | 1 |
+| Waiting on provider | 1 |
+| Open | 17 |
+
+
+Resolved in code means the behaviour exists on `main` and its screens are now specified as Implemented; design work is still needed. Approved means the founder answered and the screen is specified, but the code is not built yet.
 
 | Severity | Count |
 |---|---|
@@ -25,6 +40,55 @@
 | Security | 1 |
 | Unnecessary friction | 1 |
 
+
+## 26.2 Status of each gap
+
+| ID | Finding | Severity | Status | Note |
+|---|---|---|---|---|
+| G-01 | No buyer dashboard | High | Approved, to build | FD-21: dashboard with counts and monthly spending (BUY-01, BUY-33). |
+| G-02 | Public information pages and footer missing | Medium | Open | Still open; see the recommendation below. |
+| G-03 | No invoices, receipts or credit notes | High | Partly resolved | PR #14: non-binding invoice drafts. Binding invoices wait for the tax adviser (FD-06). |
+| G-04 | Tax applied regardless of supplier VAT registration | Critical | Resolved in code | PR #14: VAT by confirmed supplier status (P8-9, P8-10). Tax rules still need professional approval. |
+| G-05 | Commission configured by environment variable | High | Resolved in code | PR #13: versioned commission policy (ADM-56). 30-day supplier notice still to add (FD-05). |
+| G-06 | Refund commission reversal uses order total | Medium | Resolved in code | PR #13: refund split, commission reversed on merchandise only (P8-7). |
+| G-07 | No structured buyer counteroffer | Medium | Approved, being built | FD-10 and C-14: structured counteroffers, three rounds (BUY-15, BUY-34, SEL-40). |
+| G-08 | Supplier cannot cancel a paid order | High | Resolved in code | PR #17: supplier cancellation with finance-approved full refund (SEL-36). |
+| G-09 | Buyer cannot request cancellation after payment | High | Approved, to build | Founder Q12: buyer cancellation requests before dispatch (BUY-31, SEL-41). |
+| G-10 | No auto-complete after the dispute window | High | Resolved in code | PR #13: auto-completion after the window when the four conditions hold (P8-3). |
+| G-11 | No reorder | Low | Open | Still open; see the recommendation below. |
+| G-12 | Reconciliation cases cannot be resolved | High | Resolved in code | PR #13: reconciliation resolution (ADM-31). |
+| G-13 | Payouts are manual at completion, not weekly | High | Resolved in code | PR #13: weekly payout run (P8-5). Monday 10:00 schedule and holidays configurable screen still to build (ADM-47). |
+| G-14 | Dispute window starts at receipt confirmation | Medium | Resolved in code | PR #13: window from verified delivery (P8-1). |
+| G-15 | No account closure, DSAR, retention or legal hold | High | Approved, being built | C-19 in the build thread. |
+| G-16 | Refund form takes a raw order ID | Medium | Open | Still open; see the recommendation below. |
+| G-17 | No admin storefront detail page | Low | Open | Still open; see the recommendation below. |
+| G-18 | No message attachments | Medium | Open | Still open; see the recommendation below. |
+| G-19 | No legal documents; terms version "dev-1" | Critical | Waiting on legal | FD-16 answered; texts wait for a UAE legal adviser (ACC-18 blocked). |
+| G-20 | Mobile navigation issues | Medium | Open | Still open; see the recommendation below. |
+| G-21 | Quote comparison overflows on mobile | Medium | Open | Still open; see the recommendation below. |
+| G-22 | Quote validity has no default | Medium | Resolved in code | PR #16: 7-day default; FD-12 sets minimum 1 day. |
+| G-23 | Support limits and auto-close differ from founder decision | Low | Resolved in code | PR #16: 10 per company, urgent categories, exceptions, 7-day auto-close. |
+| G-24 | Compliance cannot export verification records | Low | Approved, being built | C-18 in the build thread. |
+| G-25 | Review label differs | Low | Resolved in code | PR #16: "Verified business buyer". |
+| G-26 | Delivery options limited to a flat fee | Medium | Approved, being built | FD-08 and C-10: per-emirate fees, collection, proof of dispatch (SEL-04, BUY-35, BUY-36). |
+| G-27 | Stale or misleading copy | Medium | Open | Still open; see the recommendation below. |
+| G-28 | No analytics; product views not recorded | Low | Open | Still open; see the recommendation below. |
+| G-29 | No live payment provider or payout onboarding | Critical | Waiting on provider | FD-07: Stripe Connect preferred; no live activation approved. |
+| G-30 | No bank transfer method | Medium | Open | Still open; see the recommendation below. |
+| G-31 | Transactional email not production-ready | High | Approved, being built | Founder Q5: Resend adapter and bilingual templates prepared without real sending. |
+| G-32 | No sample request flow | Low | Approved, to build | FD-13: sample requests as an RFQ type (BUY-32, SEL-39). |
+| G-33 | No search on workspace lists | Low | Open | Still open; see the recommendation below. |
+| G-34 | Mobile filter is an inline toggle | Low | Open | Still open; see the recommendation below. |
+| G-35 | No product image lightbox | Low | Open | Still open; see the recommendation below. |
+| G-36 | Specification documents out of sync with code | Low | Open | Still open; see the recommendation below. |
+| G-37 | Security review open items affect UI | Medium | Resolved in code | PR #18: nonce-based CSP and Vitest 4 (SR-1, SR-2). |
+| G-38 | No returns flow | Medium | Partly resolved | PR #17: supplier return policy shown at checkout. A returns workflow stays planned. |
+| G-39 | No production milestones for made-to-order | Low | Open | Still open; see the recommendation below. |
+| G-40 | No consolidated payment history | Low | Open | Still open; see the recommendation below. |
+| G-41 | Accessibility testing is automated only | Medium | Open | Still open; see the recommendation below. |
+
+
+## 26.3 Original findings
 
 | ID | Finding | Type | Severity | Priority | Area | Detail | Screens | Recommendation |
 |---|---|---|---|---|---|---|---|---|

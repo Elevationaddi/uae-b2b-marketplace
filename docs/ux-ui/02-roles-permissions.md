@@ -66,13 +66,13 @@ Trading capabilities (`marketplace.browse`, `buyer.purchase`, `buyer.orders.act`
 
 | Role | Who | Objectives | Can | Cannot |
 |---|---|---|---|---|
-| COMPLIANCE | Verification and trust & safety staff | Verify companies, moderate listings, RFQs, reviews | Verification decisions, suspend/reactivate companies, users and session revocation, audit log, catalogue review/enforcement, categories, restricted terms, featured, RFQ hide, review hide | Orders, finance, support, exports |
-| SUPPORT | Customer support | Resolve tickets and disputes | Read companies/users/catalogue/RFQs/orders, manage disputes, manage tickets, export support-scoped reports | Verification decisions, finance, refunds |
-| FINANCE | Finance operations | Request refunds and payouts, monitor ledger | Read finance and orders, request refunds/payouts, exports | Approve own requests |
-| FINANCE_APPROVER | Second finance person | Dual control | Approve/reject refunds and payouts, read finance, exports | Request (by design), approve own requests |
+| COMPLIANCE | Verification and trust & safety staff | Verify companies, moderate listings, RFQs, reviews | Verification decisions, suspend/reactivate companies, users and session revocation, audit log, catalogue review/enforcement, categories, restricted terms, featured, RFQ hide, review hide, confirm VAT status (ADM-54), settlement holds (ADM-57) | Orders, finance, support, exports |
+| SUPPORT | Customer support | Resolve tickets and disputes | Read companies/users/catalogue/RFQs/orders, manage disputes, manage tickets, export support-scoped reports, set support ticket limit exceptions (ADM-55) | Verification decisions, finance, refunds |
+| FINANCE | Finance operations | Request refunds and payouts, monitor ledger | Read finance and orders, request refunds/payouts, settlement holds, exports | Approve own requests |
+| FINANCE_APPROVER | Second finance person | Dual control | Approve/reject refunds and payouts, resolve reconciliation cases, change the commission rate (with TOTP and reason), settlement holds, read finance, exports | Request (by design), approve own requests |
 | SUPER_ADMIN | Platform owner/administrator | Staff and catalogue structure | Staff roles (last super-admin protected), users/sessions, audit, categories, featured, read catalogue/RFQs/companies | Finance, verification decisions, disputes |
 
-A staff member may hold several roles; capabilities are the union. Every admin page and nav item is filtered by capability. Exports need a reason and a fresh TOTP code (step-up).
+FD-01 (answered A): every finance approval needs one requester and one different approver; nobody approves their own request. A staff member may hold several roles; capabilities are the union. Every admin page and nav item is filtered by capability. Exports need a reason and a fresh TOTP code (step-up).
 
 ## 2.5 Company permissions matrix (capabilities)
 
@@ -100,11 +100,15 @@ A staff member may hold several roles; capabilities are the union. Every admin p
 | Invite, change role, remove members | ✓ | — | — | ✓ | — | — | — | — |
 | See prices, save, compare | ✓ | ✓ | ✓ | ✓* | ✓* | ✓* | ✓* | ✓* |
 | Create/publish/cancel RFQ, accept/decline/revise quote | ✓ | ✓ | — | — | — | — | — | — |
+| Counteroffer, request a sample, request order cancellation (planned) | ✓ | ✓ | — | — | — | — | — | — |
+| View monthly spending (planned) | ✓ | ✓ | ✓ | — | — | — | — | — |
 | Cart, checkout, pay, cancel checkout, addresses | ✓ | ✓ | — | — | — | — | — | — |
 | Confirm receipt, review, open dispute (buyer) | ✓ | ✓ | — | — | — | — | — | — |
 | Read orders, disputes | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Storefront, products, pricing, submit for review | — | — | — | ✓ | ✓ | — | — | — |
 | Adjust inventory, process, dispatch, deliver, open dispute (seller) | — | — | — | ✓ | — | ✓ | — | — |
+| Cancel a paid order before dispatch; review buyer cancellation requests (planned) | — | — | — | ✓ | — | ✓ | — | — |
+| Answer counteroffers, sample settings (planned) | — | — | — | ✓ | ✓ | — | — | — |
 | Quote on RFQs, ask buyer a question | — | — | — | ✓ | ✓ | — | — | — |
 | Seller finance and payouts view | — | — | — | ✓ | — | — | ✓ | — |
 | Messaging | ✓ | ✓ | — | ✓ | ✓ | — | — | — |
@@ -145,6 +149,9 @@ A staff member may hold several roles; capabilities are the union. Every admin p
 | `admin.support.read` | — | ✓ | — | — | — |
 | `admin.support.manage` | — | ✓ | — | — | — |
 | `admin.reports.export` | — | ✓ | ✓ | ✓ | — |
+| `admin.holds.manage` | ✓ | — | ✓ | ✓ | — |
+| `admin.commission.manage` | — | — | — | ✓ | — |
+| `admin.reconciliation.resolve` | — | — | — | ✓ | — |
 
 
 ## 2.8 Relationships between users

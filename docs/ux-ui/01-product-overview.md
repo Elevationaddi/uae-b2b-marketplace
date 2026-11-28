@@ -14,19 +14,19 @@ A UAE business-to-business procurement marketplace that connects **verified buyi
 
 Suppliers manage a public storefront, a versioned product catalogue (every content change is moderated), inventory, pricing, quotations, order fulfilment and a settlement view. The platform team operates verification, catalogue moderation, RFQ oversight, disputes, refunds and payouts with dual control, support, reports and an append-only audit log, from a **separate admin origin** with mandatory TOTP MFA (D02, D03).
 
-Source of truth used for this document: code on `main` at commit `2ccd947` (Phases 0–7 merged), `docs/00-decisions.md`, `docs/01-product.md`, `docs/13-roadmap.md`, `docs/IMPLEMENTATION_STATUS.md`, the founder's Phase 8 decisions of 2026-11-28, and the screenshots in the project files (phase-1 … phase-6).
+Source of truth used for this document: code on `main` at commit `9df2f0e` (Phases 0–7 and the Phase 8 pull requests #10 and #12–#19 merged; first audited at `2ccd947`), the founder's answers to the 21 UX decisions of 28 November 2026, `docs/00-decisions.md`, `docs/01-product.md`, `docs/13-roadmap.md`, `docs/IMPLEMENTATION_STATUS.md`, the founder's Phase 8 decisions of 2026-11-28, and the screenshots in the project files (phase-1 … phase-6).
 
 ## 1.2 Business model
 
 | Element | Current state | Source |
 |---|---|---|
 | Who pays | Buyers pay suppliers through the platform's payment provider; the platform deducts commission from the supplier's payable. | `docs/07-finance.md`, ledger accounts in `/admin/finance` |
-| Commission | **Founder decision (2026-11-28): 10% supplier commission on merchandise value, excluding VAT and delivery, configurable by a restricted admin setting and snapshotted per order.** Code today: commission rate from environment variable `COMMISSION_BPS`, stored on each order (`order.commission`, "Payable to supplier"). No admin setting yet (gap G-05). | founder message; `packages/db/src/commerce.ts` |
-| Commission on refunds | Founder: reversed proportionally on merchandise refunds. Code: share computed against the order total (`refundCommissionShare`), see gap G-06. | `packages/db/src/settlement.ts` |
+| Commission | 10% supplier commission on merchandise value excluding VAT and delivery (founder decision). Since PR #13 a versioned commission policy prices new checkouts and is snapshotted per order; only a finance approver records a new rate, with a reason and TOTP (ADM-56); 30 days' supplier notice before changes (FD-05). | `/admin/commission`, `packages/db` commission policy |
+| Commission on refunds | Reversed on the merchandise part of a refund only; refunds can be split into merchandise, delivery and VAT (PR #13, P8-7). | `packages/db/src/settlement.ts` |
 | Subscriptions | **None.** Founder: "everything free, no subscriptions". No plans screens are specified. | founder decision |
 | Featured placements | Editorial, labelled "Featured", never used for ranking (A13-style rule in code). No paid promotion. | `/admin/catalog/featured` |
-| Tax | Founder: disclosed-intermediary model (suppliers invoice buyers; the platform invoices suppliers for commission; no VAT for unregistered suppliers), **pending professional approval**. Code applies a tax code (STANDARD, ZERO_RATED, EXEMPT) to every order regardless of supplier registration (gap G-04). | founder decision; `packages/contracts/src/money.ts` |
-| Payouts | Founder: weekly, after the 14-day dispute window, two finance approvers. Code: manual payout of eligible orders by FINANCE, approved by a different FINANCE_APPROVER (gap G-13, decision FD-01/FD-04). | `/admin/payouts` |
+| Tax | Disclosed-intermediary model confirmed (FD-06); tax adviser pending. Since PR #14 VAT follows the supplier's VAT status confirmed by compliance (`TAX_TREATMENT`), each order snapshots its tax rule, and non-binding invoice drafts exist. Binding invoices stay blocked. | `TAX_TREATMENT`, ADM-54, BUY-37 |
+| Payouts | Weekly: the run opens every Monday at 10:00 Dubai time (next working day after UAE public holidays), no minimum at launch; orders are eligible after verified delivery and the 14-day dispute window; one finance user requests and a different finance approver approves (FD-01, FD-04, PR #13). | `/admin/payouts` |
 
 This document never assumes a commission rate, tax rule or payment policy beyond those listed above. Where the UI must show a figure, it uses server-provided values and labels the environment (sandbox).
 
@@ -85,8 +85,9 @@ This document never assumes a commission rate, tax rule or payment policy beyond
 | 5 | Fulfilment, disputes, refunds, payouts, reviews (P5-1…P5-7) | Merged (PR #7) |
 | 6 | Support, operations overview, scoped exports (P6-1…P6-6) | Merged (PR #8) |
 | 7 | Sandbox-safe hardening, restore drill, production refusal, security review | Merged (PR #9) |
-| 8A | Infrastructure architecture and cost estimates (Azure UAE North) | Authorised, in progress in a separate thread |
-| 8B–8H | Live payments, email, legal, launch | Not authorised |
+| 8 | Financial policy (PR #13), VAT configuration (PR #14), PostgreSQL scheduler for Vercel Cron (PR #15), support, quote and review policies (PR #16), supplier cancellation and return policy (PR #17), security hardening (PR #18), Vercel-first architecture at no added cost (PR #19; Azure proposal rejected and archived) | Merged |
+| 8 (open) | Per-emirate delivery and collection (C-10), counteroffers (C-14), buyer cancellation requests, sample requests, buyer dashboard and spending, staging profile | Approved, being built |
+| Launch | Live payments, production email, legal texts, public registration | Not authorised: no paid services, live services or launch without founder approval |
 
 Test evidence (Phase 7 report): 219 unit/integration tests and 76 browser E2E tests, axe-core WCAG 2.1 A/AA checks with no serious or critical findings on tested pages. The app runs only in sandbox mode; production refuses to start without required integrations.
 
@@ -100,16 +101,18 @@ Test evidence (Phase 7 report): 219 unit/integration tests and 76 browser E2E te
 | Admin portal with MFA, staff roles | Implemented | |
 | Catalogue, storefronts, moderation, categories, restricted terms, featured | Implemented | |
 | Search, filters, suggestions, saved, compare, recently viewed, preferences | Implemented | |
-| RFQs, versioned quotes, comparison, award | Implemented | Counteroffers planned (FD-10) |
-| Messaging (text) and notifications (in-app + email) | Implemented | Attachments planned; production email blocked |
-| Cart, checkout, orders, sandbox payment | Implemented (sandbox) | Live provider blocked |
-| Fulfilment, receipt confirmation, reviews | Implemented | Auto-complete pending (FD-02) |
-| Disputes, refunds, payouts (dual control) | Implemented (sandbox) | Weekly schedule pending |
+| RFQs, versioned quotes, comparison, award | Implemented | Counteroffers (FD-10) and sample requests (FD-13) approved, to build |
+| Messaging (text) and notifications (in-app + email) | Implemented | Attachments planned; production email blocked; no SMS or WhatsApp (FD-20) |
+| Cart, checkout, orders, sandbox payment | Implemented (sandbox) | Live provider blocked (FD-07); per-emirate delivery and free collection approved (FD-08) |
+| Fulfilment, verified delivery, auto-completion, reviews | Implemented (PR #13, #16) | Delivery proof review planned (FD-03) |
+| Disputes, refunds, payouts (dual control), holds, weekly payout run | Implemented (sandbox) | Configurable payout schedule screen planned (FD-04) |
+| Supplier cancellation, return policies | Implemented (PR #17) | Buyer cancellation requests approved, to build (founder Q12) |
 | Support tickets, operations overview, exports | Implemented | |
-| Buyer dashboard | Recommended | Gap G-01 |
-| Invoices, credit notes, statements | Blocked | Tax approval |
-| Commission admin setting | Planned | Founder decision |
-| Reconciliation resolution | Planned | Gap G-12 |
+| Buyer dashboard with monthly spending | Planned | FD-21 |
+| Invoice drafts (non-binding) | Implemented (PR #14) | |
+| Invoices, credit notes, statements | Blocked | Tax adviser (FD-06) |
+| Commission policy (versioned) | Implemented (PR #13) | 30-day supplier notice to add (FD-05) |
+| Reconciliation resolution | Implemented (PR #13) | |
 | Account closure, DSAR, legal hold | Planned | Founder decision |
 | Public information and legal pages | Recommended / Blocked | Legal drafting |
 | Native mobile apps | Not planned | Responsive web only |
