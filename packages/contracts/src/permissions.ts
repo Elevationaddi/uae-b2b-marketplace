@@ -164,6 +164,10 @@ export const ADMIN_CAPABILITIES = [
   'admin.payouts.request',
   'admin.payouts.approve',
   'admin.reviews.moderate',
+  /** Phase 6: support tickets and scoped CSV report exports. */
+  'admin.support.read',
+  'admin.support.manage',
+  'admin.reports.export',
 ] as const;
 export type AdminCapability = (typeof ADMIN_CAPABILITIES)[number];
 
@@ -193,6 +197,9 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.orders.read',
     'admin.disputes.read',
     'admin.disputes.manage',
+    'admin.support.read',
+    'admin.support.manage',
+    'admin.reports.export',
   ],
   FINANCE: [
     'admin.companies.read',
@@ -201,6 +208,7 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.disputes.read',
     'admin.refunds.request',
     'admin.payouts.request',
+    'admin.reports.export',
   ],
   // Independent approver (dual control): never the requester of the same refund or payout.
   FINANCE_APPROVER: [
@@ -210,6 +218,7 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.disputes.read',
     'admin.refunds.approve',
     'admin.payouts.approve',
+    'admin.reports.export',
   ],
   // Super-admin manages roles/config/system; no implicit compliance or financial approval.
   SUPER_ADMIN: [

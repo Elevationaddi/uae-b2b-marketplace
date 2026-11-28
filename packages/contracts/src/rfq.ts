@@ -357,6 +357,8 @@ export const NOTIFICATION_TYPES = [
   'dispute.updated',
   'payout.paid',
   'payout.failed',
+  'support.replied',
+  'support.resolved',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
@@ -379,6 +381,8 @@ export const notificationPreferences = z.object({
   email_rfqs: z.boolean(),
   email_quotes: z.boolean(),
   email_messages: z.boolean(),
+  /** Opt-in only (T36); never affects transactional or security notices. */
+  email_marketing: z.boolean(),
 });
 export const notificationPreferencesRequest = notificationPreferences.partial();
 

@@ -4,7 +4,9 @@ import { enqueueEmail, type Prisma, type Tx } from '@app/db';
 type Payload = Record<string, string | number | null>;
 
 /** Which email opt-in governs a notification type (in-app is always on). */
-function emailCategory(type: NotificationType): 'rfqs' | 'quotes' | 'messages' {
+function emailCategory(type: NotificationType): 'rfqs' | 'quotes' | 'messages' | 'support' {
+  // Support replies answer a request the user made: always emailed, never marketing.
+  if (type.startsWith('support.')) return 'support';
   if (
     type.startsWith('quote.') ||
     type.startsWith('order.') ||
@@ -124,6 +126,14 @@ const SUMMARY: Record<
     en: (p) => `Payout ${p.payout_number} failed at the provider`,
     ar: (p) => `فشل التحويل ${p.payout_number} لدى مزود الدفع`,
   },
+  'support.replied': {
+    en: (p) => `Platform support replied to ${p.ticket_number}`,
+    ar: (p) => `رد فريق دعم المنصة على ${p.ticket_number}`,
+  },
+  'support.resolved': {
+    en: (p) => `${p.ticket_number} was marked resolved`,
+    ar: (p) => `تم وضع علامة "تم الحل" على ${p.ticket_number}`,
+  },
 };
 
 /** Active members of a workspace holding one of the roles (notification recipients). */
@@ -186,7 +196,9 @@ export async function notify(
         ? (p?.emailRfqs ?? true)
         : cat === 'quotes'
           ? (p?.emailQuotes ?? true)
-          : (p?.emailMessages ?? false);
+          : cat === 'messages'
+            ? (p?.emailMessages ?? false)
+            : true;
     if (!on) continue;
     const locale = u.locale;
     await enqueueEmail(tx, {

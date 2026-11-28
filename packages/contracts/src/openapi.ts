@@ -19,6 +19,7 @@ import { CATALOG_ROUTES } from './openapi-catalog';
 import { RFQ_ROUTES } from './openapi-rfq';
 import { COMMERCE_ROUTES } from './openapi-commerce';
 import { FULFILMENT_ROUTES } from './openapi-fulfilment';
+import { OPERATIONS_ROUTES } from './openapi-operations';
 import * as team from './team';
 
 extendZodWithOpenApi(z);
@@ -612,6 +613,7 @@ const ROUTES: Route[] = [
   ...RFQ_ROUTES,
   ...COMMERCE_ROUTES,
   ...FULFILMENT_ROUTES,
+  ...OPERATIONS_ROUTES,
 ];
 
 export const API_ROUTES = ROUTES.map((r) => ({ method: r.method, path: r.path }));
