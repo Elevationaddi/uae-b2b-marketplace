@@ -48,7 +48,7 @@
 - [ ] Commission reversal on merchandise refunds only (C-06)
 - [ ] Supplier VAT status and TRN; supplier invoices, platform commission invoices, credit notes, statements (C-08, C-09). **Tax adviser approval before activation.**
 - [ ] Delivery options, proof of dispatch and delivery, seller return policy (C-10, C-11)
-- [ ] Auto-completion with holds (C-03); supplier cancellation with refund (C-07)
+- [x] Auto-completion with holds (C-03); supplier cancellation with refund (C-07)
 - [ ] Support auto-close, per-company limit, urgent bypass; compliance exports (C-16 to C-18)
 - [ ] Account closure, data access and export requests, deletion requests, legal hold (C-19)
 - [ ] Review label, quote validity default, counteroffers (C-12 to C-14)
