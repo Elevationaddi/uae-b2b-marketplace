@@ -34,7 +34,7 @@ import {
   mapPayment,
   nextNumber,
 } from './commerce-common';
-import { buildPreview, loadCart, publicLine } from './pricing';
+import { buildPreview, loadCart, publicLine, type DeliveryChoice } from './pricing';
 import type { SupplierVat, TaxSettings } from './tax';
 
 const TX = { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 20_000 };
@@ -58,10 +58,20 @@ export class CheckoutService {
     if (!this.config.checkoutEnabled) throw new ApiError('CONFLICT', 'checkout.payments_disabled');
   }
 
-  async preview(user: User, ws: string, addressId: string): Promise<CheckoutPreview> {
+  async preview(
+    user: User,
+    ws: string,
+    addressId: string,
+    methods: Record<string, DeliveryChoice> = {},
+  ): Promise<CheckoutPreview> {
     const ctx = await this.carts.ctx(user, ws);
     const address = await this.addresses.own(ctx.workspace.id, addressId);
-    const p = buildPreview(await loadCart(this.prisma, ctx.workspace.id), address, this.config.tax);
+    const p = buildPreview(
+      await loadCart(this.prisma, ctx.workspace.id),
+      address,
+      this.config.tax,
+      methods,
+    );
     return {
       address: p.address,
       groups: p.groups.map((g) => ({
@@ -71,7 +81,20 @@ export class CheckoutService {
         shipping_fils: g.shipping.toString(),
         tax_fils: g.tax.toString(),
         total_fils: g.total.toString(),
-        delivery_days: g.group.delivery.days,
+        delivery_days: g.method === 'COLLECTION' ? g.group.collection.days : (g.rate?.days ?? null),
+        delivery_method: g.method,
+        delivery_options: {
+          delivery: {
+            available: !!g.rate,
+            fee_fils: g.rate ? String(g.rate.fee_fils) : null,
+            days: g.rate?.days ?? null,
+          },
+          collection: {
+            available: g.group.collection.enabled,
+            emirate: g.group.collection.enabled ? g.group.collection.emirate : null,
+            days: g.group.collection.enabled ? g.group.collection.days : null,
+          },
+        },
         tax_bps: g.taxBps,
         tax_code: g.taxCode,
         return_policy: g.group.returnPolicy,
@@ -104,7 +127,12 @@ export class CheckoutService {
     const id = await this.prisma.$transaction(async (tx) => {
       // Serialise checkouts of one workspace so the same cart cannot be checked out twice.
       await tx.$queryRaw`SELECT id FROM workspaces WHERE id = ${ctx.workspace.id}::uuid FOR UPDATE`;
-      const p = buildPreview(await loadCart(tx, ctx.workspace.id), address, this.config.tax);
+      const p = buildPreview(
+        await loadCart(tx, ctx.workspace.id),
+        address,
+        this.config.tax,
+        b.methods ?? {},
+      );
       if (p.hash !== b.preview_hash) throw new ApiError('CONFLICT', 'checkout.changed');
       if (p.blocked) throw new ApiError('CONFLICT', 'checkout.blocked');
       if (p.groups.some((g) => g.group.seller_company_id === ctx.company.id))
@@ -192,10 +220,26 @@ export class CheckoutService {
             sellerPayableFils: g.total - commissionFils,
             commissionBps: commission.bps,
             commissionPolicyId: commission.policyId,
+            deliveryMethod: g.method,
             snapshot: {
               buyer: { company_name: ctx.company.displayName },
               seller: { company_name: g.group.seller.company_name },
-              delivery: { fee_fils: g.shipping.toString(), days: g.group.delivery.days },
+              // C-10: method, charge and terms agreed at checkout.
+              delivery: {
+                method: g.method,
+                fee_fils: g.shipping.toString(),
+                days: g.method === 'COLLECTION' ? g.group.collection.days : (g.rate?.days ?? null),
+                emirate: p.address.emirate,
+                collection:
+                  g.method === 'COLLECTION'
+                    ? {
+                        emirate: g.group.collection.emirate,
+                        days: g.group.collection.days,
+                        instructions_en: g.group.collection.instructions_en,
+                        instructions_ar: g.group.collection.instructions_ar,
+                      }
+                    : null,
+              },
               address: p.address,
               commission_bps: commission.bps,
               commission_policy_version: commission.version,
@@ -515,10 +559,13 @@ export async function createQuoteCheckout(
       sellerPayableFils: v.totalFils - commission,
       commissionBps: policy.bps,
       commissionPolicyId: policy.policyId,
+      // C-10: delivery charge and date agreed in the quote.
+      deliveryMethod: 'QUOTE_TERMS',
       snapshot: {
         buyer: { company_name: input.buyer.companyName },
         seller: { company_name: input.seller.companyName },
         delivery: {
+          method: 'QUOTE_TERMS',
           fee_fils: v.shippingFils.toString(),
           emirate: input.rfq.emirate,
           delivery_date: v.deliveryDate.toISOString().slice(0, 10),

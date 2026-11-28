@@ -124,19 +124,23 @@ export class SellerFulfilmentController {
 
   @Post('orders/:id/dispatch')
   @HttpCode(200)
+  @upload()
   async dispatch(
     @Auth() a: AuthContext,
     @Param('ws') ws: string,
     @Param('id') id: string,
     @Body() b: unknown,
+    @UploadedFile() file: Express.Multer.File | undefined,
     @Req() req: Request,
   ) {
+    if (file) await this.limits.consume('upload_user', a.user.id);
     await this.fulfilment.dispatch(
       a.user,
       ws,
       id,
-      parse(shipmentDispatchRequest, b),
+      parse(shipmentDispatchRequest, b ?? {}),
       requestMeta(req),
+      file,
     );
     return ok(await this.orders.sellerDetail(a.user, ws, id));
   }
@@ -193,6 +197,20 @@ export class SellerFulfilmentController {
       requestMeta(req),
     );
     return ok(await this.orders.sellerDetail(a.user, ws, id));
+  }
+
+  @Get('orders/:id/dispatch-proof')
+  async dispatchProof(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendFile(
+      res,
+      await this.fulfilment.proof(a.user, 'seller', ws, id, requestMeta(req), 'dispatch'),
+    );
   }
 
   @Post('orders/:id/disputes')
@@ -334,6 +352,20 @@ export class BuyerFulfilmentController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return sendFile(res, await this.fulfilment.proof(a.user, 'buyer', ws, id, requestMeta(req)));
+  }
+
+  @Get('orders/:id/dispatch-proof')
+  async dispatchProof(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendFile(
+      res,
+      await this.fulfilment.proof(a.user, 'buyer', ws, id, requestMeta(req), 'dispatch'),
+    );
   }
 
   @Post('orders/:id/disputes')

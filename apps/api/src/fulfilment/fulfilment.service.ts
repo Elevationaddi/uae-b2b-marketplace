@@ -190,12 +190,24 @@ export class FulfilmentService {
     id: string,
     body: z.infer<typeof shipmentDispatchRequest>,
     meta: RequestMeta,
+    file?: Upload,
   ) {
     const ctx = await this.seller(user, ws);
+    assertUuid(id);
     if (body.expected_delivery_date && Number.isNaN(Date.parse(body.expected_delivery_date)))
       throw new ApiError('VALIDATION_FAILED', 'common.validation', {
         expected_delivery_date: 'invalid',
       });
+    // C-10: optional proof of dispatch (waybill, handover note), scanned like any upload.
+    const fileData = file
+      ? await this.attachments.prepare(
+          user.id,
+          ctx.company.id,
+          file,
+          'DELIVERY_PROOF',
+          `orders/${id}`,
+        )
+      : null;
     await this.prisma.$transaction(async (tx) => {
       const o = await lockScopedOrder(tx, id, { sellerWorkspaceId: ctx.workspace.id });
       // T24: an unpaid order can never be shipped.
@@ -203,11 +215,24 @@ export class FulfilmentService {
       if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
         throw new ApiError('CONFLICT', 'order.invalid_transition');
       if (cancellationPending(o)) throw new ApiError('CONFLICT', 'order.cancellation_pending');
+      // FD-08: a collection order is handed over at the supplier's premises; no carrier needed.
+      const carrier =
+        body.carrier ?? (o.deliveryMethod === 'COLLECTION' ? 'Buyer collection' : null);
+      if (!carrier)
+        throw new ApiError('VALIDATION_FAILED', 'common.validation', { carrier: 'required' });
+      const f = fileData ? await tx.file.create({ data: fileData }) : null;
+      if (f && f.scanState !== 'CLEAN') {
+        await this.audit(tx, ctx, user, 'order.dispatch_proof_quarantined', o.id, meta, {
+          file_id: f.id,
+        });
+        return;
+      }
       const now = new Date();
       await tx.shipment.create({
         data: {
           orderId: o.id,
-          carrier: body.carrier,
+          carrier,
+          dispatchProofFileId: f?.id ?? null,
           trackingCode: body.tracking_code ?? null,
           expectedDeliveryDate: body.expected_delivery_date
             ? new Date(`${body.expected_delivery_date}T00:00:00Z`)
@@ -228,9 +253,14 @@ export class FulfilmentService {
         },
       });
       await this.event(tx, o.id, 'order.dispatched', 'SELLER', user.id);
-      await this.audit(tx, ctx, user, 'order.dispatched', o.id, meta, { carrier: body.carrier });
+      await this.audit(tx, ctx, user, 'order.dispatched', o.id, meta, {
+        carrier,
+        dispatch_proof: !!f,
+      });
       await this.tellBuyer(tx, o, 'order.dispatched');
     });
+    if (fileData && fileData.scanState !== 'CLEAN')
+      throw new ApiError('VALIDATION_FAILED', 'file.infected', { file: 'infected' });
   }
 
   /**
@@ -384,7 +414,14 @@ export class FulfilmentService {
       throw new ApiError('VALIDATION_FAILED', 'file.infected', { file: 'infected' });
   }
 
-  async proof(user: User, side: 'buyer' | 'seller', ws: string, id: string, meta: RequestMeta) {
+  async proof(
+    user: User,
+    side: 'buyer' | 'seller',
+    ws: string,
+    id: string,
+    meta: RequestMeta,
+    kind: 'delivery' | 'dispatch' = 'delivery',
+  ) {
     const ctx = await loadWorkspaceContext(
       this.prisma,
       user.id,
@@ -402,15 +439,18 @@ export class FulfilmentService {
       },
       include: { shipment: true },
     });
-    if (!o?.shipment?.proofFileId) throw new ApiError('NOT_FOUND', 'common.not_found');
-    const out = await this.attachments.stream(o.shipment.proofFileId);
+    const fileId =
+      kind === 'dispatch' ? o?.shipment?.dispatchProofFileId : o?.shipment?.proofFileId;
+    if (!fileId) throw new ApiError('NOT_FOUND', 'common.not_found');
+    const out = await this.attachments.stream(fileId);
     await writeAudit(this.prisma, {
       actorId: user.id,
       actorType: 'user',
       action: 'order.proof_downloaded',
       resourceType: 'file',
-      resourceId: o.shipment.proofFileId,
+      resourceId: fileId,
       companyId: ctx.company.id,
+      details: { kind },
       requestId: meta.requestId,
       ip: meta.ip,
     });

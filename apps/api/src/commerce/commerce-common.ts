@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
-import type { OrderFulfilment } from '@app/contracts';
+import type { DeliveryMethod, OrderFulfilment } from '@app/contracts';
 import {
   createSandboxPsp,
   type Checkout,
@@ -99,6 +99,35 @@ export function mapOrderSummary(o: OrderWithParties, names: Names) {
   };
 }
 
+type CollectionSnapshot = {
+  emirate: string | null;
+  days: number | null;
+  instructions_en: string | null;
+  instructions_ar: string | null;
+};
+
+/**
+ * FD-08: collection terms snapshotted at checkout. The supplier and admins always see the
+ * instructions; the buyer sees them only once the payment is confirmed, so an unpaid checkout
+ * never reveals a supplier's premises.
+ */
+export function collectionView(
+  o: { deliveryMethod: string; snapshot: unknown; checkout: { paidAt: Date | null } },
+  side: 'buyer' | 'seller' | 'admin',
+): CollectionSnapshot | null {
+  if (o.deliveryMethod !== 'COLLECTION') return null;
+  const snap = (o.snapshot as { delivery?: { collection?: CollectionSnapshot | null } } | null)
+    ?.delivery?.collection;
+  if (!snap) return null;
+  const reveal = side !== 'buyer' || o.checkout.paidAt !== null;
+  return {
+    emirate: snap.emirate ?? null,
+    days: snap.days ?? null,
+    instructions_en: reveal ? (snap.instructions_en ?? null) : null,
+    instructions_ar: reveal ? (snap.instructions_ar ?? null) : null,
+  };
+}
+
 export function mapOrderDetail(
   o: OrderWithParties & { lines: OrderLine[]; events: OrderEvent[] },
   names: Names,
@@ -133,6 +162,8 @@ export function mapOrderDetail(
     return_policy:
       (o.snapshot as { return_policy?: { en: string | null; ar: string | null } | null } | null)
         ?.return_policy ?? null,
+    delivery_method: o.deliveryMethod as DeliveryMethod,
+    collection: collectionView(o, side),
     seller_cancel:
       o.sellerCancelRequestedAt && o.sellerCancelReason
         ? { requested_at: o.sellerCancelRequestedAt.toISOString(), reason: o.sellerCancelReason }
