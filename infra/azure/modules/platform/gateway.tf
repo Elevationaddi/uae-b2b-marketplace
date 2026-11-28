@@ -5,7 +5,7 @@ locals {
   gw          = var.enable_app_gateway
   gw_name     = "agw-${local.base}"
   web_backend = "web-backend"
-  hosts       = {
+  hosts = {
     web   = var.public_hostnames.web
     admin = var.public_hostnames.admin
   }

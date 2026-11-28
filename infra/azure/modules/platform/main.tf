@@ -5,7 +5,7 @@ locals {
   base      = "${var.name_prefix}-${local.env_short}"
   # Storage accounts and registries: lowercase alphanumerics only, globally unique.
   compact = "${var.name_prefix}${local.env_short}"
-  tags    = merge({
+  tags = merge({
     application = "uae-b2b-marketplace"
     environment = var.environment
     managed_by  = "terraform"
@@ -243,7 +243,7 @@ locals {
   generated_secrets = {
     "session-secret"     = random_password.session_secret.result
     "mfa-encryption-key" = random_bytes.mfa_key.base64
-    "database-url"       = format(
+    "database-url" = format(
       "postgresql://%s:%s@%s:5432/%s?sslmode=require",
       azurerm_postgresql_flexible_server.this.administrator_login,
       random_password.postgres_admin.result,

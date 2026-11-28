@@ -73,7 +73,7 @@ variable "image_tag" {
 
 variable "apps" {
   description = "Sizing per app. cpu/memory must be a valid Container Apps consumption pair (0.25/0.5Gi, 0.5/1Gi, 1/2Gi, 1.5/3Gi, 2/4Gi)."
-  type        = map(object({
+  type = map(object({
     cpu          = number
     memory       = string
     min_replicas = number
@@ -114,11 +114,11 @@ variable "existing_container_registry_login_server" {
 # ---------------------------------------------------------------- data
 variable "postgres" {
   description = "PostgreSQL flexible server settings."
-  type        = object({
-    sku_name              = string                # e.g. GP_Standard_D2ds_v5 or B_Standard_B2s
-    storage_mb            = number                # e.g. 131072
-    backup_retention_days = number                # 7-35; PITR window
-    high_availability     = bool                  # zone-redundant HA (needs General Purpose)
+  type = object({
+    sku_name              = string # e.g. GP_Standard_D2ds_v5 or B_Standard_B2s
+    storage_mb            = number # e.g. 131072
+    backup_retention_days = number # 7-35; PITR window
+    high_availability     = bool   # zone-redundant HA (needs General Purpose)
     zone                  = optional(string, "1")
     standby_zone          = optional(string, "2")
     geo_redundant_backup  = optional(bool, false) # needs paired-region access (UAE Central is restricted)
@@ -127,7 +127,7 @@ variable "postgres" {
 
 variable "redis" {
   description = "Azure Cache for Redis sizing. Basic has no replica (staging only)."
-  type        = object({
+  type = object({
     sku_name = string # Basic or Standard
     capacity = number # C0..C6
   })

@@ -50,13 +50,13 @@ locals {
   # Values every app receives. App-specific overrides are merged below. Names match
   # packages/config/src/env.ts; entries marked (8B) need the code changes C-20/C-21 first.
   common_settings = merge({
-    APP_ENV                               = var.environment                              # (8B) staging profile, C-20
+    APP_ENV                               = var.environment # (8B) staging profile, C-20
     WEB_ORIGIN                            = local.web_origin
     ADMIN_ORIGIN                          = local.admin_origin
-    API_ORIGIN                            = local.web_origin                             # browsers reach the API through the web origin
+    API_ORIGIN                            = local.web_origin # browsers reach the API through the web origin
     TRUST_PROXY                           = "uniquelocal"
     LOG_LEVEL                             = "info"
-    STORAGE_DRIVER                        = "azure-blob"                                 # (8B) C-21
+    STORAGE_DRIVER                        = "azure-blob" # (8B) C-21
     STORAGE_ACCOUNT_URL                   = azurerm_storage_account.this.primary_blob_endpoint
     STORAGE_BUCKET                        = azurerm_storage_container.this["private"].name
     STORAGE_MEDIA_BUCKET                  = azurerm_storage_container.this["media"].name
@@ -249,7 +249,7 @@ locals {
     backup = {
       image   = "marketplace-ops" # (8B) pg_dump + upload with managed identity
       command = ["/usr/local/bin/backup-to-blob"]
-      cron    = "0 22 * * *"      # 22:00 UTC = 02:00 Dubai
+      cron    = "0 22 * * *" # 22:00 UTC = 02:00 Dubai
     }
   }
 }

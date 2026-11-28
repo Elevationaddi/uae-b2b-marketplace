@@ -144,7 +144,7 @@ resource "azurerm_monitor_scheduled_query_rules_alert_v2" "job_failures" {
   window_duration      = "PT1H"
 
   criteria {
-    query = <<-KQL
+    query                   = <<-KQL
       ContainerAppSystemLogs_CL
       | where JobName_s in ("job-backup", "job-migrate")
       | where Reason_s in ("BackOff", "Failed", "ReplicaFailed")
