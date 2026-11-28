@@ -68,8 +68,8 @@
 - [ ] Review label, quote validity default, counteroffers (C-12 to C-14)
 
 ## 8F Security remediation and testing
-- [ ] Nonce-based CSP, removing `'unsafe-inline'` where practical (SR-2)
-- [ ] Vitest 4 upgrade with a full regression run (SR-1)
+- [x] Nonce-based CSP, removing `'unsafe-inline'` where practical (SR-2)
+- [x] Vitest 4 upgrade with a full regression run (SR-1)
 - [ ] Session security review; cross-tenant isolation review; admin access review
 - [ ] Financial ledger reconciliation tests against provider data
 - [ ] Dependency and container scanning in CI with no open high or critical findings
