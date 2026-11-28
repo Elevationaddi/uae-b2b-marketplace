@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (git-ignored). No secrets belong here.
+subscription_id           = "00000000-0000-0000-0000-000000000000"
+image_tag                 = "<git-sha>"
+public_hostnames          = { web = "www.example.ae", admin = "admin.example.ae" }
+tls_certificate_secret_id = "https://kv-uaeb2b-cert-prd.vault.azure.net/secrets/public-hosts"
+alert_emails              = ["oncall@example.ae"]
+monthly_budget_usd        = 1653
+budget_start_date         = "2027-01-01T00:00:00Z"
+certificate_key_vault_id = "/subscriptions/<sub>/resourceGroups/rg-uaeb2b-tfstate/providers/Microsoft.KeyVault/vaults/kv-uaeb2b-cert-prd"

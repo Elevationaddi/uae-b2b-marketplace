@@ -13,6 +13,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Phase 8A: infrastructure as code is formatted and validated only. Nothing is planned or
+  # applied from CI, and no Azure credentials exist in this repository.
+  infrastructure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.16.6
+      - name: Terraform format check
+        run: terraform fmt -check -recursive -diff infra/azure
+      - name: Terraform validate (no backend, no credentials)
+        run: |
+          for dir in infra/azure/bootstrap infra/azure/envs/staging infra/azure/envs/production; do
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
