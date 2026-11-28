@@ -1079,12 +1079,16 @@ describe('Phase 8: commission policy (C-05)', () => {
 
     const b = await buyer();
     const o = await paidOrder(s, b);
-    const latest = await prisma.commissionPolicy.findFirstOrThrow({
+    // The scheduled version is not in effect yet: the order uses the version in effect now, or
+    // the configured fallback when none is (a fresh database).
+    const inEffect = await prisma.commissionPolicy.findFirst({
       where: { effectiveFrom: { lte: new Date() } },
       orderBy: [{ effectiveFrom: 'desc' }, { version: 'desc' }],
     });
-    expect(o.commissionPolicyId).toBe(latest.id);
-    expect(o.commissionBps).toBe(latest.rateBps);
-    expect(o.commissionFils).toBe((o.merchandiseFils * BigInt(latest.rateBps)) / 10_000n);
+    expect(o.commissionPolicyId).toBe(inEffect?.id ?? null);
+    expect(o.commissionPolicyId).not.toBe(v.id);
+    const bps = inEffect?.rateBps ?? env.COMMISSION_BPS ?? 1000;
+    expect(o.commissionBps).toBe(bps);
+    expect(o.commissionFils).toBe((o.merchandiseFils * BigInt(bps)) / 10_000n);
   });
 });
