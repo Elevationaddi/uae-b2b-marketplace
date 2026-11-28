@@ -4,7 +4,7 @@
  * docs/09-workflows.md). Money is integer fils as a digit string; timestamps are UTC ISO.
  */
 import { z } from 'zod';
-import { filsString, QUANTITY_UNITS } from './catalog';
+import { deliveryRate, filsString, QUANTITY_UNITS } from './catalog';
 import { emirate, isoDateTime, uuid } from './common';
 import { orderFulfilment } from './fulfilment';
 import { MAX_QUANTITY } from './money';
@@ -55,6 +55,8 @@ export const CART_ISSUES = [
 export const DELIVERY_ISSUES = [
   'no_delivery_terms',
   'emirate_not_served',
+  /** Collection was chosen but the supplier does not offer it. */
+  'collection_unavailable',
   /** TAX_TREATMENT=supplier_status and compliance has not confirmed the supplier's VAT status. */
   'supplier_vat_unconfirmed',
 ] as const;
@@ -118,10 +120,14 @@ export const sellerRef = z.object({
   company_name: z.string(),
   storefront_id: uuid.nullable(),
 });
+/** C-10 / FD-08: what a supplier offers; unserved emirates are simply absent from `rates`. */
 export const deliveryTerms = z.object({
-  fee_fils: filsString.nullable(),
-  emirates: z.array(emirate),
-  days: z.number().int().nullable(),
+  rates: z.array(deliveryRate),
+  collection: z.object({
+    available: z.boolean(),
+    emirate: emirate.nullable(),
+    days: z.number().int().nullable(),
+  }),
 });
 export const cartLine = z.object({
   id: uuid,
@@ -156,7 +162,13 @@ export const cartView = z.object({
 
 // ------------------------------------------------------------------ checkout
 
-export const checkoutPreviewRequest = z.object({ address_id: uuid });
+export const DELIVERY_METHODS = ['DELIVERY', 'COLLECTION', 'QUOTE_TERMS'] as const;
+export type DeliveryMethod = (typeof DELIVERY_METHODS)[number];
+/** Per supplier (seller workspace id): supplier delivery (default) or free buyer collection. */
+export const deliveryChoices = z
+  .record(z.string().uuid(), z.enum(['DELIVERY', 'COLLECTION']))
+  .optional();
+export const checkoutPreviewRequest = z.object({ address_id: uuid, methods: deliveryChoices });
 export const checkoutPreviewGroup = z.object({
   seller: sellerRef,
   lines: z.array(cartLine),
@@ -171,6 +183,20 @@ export const checkoutPreviewGroup = z.object({
   /** The supplier's disclosed return policy (C-11); null when the supplier has not stated one. */
   return_policy: z.object({ en: z.string().nullable(), ar: z.string().nullable() }).nullable(),
   issue: z.enum(DELIVERY_ISSUES).nullable(),
+  /** C-10: the method priced in this preview and what the supplier offers. */
+  delivery_method: z.enum(['DELIVERY', 'COLLECTION']),
+  delivery_options: z.object({
+    delivery: z.object({
+      available: z.boolean(),
+      fee_fils: filsString.nullable(),
+      days: z.number().int().nullable(),
+    }),
+    collection: z.object({
+      available: z.boolean(),
+      emirate: z.string().nullable(),
+      days: z.number().int().nullable(),
+    }),
+  }),
 });
 export const checkoutPreview = z.object({
   address: addressSnapshot,
@@ -191,6 +217,7 @@ export const checkoutPreview = z.object({
 });
 export const checkoutCreateRequest = z.object({
   address_id: uuid,
+  methods: deliveryChoices,
   preview_hash: z.string().min(16).max(128),
   po_reference: z.string().trim().max(60).optional(),
   accept_terms: z.literal(true, { error: 'required' }),
@@ -262,6 +289,20 @@ export const orderDetail = orderSummary.extend({
   tax_provisional: z.boolean(),
   /** Return policy disclosed at checkout (C-11); null when none was stated. */
   return_policy: z.object({ en: z.string().nullable(), ar: z.string().nullable() }).nullable(),
+  /** C-10: how the goods reach the buyer, as agreed at checkout. */
+  delivery_method: z.enum(DELIVERY_METHODS),
+  /**
+   * Buyer collection (FD-08): where and how to collect. Instructions are shown to the buyer only
+   * once the order is paid, and always to the supplier; null for delivered orders.
+   */
+  collection: z
+    .object({
+      emirate: z.string().nullable(),
+      days: z.number().int().nullable(),
+      instructions_en: z.string().nullable(),
+      instructions_ar: z.string().nullable(),
+    })
+    .nullable(),
   /** C-07: the supplier asked to cancel; null otherwise. */
   seller_cancel: z.object({ requested_at: isoDateTime, reason: z.string() }).nullable(),
   /** Seller and admin only: the buyer never sees the platform commission. */

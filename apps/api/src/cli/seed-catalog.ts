@@ -15,6 +15,11 @@ import type { Prisma, PrismaClient } from '@app/db';
 import { createHash, randomUUID } from 'node:crypto';
 import sharp from 'sharp';
 
+/** C-10 per-emirate delivery rates for the fictional suppliers (same fee in each emirate served). */
+function rates(feeFils: number, emirates: string[], days: number) {
+  return emirates.map((emirate) => ({ emirate, fee_fils: String(feeFils), days }));
+}
+
 type Attr = {
   key: string;
   en: string;
@@ -357,6 +362,11 @@ const SELLERS: {
         'FUJAIRAH',
       ],
       deliveryDays: 3,
+      deliveryRates: rates(
+        5000,
+        ['ABU_DHABI', 'DUBAI', 'SHARJAH', 'AJMAN', 'UMM_AL_QUWAIN', 'RAS_AL_KHAIMAH', 'FUJAIRAH'],
+        3,
+      ),
       certifications: [{ name: 'ISO 9001:2015', issuer: 'Fictional Certification Body' }],
     },
     products: [
@@ -509,6 +519,7 @@ const SELLERS: {
       deliveryFeeFils: 3500n,
       deliveryEmirates: ['DUBAI', 'SHARJAH', 'AJMAN'],
       deliveryDays: 2,
+      deliveryRates: rates(3500, ['DUBAI', 'SHARJAH', 'AJMAN'], 2),
       certifications: [{ name: 'OEKO-TEX Standard 100 (declared)', issuer: 'Fictional' }],
     },
     products: [
@@ -647,6 +658,7 @@ const SELLERS: {
       deliveryFeeFils: 7500n,
       deliveryEmirates: ['DUBAI', 'SHARJAH', 'ABU_DHABI'],
       deliveryDays: 4,
+      deliveryRates: rates(7500, ['DUBAI', 'SHARJAH', 'ABU_DHABI'], 4),
       certifications: [
         { name: 'HACCP (declared)', issuer: 'Fictional' },
         { name: 'Halal (declared)', issuer: 'Fictional' },

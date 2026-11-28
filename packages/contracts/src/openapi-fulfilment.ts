@@ -63,11 +63,18 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
     response: orderDetail,
     capability: ship,
   }),
-  seller('post', '/orders/{id}/dispatch', 'Record dispatch (paid orders only; full shipment)', {
-    body: f.shipmentDispatchRequest,
-    response: orderDetail,
-    capability: ship,
-  }),
+  seller(
+    'post',
+    '/orders/{id}/dispatch',
+    'Record dispatch or collection handover (paid orders only; full shipment; optional proof of dispatch)',
+    {
+      multipart: true,
+      body: f.shipmentDispatchRequest.extend({ file: file.file.optional() }),
+      response: orderDetail,
+      capability: ship,
+      errors: [403, 404, 409, 422, 429, 503],
+    },
+  ),
   seller(
     'post',
     '/orders/{id}/deliver',
@@ -81,6 +88,10 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
     },
   ),
   seller('get', '/orders/{id}/proof', 'Download the delivery proof (audited)', {
+    binary: true,
+    capability: memberS,
+  }),
+  seller('get', '/orders/{id}/dispatch-proof', 'Download the proof of dispatch (audited)', {
     binary: true,
     capability: memberS,
   }),
@@ -126,6 +137,10 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
     capability: buyerAct,
   }),
   buyer('get', '/orders/{id}/proof', 'Download the delivery proof (audited)', {
+    binary: true,
+    capability: memberB,
+  }),
+  buyer('get', '/orders/{id}/dispatch-proof', 'Download the proof of dispatch (audited)', {
     binary: true,
     capability: memberB,
   }),

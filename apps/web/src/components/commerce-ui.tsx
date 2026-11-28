@@ -287,6 +287,32 @@ export function OrderDetailView({
             {o.tax_provisional ? ` · ${t('tax.provisional_note')}` : ''}
           </p>
         </section>
+        <section className="card" aria-labelledby="ord-method" data-testid="order-delivery-method">
+          <h2 id="ord-method" className="h3">
+            {t('order.delivery_method')}
+          </h2>
+          <p>{t(`order.method.${o.delivery_method}` as MessageKey)}</p>
+          {o.collection ? (
+            <>
+              {o.collection.emirate ? (
+                <p className="muted small">
+                  {t('order.collection_emirate', {
+                    emirate: t(`emirate.${o.collection.emirate}` as MessageKey),
+                  })}
+                </p>
+              ) : null}
+              {o.collection.instructions_en || o.collection.instructions_ar ? (
+                <p className="pre-wrap" data-testid="collection-instructions">
+                  {locale === 'ar' && o.collection.instructions_ar
+                    ? o.collection.instructions_ar
+                    : (o.collection.instructions_en ?? o.collection.instructions_ar)}
+                </p>
+              ) : (
+                <p className="muted small">{t('order.collection_after_payment')}</p>
+              )}
+            </>
+          ) : null}
+        </section>
         {o.return_policy ? (
           <section className="card" aria-labelledby="ord-returns">
             <h2 id="ord-returns" className="h3">

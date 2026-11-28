@@ -676,6 +676,11 @@ export const stockMovementItem = z.object({
 
 // ------------------------------------------------------------------ storefront
 
+export const deliveryRate = z.object({
+  emirate,
+  fee_fils: filsString,
+  days: z.number().int().min(0, 'min').max(90, 'max').nullable(),
+});
 const storefrontFields = {
   business_type: businessType.nullish(),
   description_en: optText(4000),
@@ -694,14 +699,25 @@ const storefrontFields = {
   fulfilment_en: optText(1000),
   fulfilment_ar: optText(1000),
   certifications: z.array(certification).max(20, 'max'),
-  /** Phase 4 delivery terms (provisional P4-1): flat fee per order and the emirates served. */
-  delivery_fee_fils: filsString.nullish(),
-  delivery_emirates: z.array(emirate).max(7, 'max'),
-  delivery_days: z.number().int().min(0).max(90).nullish(),
+  /**
+   * C-10: delivery fee per emirate served (all seven can be set; an emirate left out is not
+   * served). Fee in fils per order, lead time in days.
+   */
+  delivery_rates: z
+    .array(deliveryRate)
+    .max(7, 'max')
+    .refine((r) => new Set(r.map((x) => x.emirate)).size === r.length, 'duplicate'),
+  /** FD-08: free buyer collection. Instructions are shown to the buyer only after payment. */
+  collection_enabled: z.boolean(),
+  collection_emirate: emirate.nullish(),
+  collection_instructions_en: optText(1000),
+  collection_instructions_ar: optText(1000),
+  collection_days: z.number().int().min(0).max(90).nullish(),
   /** Disclosed change-of-mind return policy (C-11); shown to buyers before payment. */
   return_policy_en: optText(2000),
   return_policy_ar: optText(2000),
 };
+export type DeliveryRate = z.infer<typeof deliveryRate>;
 export const storefrontUpdateRequest = z
   .object({
     ...Object.fromEntries(Object.entries(storefrontFields).map(([k, v]) => [k, v.optional()])),
@@ -758,9 +774,12 @@ export const storefrontResponse = z.object({
     }),
   ),
   media: z.array(storefrontMediaItem),
-  delivery_fee_fils: filsString.nullable(),
-  delivery_emirates: z.array(emirate),
-  delivery_days: z.number().int().nullable(),
+  delivery_rates: z.array(deliveryRate),
+  collection_enabled: z.boolean(),
+  collection_emirate: emirate.nullable(),
+  collection_instructions_en: z.string().nullable(),
+  collection_instructions_ar: z.string().nullable(),
+  collection_days: z.number().int().nullable(),
   return_policy_en: z.string().nullable(),
   return_policy_ar: z.string().nullable(),
   version: z.number().int(),

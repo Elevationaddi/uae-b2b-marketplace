@@ -84,21 +84,42 @@ function Storefront({ ws }: { ws: Workspace }) {
           e.preventDefault();
           setDeliverySaved(false);
           const fd = new FormData(e.currentTarget);
-          const fee = String(fd.get('delivery_fee') ?? '').trim();
-          const feeFils = fee ? parseAedToFils(fee) : null;
-          if (fee && feeFils === null) {
+          // C-10: one fee per served emirate; an unticked emirate is not served.
+          const rates: { emirate: string; fee_fils: string; days: number | null }[] = [];
+          const bad: string[] = [];
+          for (const em of EMIRATES) {
+            if (fd.get(`serve_${em}`) !== 'on') continue;
+            const fee = String(fd.get(`fee_${em}`) ?? '').trim();
+            const fils = parseAedToFils(fee || '0');
+            if (fils === null) {
+              bad.push(em);
+              continue;
+            }
+            const days = String(fd.get(`days_${em}`) ?? '').trim();
+            rates.push({
+              emirate: em,
+              fee_fils: fils.toString(),
+              days: days ? Number(days) : null,
+            });
+          }
+          if (bad.length) {
             setFeeError(fieldText(locale, 'money'));
             return;
           }
           setFeeError(undefined);
-          const days = String(fd.get('delivery_days') ?? '').trim();
+          const collectionDays = String(fd.get('collection_days') ?? '').trim();
           const r = await delivery.run<StorefrontResponse>(path, {
             method: 'PATCH',
             body: {
               ...(exists ? { expected_version: s.version } : {}),
-              delivery_fee_fils: feeFils === null ? null : feeFils.toString(),
-              delivery_emirates: fd.getAll('delivery_emirates').map(String),
-              delivery_days: days ? Number(days) : null,
+              delivery_rates: rates,
+              collection_enabled: fd.get('collection_enabled') === 'on',
+              collection_emirate: String(fd.get('collection_emirate') ?? '') || null,
+              collection_days: collectionDays ? Number(collectionDays) : null,
+              collection_instructions_en:
+                String(fd.get('collection_instructions_en') ?? '').trim() || null,
+              collection_instructions_ar:
+                String(fd.get('collection_instructions_ar') ?? '').trim() || null,
               return_policy_en: String(fd.get('return_policy_en') ?? '').trim() || null,
               return_policy_ar: String(fd.get('return_policy_ar') ?? '').trim() || null,
             },
@@ -308,42 +329,119 @@ function Storefront({ ws }: { ws: Workspace }) {
                 {t('delivery.title')}
               </h2>
               <p className="muted small">{t('delivery.hint')}</p>
-              <div className="grid-2">
-                <Field
-                  label={t('delivery.fee_aed')}
-                  name="delivery_fee"
-                  inputMode="decimal"
-                  defaultValue={s.delivery_fee_fils ? filsToDecimal(s.delivery_fee_fils) : ''}
-                  error={
-                    feeError ?? fieldText(locale, delivery.error?.fieldErrors.delivery_fee_fils)
-                  }
-                />
-                <Field
-                  label={t('delivery.days')}
-                  name="delivery_days"
-                  type="number"
-                  min={0}
-                  max={90}
-                  optional
-                  defaultValue={s.delivery_days ?? ''}
-                  error={fieldText(locale, delivery.error?.fieldErrors.delivery_days)}
-                />
+              {feeError ? <Alert kind="error">{feeError}</Alert> : null}
+              <div className="table-wrap">
+                <table className="table" data-testid="delivery-rates">
+                  <caption className="sr-only">{t('delivery.emirates')}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('delivery.emirate')}</th>
+                      <th scope="col">{t('delivery.serve')}</th>
+                      <th scope="col">{t('delivery.fee_aed')}</th>
+                      <th scope="col">{t('delivery.days')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {EMIRATES.map((em) => {
+                      const rate = s.delivery_rates.find((x) => x.emirate === em);
+                      const name = t(`emirate.${em}` as MessageKey);
+                      return (
+                        <tr key={em}>
+                          <th scope="row">{name}</th>
+                          <td>
+                            <input
+                              type="checkbox"
+                              name={`serve_${em}`}
+                              defaultChecked={!!rate}
+                              aria-label={`${t('delivery.serve')}: ${name}`}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              name={`fee_${em}`}
+                              inputMode="decimal"
+                              className="input-sm"
+                              defaultValue={rate ? filsToDecimal(rate.fee_fils) : ''}
+                              aria-label={`${t('delivery.fee_aed')}: ${name}`}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              name={`days_${em}`}
+                              type="number"
+                              min={0}
+                              max={90}
+                              className="input-sm"
+                              defaultValue={rate?.days ?? ''}
+                              aria-label={`${t('delivery.days')}: ${name}`}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <fieldset>
-                <legend>{t('delivery.emirates')}</legend>
-                <div className="check-grid">
-                  {EMIRATES.map((em) => (
-                    <label key={em} className="check">
-                      <input
-                        type="checkbox"
-                        name="delivery_emirates"
-                        value={em}
-                        defaultChecked={s.delivery_emirates.includes(em)}
-                      />
-                      {t(`emirate.${em}` as MessageKey)}
-                    </label>
-                  ))}
+              {delivery.error?.fieldErrors.delivery_rates ? (
+                <p className="field-error">
+                  {fieldText(locale, delivery.error.fieldErrors.delivery_rates)}
+                </p>
+              ) : null}
+              <fieldset data-testid="collection-terms">
+                <legend>{t('collection.title')}</legend>
+                <p className="muted small">{t('collection.hint')}</p>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    name="collection_enabled"
+                    defaultChecked={s.collection_enabled}
+                  />
+                  {t('collection.enable')}
+                </label>
+                <div className="grid-2">
+                  <SelectField
+                    label={t('collection.emirate')}
+                    name="collection_emirate"
+                    defaultValue={s.collection_emirate ?? ''}
+                    options={[
+                      { value: '', label: '—' },
+                      ...EMIRATES.map((em) => ({
+                        value: em,
+                        label: t(`emirate.${em}` as MessageKey),
+                      })),
+                    ]}
+                    error={fieldText(locale, delivery.error?.fieldErrors.collection_emirate)}
+                  />
+                  <Field
+                    label={t('collection.days')}
+                    name="collection_days"
+                    type="number"
+                    min={0}
+                    max={90}
+                    optional
+                    defaultValue={s.collection_days ?? ''}
+                    error={fieldText(locale, delivery.error?.fieldErrors.collection_days)}
+                  />
                 </div>
+                <TextArea
+                  label={t('collection.instructions_en')}
+                  name="collection_instructions_en"
+                  rows={3}
+                  maxLength={1000}
+                  defaultValue={s.collection_instructions_en ?? ''}
+                  hint={t('collection.instructions_hint')}
+                  error={fieldText(locale, delivery.error?.fieldErrors.collection_instructions_en)}
+                />
+                <TextArea
+                  label={t('collection.instructions_ar')}
+                  name="collection_instructions_ar"
+                  dir="rtl"
+                  rows={3}
+                  maxLength={1000}
+                  optional
+                  defaultValue={s.collection_instructions_ar ?? ''}
+                  error={fieldText(locale, delivery.error?.fieldErrors.collection_instructions_ar)}
+                />
               </fieldset>
               <p className="muted small">{t('storefront.return_policy_hint')}</p>
               <TextArea
