@@ -326,7 +326,10 @@ describe('T28–T30 refunds through the sandbox provider', () => {
     const s = await seller();
     const b = await buyer();
     const o = await paidOrder(s, b);
-    const journalsBefore = await prisma.ledgerJournal.count();
+    // Count only this order's journals (refund journals carry the order's checkout id): other test
+    // files share the database and may post journals while this test runs.
+    const ownJournals = { where: { checkoutId: o.checkoutId } };
+    const journalsBefore = await prisma.ledgerJournal.count(ownJournals);
     const over = await finance
       .post('/admin/refunds', {
         order_id: o.id,
@@ -346,7 +349,7 @@ describe('T28–T30 refunds through the sandbox provider', () => {
         reason: 'Rest plus one',
       })
       .expect(409);
-    expect(await prisma.ledgerJournal.count()).toBe(journalsBefore);
+    expect(await prisma.ledgerJournal.count(ownJournals)).toBe(journalsBefore);
   });
 
   it('T30: duplicate and out-of-order refund webhooks give one reversal and the provider state', async () => {
