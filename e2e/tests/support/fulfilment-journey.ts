@@ -1,6 +1,14 @@
 import { expect, type Browser, type Page } from '@playwright/test';
 import { addToCart, buyerBase, ensureAddress, placeOrder } from './commerce';
-import { adminContext, createAdmin, enrolAdmin, press, samplePdf, signIn } from './helpers';
+import {
+  adminContext,
+  createAdmin,
+  endDisputeWindow,
+  enrolAdmin,
+  press,
+  samplePdf,
+  signIn,
+} from './helpers';
 
 /**
  * Phase 5 journey against the real stack and dev seed (fictional companies only):
@@ -95,7 +103,7 @@ export async function fulfilmentJourney(page: Page, browser: Browser) {
   // Supplier sees the dispute and the hold.
   await sp.reload();
   await expect(sp.getByTestId('dispute-link')).toBeVisible();
-  await expect(sp.getByTestId('fulfilment')).toContainText('Held (dispute)');
+  await expect(sp.getByTestId('fulfilment')).toContainText('On hold');
 
   // Support: assign, propose no action, close.
   const support = await admin(browser, 'SUPPORT');
@@ -147,8 +155,15 @@ export async function fulfilmentJourney(page: Page, browser: Browser) {
     await expect(row.locator('[data-status="SUCCEEDED"]')).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 30_000 });
 
-  // Payout with dual approval; paid only on the provider confirmation.
+  // Payouts wait for the 14-day dispute window after verified delivery (C-01). SANDBOX test
+  // clock: end this order's window, then the weekly payout run with dual approval.
   await finance.page.goto('/en/admin/payouts');
+  await expect(
+    finance.page.getByTestId('payout-eligible').getByRole('row', { name: /Desert/ }),
+  ).toHaveCount(0);
+  endDisputeWindow(orderId);
+  await finance.page.reload();
+  await expect(finance.page.getByTestId('payout-run')).toBeVisible();
   const elig = finance.page.getByTestId('payout-eligible').getByRole('row', { name: /Desert/ });
   await press(elig.getByRole('button', { name: 'Request payout' }));
   await press(finance.page.getByRole('dialog').getByRole('button', { name: 'Request payout' }));

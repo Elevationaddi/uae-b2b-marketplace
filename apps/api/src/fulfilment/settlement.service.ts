@@ -9,11 +9,18 @@ import type {
 } from '@app/contracts';
 import type { AppEnv } from '@app/config';
 import {
+  allocateRefund,
   completeSandboxOperation,
+  currentPayoutRun,
+  HOLDING_BLOCKERS,
+  merchandiseCommissionShare,
   Prisma,
+  providerAvailableFils,
   recomputeSettlement,
-  refundCommissionShare,
+  refundParts,
   remainingPayable,
+  settlementBlockers,
+  toIsoDate,
   writeAudit,
   type Payout,
   type PrismaClient,
@@ -93,13 +100,26 @@ export class SettlementService {
         where: { checkoutId: o.checkoutId, state: { in: ['CAPTURED', 'PARTIALLY_REFUNDED'] } },
       });
       if (!payment) throw new ApiError('CONFLICT', 'refund.no_capture');
-      const committed = await tx.refund.aggregate({
+      const prior = await tx.refund.findMany({
         where: { orderId: o.id, state: { in: [...OPEN_REFUND] } },
-        _sum: { amountFils: true },
       });
+      const committed = prior.reduce((s, r) => s + r.amountFils, 0n);
       // T29: cumulative refunds never exceed what was captured for this order.
-      if (amount > o.totalFils - (committed._sum.amountFils ?? 0n))
+      if (amount > o.totalFils - committed)
         throw new ApiError('CONFLICT', 'refund.exceeds_remaining');
+      // C-06: say which parts the refund covers; commission follows the merchandise part only.
+      const explicit =
+        b.merchandise_fils !== undefined
+          ? {
+              merchandise: BigInt(b.merchandise_fils),
+              shipping: BigInt(b.shipping_fils!),
+              tax: BigInt(b.tax_fils!),
+            }
+          : undefined;
+      const parts = allocateRefund(o, prior, amount, explicit);
+      if (typeof parts === 'string') throw new ApiError('CONFLICT', parts);
+      const merchandiseBefore = prior.reduce((s, r) => s + refundParts(o, r).merchandise, 0n);
+      const commissionBefore = prior.reduce((s, r) => s + r.commissionFils, 0n);
       let disputeId: string | null = null;
       if (b.dispute_id) {
         const d = await tx.dispute.findFirst({ where: { id: b.dispute_id, orderId: o.id } });
@@ -121,14 +141,28 @@ export class SettlementService {
           paymentId: payment.id,
           disputeId,
           amountFils: amount,
-          commissionFils: refundCommissionShare(amount, o.commissionFils, o.totalFils),
+          merchandiseFils: parts.merchandise,
+          shippingFils: parts.shipping,
+          taxFils: parts.tax,
+          commissionFils: merchandiseCommissionShare(
+            o,
+            merchandiseBefore,
+            parts.merchandise,
+            commissionBefore,
+          ),
           reason: b.reason,
           requestedById: admin.id,
         },
       });
+      // A pending refund holds the order's settlement until it succeeds, fails or is rejected.
+      await recomputeSettlement(tx, o.id);
       await this.audit(tx, admin, 'refund.requested', 'refund', r.id, meta, b.reason, {
         order_id: o.id,
         amount_fils: amount.toString(),
+        merchandise_fils: parts.merchandise.toString(),
+        shipping_fils: parts.shipping.toString(),
+        tax_fils: parts.tax.toString(),
+        split: explicit ? 'explicit' : 'pro_rata',
       });
       return r.id;
     });
@@ -170,6 +204,7 @@ export class SettlementService {
             data: { state: 'RESOLUTION_PROPOSED' },
           });
       }
+      if (!approve) await recomputeSettlement(tx, r.orderId);
       await this.audit(
         tx,
         admin,
@@ -212,6 +247,9 @@ export class SettlementService {
         dispute_id: r.disputeId,
         amount_fils: r.amountFils.toString(),
         commission_fils: r.commissionFils.toString(),
+        merchandise_fils: r.merchandiseFils?.toString() ?? null,
+        shipping_fils: r.shippingFils?.toString() ?? null,
+        tax_fils: r.taxFils?.toString() ?? null,
         state: r.state,
         reason: r.reason,
         requested_by: names.get(r.requestedById) ?? '',
@@ -230,7 +268,10 @@ export class SettlementService {
 
   // ---------------------------------------------------------------- payouts
 
-  /** Sellers with completed, undisputed orders whose payable is not yet paid out. */
+  /**
+   * Sellers with orders whose dispute window has ended after verified delivery, with no dispute,
+   * hold, open reconciliation case or pending refund, and a payable not yet paid out (C-01).
+   */
   async eligibleSellers() {
     const orders = await this.prisma.order.findMany({
       where: { settlementState: 'ELIGIBLE' },
@@ -260,19 +301,35 @@ export class SettlementService {
     return out.sort((a, b) => a.seller_company_name.localeCompare(b.seller_company_name));
   }
 
+  /**
+   * Weekly payout run (C-04): one live payout per supplier per Dubai week. Every order is checked
+   * again under lock, so an order held or disputed since the last sweep is left out.
+   */
   async createPayout(admin: User, b: z.infer<typeof payoutCreateRequest>, meta: RequestMeta) {
     const id = await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const run = await currentPayoutRun(tx, now);
       const ids = await tx.$queryRaw<{ id: string }[]>`
         SELECT id FROM orders WHERE seller_workspace_id = ${b.seller_workspace_id}::uuid
           AND settlement_state = 'ELIGIBLE' ORDER BY id FOR UPDATE`;
+      const live = await tx.payout.count({
+        where: {
+          runId: run.id,
+          sellerWorkspaceId: b.seller_workspace_id,
+          state: { notIn: ['REJECTED', 'FAILED'] },
+        },
+      });
+      if (live) throw new ApiError('CONFLICT', 'payout.already_in_run');
       const allocations: { orderId: string; amountFils: bigint }[] = [];
       let companyId: string | null = null;
       for (const { id: orderId } of ids) {
         const o = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
-        companyId = o.sellerCompanyId;
-        const active = await tx.dispute.count({ where: { orderId, state: { not: 'CLOSED' } } });
         const left = await remainingPayable(tx, orderId);
-        if (active || left <= 0n) continue;
+        if ((await settlementBlockers(tx, o, left, now)).length) {
+          await recomputeSettlement(tx, orderId, now);
+          continue;
+        }
+        companyId = o.sellerCompanyId;
         allocations.push({ orderId, amountFils: left });
       }
       if (allocations.length === 0 || !companyId)
@@ -285,6 +342,7 @@ export class SettlementService {
           sellerCompanyId: companyId,
           amountFils: amount,
           requestedById: admin.id,
+          runId: run.id,
           allocations: { create: allocations },
         },
       });
@@ -295,6 +353,7 @@ export class SettlementService {
       await this.audit(tx, admin, 'payout.requested', 'payout', p.id, meta, undefined, {
         amount_fils: amount.toString(),
         orders: allocations.length,
+        week_start: toIsoDate(run.weekStart),
       });
       return p.id;
     });
@@ -317,10 +376,29 @@ export class SettlementService {
       if (p.state !== 'REQUESTED') throw new ApiError('CONFLICT', 'payout.invalid_transition');
       const orderIds = p.allocations.map((a) => a.orderId);
       if (approve) {
-        const disputed = await tx.dispute.count({
-          where: { orderId: { in: orderIds }, state: { not: 'CLOSED' } },
-        });
-        if (disputed) throw new ApiError('CONFLICT', 'payout.order_disputed');
+        const now = new Date();
+        for (const a of p.allocations) {
+          const o = await tx.order.findUniqueOrThrow({ where: { id: a.orderId } });
+          const left = await remainingPayable(tx, a.orderId);
+          if (left < a.amountFils) throw new ApiError('CONFLICT', 'payout.order_changed');
+          const blockers = await settlementBlockers(tx, o, left, now);
+          if (blockers.includes('dispute_active'))
+            throw new ApiError('CONFLICT', 'payout.order_disputed');
+          if (
+            blockers.some(
+              (x) =>
+                (HOLDING_BLOCKERS as readonly string[]).includes(x) ||
+                x === 'dispute_window_open' ||
+                x === 'delivery_not_verified',
+            )
+          )
+            throw new ApiError('CONFLICT', 'payout.order_held');
+        }
+        // C-04: never approve more than the provider holds. Serialise approvals so two cannot
+        // both pass against the same balance.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('payout-balance'))`;
+        if ((await providerAvailableFils(tx)) < p.amountFils)
+          throw new ApiError('CONFLICT', 'payout.insufficient_balance');
       }
       await tx.payout.update({
         where: { id },
@@ -357,7 +435,7 @@ export class SettlementService {
   }
 
   private async mapPayouts(
-    rows: (Payout & { _count: { allocations: number } })[],
+    rows: (Payout & { _count: { allocations: number }; run: { weekStart: Date } | null })[],
     adminId: string | null,
   ) {
     const names = await companyNames(
@@ -380,6 +458,7 @@ export class SettlementService {
       provider_ref: p.providerRef,
       failure_code: p.failureCode,
       sandbox: this.config.psp?.sandbox ?? false,
+      week_start: p.run ? toIsoDate(p.run.weekStart) : null,
       created_at: p.createdAt.toISOString(),
       paid_at: p.paidAt?.toISOString() ?? null,
     }));
@@ -393,7 +472,7 @@ export class SettlementService {
     const offset = decodeOffset(q.cursor);
     const rows = await this.prisma.payout.findMany({
       where: { ...(q.state ? { state: q.state } : {}), ...extra },
-      include: { _count: { select: { allocations: true } } },
+      include: { _count: { select: { allocations: true } }, run: { select: { weekStart: true } } },
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       skip: offset,
       take: PAGE + 1,
@@ -473,7 +552,7 @@ export class SettlementService {
     }
     const payouts = await this.prisma.payout.findMany({
       where: { sellerWorkspaceId: ctx.workspace.id },
-      include: { _count: { select: { allocations: true } } },
+      include: { _count: { select: { allocations: true } }, run: { select: { weekStart: true } } },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });

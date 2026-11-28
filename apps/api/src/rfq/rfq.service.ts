@@ -789,7 +789,7 @@ export class RfqService {
             userId: user.id,
             payBy: paymentDueAt,
             poReference: b.po_reference ?? null,
-            commissionBps: this.commerce.commissionBps,
+            commissionFallbackBps: this.commerce.commissionBps,
           });
         }
         const others = await tx.quote.findMany({

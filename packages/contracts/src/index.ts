@@ -12,3 +12,4 @@ export * from './rfq';
 export * from './commerce';
 export * from './fulfilment';
 export * from './operations';
+export * from './financial-policy';

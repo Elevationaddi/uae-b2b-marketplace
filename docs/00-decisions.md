@@ -163,6 +163,20 @@ Where a decision below needs provider, legal or tax confirmation, the production
 | P6-5 (operations overview) | Kept |
 | P6-6 (marketing opt-in) | Kept |
 
+### Phase 8 financial implementation rules (provisional, pending founder confirmation)
+Code changes for conflicts C-01 to C-06 (financial first, as instructed on 28 November 2026). These rules fill gaps the founder decisions leave open.
+
+| ID | Rule | Why | Where |
+|---|---|---|---|
+| P8-1 | **Verified delivery** is the earlier of: the supplier reporting delivery **with a proof file** (clean scan), or the buyer confirming receipt. Delivery reported without proof starts nothing; the window then starts at buyer receipt. The window end is stored per order (`DISPUTE_WINDOW_DAYS`, default 14) and never moves once set. | F07: "14 days after verified delivery; buyer confirmation does not waive it" | `orders.delivery_verified_at`, `dispute_window_ends_at`; `verifyDelivery` |
+| P8-2 | Buyer receipt still marks the order **COMPLETED** immediately (reviews open then). Payout eligibility is separate: an order is **ELIGIBLE** only after the window ends, with no open dispute, no active hold, no open reconciliation case on its checkout or payment, and no pending refund. Otherwise it is **HELD** (any of those active) or **NOT_ELIGIBLE** (still waiting). | F07: payout eligibility separate from completion | `settlementBlockers`, `recomputeSettlement` |
+| P8-3 | **Auto-completion:** every 5 minutes the worker completes DELIVERED orders whose window has ended after verified delivery, with no dispute, hold, open reconciliation case or pending refund. Orders delivered without proof and never confirmed are not auto-completed; they stay with operations. | F07 four conditions | `runSettlementSweep`, event `order.auto_completed` |
+| P8-4 | **Holds:** kinds COMPLIANCE, FRAUD, RECONCILIATION, PAYMENT_INVESTIGATION. COMPLIANCE, FINANCE and FINANCE_APPROVER can place and release them, each with a reason; holds are never deleted, one active hold per kind per order. A hold placed while an order is in a payout makes the payout approval fail. | F01/F07: no payout under compliance restriction | `order_holds`; `/admin/holds` |
+| P8-5 | **Weekly payout run:** Dubai calendar week, Monday to Sunday. At most one live payout per supplier per week (rejected and failed payouts do not count, so a failure can be retried). Approval re-checks every order and refuses when the available provider balance is lower than the payout. In sandbox the balance is derived from the ledger; a live adapter must ask the provider (launch blocker). | F01/F07: weekly payouts, balance check | `payout_runs`; `payouts.run_id`; `providerAvailableFils` |
+| P8-6 | **Commission policy:** versioned and append-only; only **FINANCE_APPROVER** can record a new version, with a reason and a fresh TOTP code. It applies to checkouts created afterwards; each checkout and order records the rate and policy version. Before the first version, `COMMISSION_BPS` (or the 10% sandbox fixture) applies. | F04: restricted admin setting, policy recorded per order | `commission_policies`; `/admin/finance/commission` |
+| P8-7 | **Refund split:** a refund may state its merchandise, delivery and VAT parts; otherwise it is spread pro rata over what is left of each part. Commission is reversed on the merchandise part only, so refunding all merchandise reverses exactly the order's commission. Refunds made before Phase 8 are read as pro rata of the order total. | F04: reversal on merchandise refunds only (C-06) | `refunds.merchandise_fils`, `shipping_fils`, `tax_fils` |
+| P8-8 | **Reconciliation cases** can be resolved by FINANCE_APPROVER with a reason; orders they held are re-evaluated. | Without this an open case would hold an order forever | `/admin/finance/reconciliation/{id}/resolve` |
+
 ### Still open
 - D01 (mobile launch scope).
 - D02 category-specific documentation rules.

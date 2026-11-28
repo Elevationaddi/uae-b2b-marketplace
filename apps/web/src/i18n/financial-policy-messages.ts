@@ -1,0 +1,184 @@
+/**
+ * Phase 8 catalogue (founder decisions of 28 November 2026): verified delivery and the dispute
+ * window, settlement holds, the weekly payout run, the commission policy and refund splits.
+ */
+export const financialPolicyEn = {
+  'admin.nav.holds': 'Settlement holds',
+  'admin.nav.commission': 'Commission',
+
+  'ful.delivery_verified': 'Delivery verified',
+  'ful.verified.PROOF_OF_DELIVERY': '{date} (proof of delivery)',
+  'ful.verified.BUYER_CONFIRMED': '{date} (buyer confirmed receipt)',
+  'ful.window_ends': 'Dispute window',
+  'ful.window_open': 'Open until {date}',
+  'ful.window_closed': 'Ended {date}',
+  'ful.window_pending': 'Starts when delivery is verified (proof of delivery or buyer receipt)',
+
+  'refund.split_title': 'Which part of the order does this cover? (optional)',
+  'refund.split_hint':
+    'Leave all three blank to spread the refund over merchandise, delivery and VAT in proportion. Commission is reversed only on the merchandise part.',
+  'refund.merchandise': 'Merchandise (AED)',
+  'refund.shipping': 'Delivery (AED)',
+  'refund.tax': 'VAT (AED)',
+  'refund.parts': 'Merchandise {merchandise} · Delivery {shipping} · VAT {tax}',
+  'refund.parts_legacy': 'Split in proportion to the order total (before Phase 8)',
+  'field.split_mismatch': 'The three parts must add up to the refund amount.',
+
+  'payout.run_title': 'This week’s payout run',
+  'payout.run_week': 'Week of {start} to {end} (Dubai)',
+  'payout.run_note':
+    'Payouts are made weekly: at most one payout per supplier per week, approved by a second finance user. Orders become eligible only after verified delivery and the end of the dispute window, with no dispute, hold, open reconciliation case or pending refund.',
+  'payout.run_count': 'Payouts this week',
+  'payout.run_amount': 'Requested this week',
+  'payout.available': 'Available provider balance',
+  'payout.available_sandbox': 'SANDBOX: worked out from the ledger, not reported by a provider.',
+  'payout.week': 'Week of {date}',
+
+  'hold.title': 'Settlement holds',
+  'hold.intro':
+    'A hold stops an order’s supplier payout until it is released. Use it for compliance, fraud, reconciliation or payment investigations. Every hold and release is recorded with its reason.',
+  'hold.place': 'Place a hold',
+  'hold.order_id': 'Order ID',
+  'hold.kind': 'Type',
+  'hold.reason': 'Reason',
+  'hold.placed': 'Hold placed. The order cannot be paid out until it is released.',
+  'hold.kind.COMPLIANCE': 'Compliance',
+  'hold.kind.FRAUD': 'Fraud',
+  'hold.kind.RECONCILIATION': 'Reconciliation',
+  'hold.kind.PAYMENT_INVESTIGATION': 'Payment investigation',
+  'hold.filter.active': 'Active',
+  'hold.filter.released': 'Released',
+  'hold.empty': 'No holds.',
+  'hold.placed_by': 'Placed by {name}',
+  'hold.released_by': 'Released by {name}',
+  'hold.release': 'Release',
+  'hold.release_title': 'Release the hold on {number}?',
+  'hold.release_reason': 'Reason for releasing',
+  'hold.order': 'Order',
+
+  'commission.title': 'Commission',
+  'commission.intro':
+    'The platform commission is a percentage of merchandise value, excluding VAT and delivery. A new rate applies to checkouts created after it is saved; existing orders keep the rate they were priced with.',
+  'commission.current': 'Current rate',
+  'commission.source.policy': 'Policy version {version}',
+  'commission.source.configuration': 'From configuration (no policy version recorded yet)',
+  'commission.new': 'Record a new rate',
+  'commission.rate': 'Rate (%)',
+  'commission.rate_hint': 'For example 10 or 7.5. At most 50%.',
+  'commission.reason': 'Reason for the change',
+  'commission.totp': 'Authenticator code',
+  'commission.save': 'Save new rate',
+  'commission.saved': 'New commission rate saved. It applies to new checkouts.',
+  'commission.history': 'History',
+  'commission.empty': 'No policy versions recorded yet.',
+  'commission.readonly': 'Only a finance approver can change the rate.',
+  'commission.version': 'Version {version}',
+
+  'finance.resolve': 'Resolve',
+  'finance.resolve_title': 'Resolve this reconciliation case?',
+  'finance.resolution': 'How was it resolved?',
+
+  'error.refund.exceeds_component':
+    'A part is more than what remains refundable of it, or the parts do not add up to the amount.',
+  'error.payout.already_in_run': 'This supplier already has a payout in this week’s run.',
+  'error.payout.order_held':
+    'An order in this payout is on hold, has an open reconciliation case or pending refund, or is still inside its dispute window.',
+  'error.payout.order_changed':
+    'An order in this payout changed after it was requested. Reject it and request again.',
+  'error.payout.insufficient_balance':
+    'The available provider balance is lower than this payout. It cannot be approved now.',
+  'error.hold.order_paid_out': 'This order has already been paid out.',
+  'error.hold.exists': 'This order already has an active hold of that type.',
+  'error.hold.already_released': 'This hold has already been released.',
+  'error.reconciliation.not_open': 'This case is already resolved.',
+} as const;
+
+export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> = {
+  'admin.nav.holds': 'تعليق التسويات',
+  'admin.nav.commission': 'العمولة',
+
+  'ful.delivery_verified': 'تم التحقق من التسليم',
+  'ful.verified.PROOF_OF_DELIVERY': '{date} (إثبات التسليم)',
+  'ful.verified.BUYER_CONFIRMED': '{date} (أكد المشتري الاستلام)',
+  'ful.window_ends': 'فترة النزاع',
+  'ful.window_open': 'مفتوحة حتى {date}',
+  'ful.window_closed': 'انتهت في {date}',
+  'ful.window_pending': 'تبدأ عند التحقق من التسليم (إثبات التسليم أو تأكيد المشتري للاستلام)',
+
+  'refund.split_title': 'ما الجزء الذي يغطيه هذا الاسترداد من الطلب؟ (اختياري)',
+  'refund.split_hint':
+    'اترك الحقول الثلاثة فارغة لتوزيع الاسترداد على البضاعة والتوصيل وضريبة القيمة المضافة بالتناسب. تُعكس العمولة على جزء البضاعة فقط.',
+  'refund.merchandise': 'البضاعة (درهم)',
+  'refund.shipping': 'التوصيل (درهم)',
+  'refund.tax': 'ضريبة القيمة المضافة (درهم)',
+  'refund.parts': 'البضاعة {merchandise} · التوصيل {shipping} · الضريبة {tax}',
+  'refund.parts_legacy': 'موزع بالتناسب مع إجمالي الطلب (قبل المرحلة 8)',
+  'field.split_mismatch': 'يجب أن يساوي مجموع الأجزاء الثلاثة مبلغ الاسترداد.',
+
+  'payout.run_title': 'دورة التحويلات لهذا الأسبوع',
+  'payout.run_week': 'أسبوع {start} إلى {end} (بتوقيت دبي)',
+  'payout.run_note':
+    'تتم التحويلات أسبوعياً: تحويل واحد كحد أقصى لكل مورد في الأسبوع، بموافقة مستخدم مالية ثانٍ. لا تصبح الطلبات مؤهلة إلا بعد التحقق من التسليم وانتهاء فترة النزاع، ودون نزاع أو تعليق أو حالة تسوية مفتوحة أو استرداد معلّق.',
+  'payout.run_count': 'تحويلات هذا الأسبوع',
+  'payout.run_amount': 'المطلوب هذا الأسبوع',
+  'payout.available': 'الرصيد المتاح لدى مزود الدفع',
+  'payout.available_sandbox': 'بيئة تجريبية: محسوب من دفتر الأستاذ، وليس من مزود دفع.',
+  'payout.week': 'أسبوع {date}',
+
+  'hold.title': 'تعليق التسويات',
+  'hold.intro':
+    'يوقف التعليق تحويل مستحقات المورد عن الطلب حتى يُرفع. استخدمه لتحقيقات الامتثال أو الاحتيال أو التسوية أو الدفع. يُسجَّل كل تعليق ورفع مع سببه.',
+  'hold.place': 'إضافة تعليق',
+  'hold.order_id': 'رقم الطلب (المعرّف)',
+  'hold.kind': 'النوع',
+  'hold.reason': 'السبب',
+  'hold.placed': 'تمت إضافة التعليق. لا يمكن تحويل مستحقات الطلب حتى يُرفع.',
+  'hold.kind.COMPLIANCE': 'امتثال',
+  'hold.kind.FRAUD': 'احتيال',
+  'hold.kind.RECONCILIATION': 'تسوية',
+  'hold.kind.PAYMENT_INVESTIGATION': 'تحقيق في الدفع',
+  'hold.filter.active': 'نشط',
+  'hold.filter.released': 'مرفوع',
+  'hold.empty': 'لا توجد تعليقات.',
+  'hold.placed_by': 'أضافه {name}',
+  'hold.released_by': 'رفعه {name}',
+  'hold.release': 'رفع التعليق',
+  'hold.release_title': 'رفع التعليق عن {number}؟',
+  'hold.release_reason': 'سبب الرفع',
+  'hold.order': 'الطلب',
+
+  'commission.title': 'العمولة',
+  'commission.intro':
+    'عمولة المنصة نسبة من قيمة البضاعة دون ضريبة القيمة المضافة والتوصيل. تنطبق النسبة الجديدة على عمليات الدفع التي تُنشأ بعد حفظها، وتحتفظ الطلبات الحالية بالنسبة التي سُعّرت بها.',
+  'commission.current': 'النسبة الحالية',
+  'commission.source.policy': 'إصدار السياسة {version}',
+  'commission.source.configuration': 'من الإعدادات (لم يُسجَّل أي إصدار سياسة بعد)',
+  'commission.new': 'تسجيل نسبة جديدة',
+  'commission.rate': 'النسبة (%)',
+  'commission.rate_hint': 'مثلاً 10 أو 7.5. بحد أقصى 50%.',
+  'commission.reason': 'سبب التغيير',
+  'commission.totp': 'رمز تطبيق المصادقة',
+  'commission.save': 'حفظ النسبة الجديدة',
+  'commission.saved': 'تم حفظ نسبة العمولة الجديدة. تنطبق على عمليات الدفع الجديدة.',
+  'commission.history': 'السجل',
+  'commission.empty': 'لم يُسجَّل أي إصدار سياسة بعد.',
+  'commission.readonly': 'يمكن لمعتمد المالية فقط تغيير النسبة.',
+  'commission.version': 'الإصدار {version}',
+
+  'finance.resolve': 'حلّ الحالة',
+  'finance.resolve_title': 'حلّ حالة التسوية هذه؟',
+  'finance.resolution': 'كيف تم الحل؟',
+
+  'error.refund.exceeds_component':
+    'أحد الأجزاء أكبر من المتبقي القابل للاسترداد منه، أو أن الأجزاء لا تساوي المبلغ.',
+  'error.payout.already_in_run': 'لدى هذا المورد تحويل في دورة هذا الأسبوع بالفعل.',
+  'error.payout.order_held':
+    'أحد طلبات هذا التحويل معلّق أو لديه حالة تسوية مفتوحة أو استرداد معلّق، أو ما زال ضمن فترة النزاع.',
+  'error.payout.order_changed': 'تغيّر أحد طلبات هذا التحويل بعد طلبه. ارفضه واطلبه من جديد.',
+  'error.payout.insufficient_balance':
+    'الرصيد المتاح لدى مزود الدفع أقل من هذا التحويل. لا يمكن اعتماده الآن.',
+  'error.hold.order_paid_out': 'تم تحويل مستحقات هذا الطلب بالفعل.',
+  'error.hold.exists': 'لدى هذا الطلب تعليق نشط من هذا النوع بالفعل.',
+  'error.hold.already_released': 'تم رفع هذا التعليق بالفعل.',
+  'error.reconciliation.not_open': 'تم حل هذه الحالة بالفعل.',
+};

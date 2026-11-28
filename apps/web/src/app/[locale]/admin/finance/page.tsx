@@ -1,13 +1,22 @@
 'use client';
 import type { AdminFinanceSummary, AdminPaymentItem, ReconciliationItem } from '@app/contracts';
-import { AdminShell } from '@/components/admin-shell';
+import { useState } from 'react';
+import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
 import { Money } from '@/components/catalog-ui';
 import { CheckoutState, PaymentState, SandboxNotice } from '@/components/commerce-ui';
 import { Resource } from '@/components/resource';
-import { Empty, PageHeader, Pager } from '@/components/ui';
+import {
+  Button,
+  ConfirmDialog,
+  Empty,
+  PageHeader,
+  Pager,
+  TextArea,
+  useFieldError,
+} from '@/components/ui';
 import { formatDubaiTime, type MessageKey } from '@/i18n/messages';
-import { useCursor, useResource } from '@/lib/use-resource';
+import { useCursor, useMutation, useResource } from '@/lib/use-resource';
 
 function Summary() {
   const t = useT();
@@ -126,9 +135,58 @@ function Payments() {
   );
 }
 
+/** Close a reconciliation case with a reason (FINANCE_APPROVER); held orders are re-evaluated. */
+function ResolveCase({ id, onDone }: { id: string; onDone: () => void }) {
+  const t = useT();
+  const m = useMutation();
+  const fe = useFieldError(m.error);
+  const [open, setOpen] = useState(false);
+  const [resolution, setResolution] = useState('');
+  return (
+    <>
+      <Button variant="link" onClick={() => setOpen(true)}>
+        {t('finance.resolve')}
+      </Button>
+      <ConfirmDialog
+        open={open}
+        title={t('finance.resolve_title')}
+        confirmLabel={t('finance.resolve')}
+        busy={m.busy}
+        error={m.error && Object.keys(m.error.fieldErrors).length === 0 ? m.error : null}
+        onClose={() => {
+          setOpen(false);
+          m.setError(null);
+        }}
+        onConfirm={async () => {
+          const r = await m.run(`/admin/finance/reconciliation/${id}/resolve`, {
+            method: 'POST',
+            body: { resolution },
+          });
+          if (r.ok) {
+            setOpen(false);
+            setResolution('');
+            onDone();
+          }
+        }}
+      >
+        <TextArea
+          label={t('finance.resolution')}
+          value={resolution}
+          onChange={(e) => setResolution(e.target.value)}
+          required
+          rows={2}
+          error={fe('resolution')}
+        />
+      </ConfirmDialog>
+    </>
+  );
+}
+
 function Reconciliation() {
   const t = useT();
   const { locale } = useApp();
+  const me = useAdmin();
+  const canResolve = me.capabilities.includes('admin.reconciliation.resolve');
   const pager = useCursor();
   const res = useResource<ReconciliationItem[]>('/admin/finance/reconciliation', {
     state: 'OPEN',
@@ -159,6 +217,12 @@ function Reconciliation() {
                       </>
                     ) : null}{' '}
                     · {formatDubaiTime(c.created_at, locale)}
+                    {canResolve ? (
+                      <>
+                        {' '}
+                        <ResolveCase id={c.id} onDone={res.reload} />
+                      </>
+                    ) : null}
                   </li>
                 ))}
               </ul>

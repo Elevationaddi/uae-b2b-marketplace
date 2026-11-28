@@ -89,6 +89,23 @@ export function FulfilmentCard({
       ]
     : [];
   if (f.completed_at) rows.push([t('ful.completed_at'), formatDubaiTime(f.completed_at, locale)]);
+  if (f.delivery_verified_at && f.delivery_verification)
+    rows.push([
+      t('ful.delivery_verified'),
+      t(`ful.verified.${f.delivery_verification}`, {
+        date: formatDubaiTime(f.delivery_verified_at, locale),
+      }),
+    ]);
+  if (f.dispute_window_ends_at) {
+    const ends = formatDubaiTime(f.dispute_window_ends_at, locale);
+    rows.push([
+      t('ful.window_ends'),
+      Date.parse(f.dispute_window_ends_at) > Date.now()
+        ? t('ful.window_open', { date: ends })
+        : t('ful.window_closed', { date: ends }),
+    ]);
+  } else if (s && o.state !== 'CANCELLED')
+    rows.push([t('ful.window_ends'), t('ful.window_pending')]);
   if (f.settlement_state)
     rows.push([
       t('ful.settlement'),

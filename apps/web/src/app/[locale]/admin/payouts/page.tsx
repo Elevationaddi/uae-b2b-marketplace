@@ -1,5 +1,10 @@
 'use client';
-import { PAYOUT_STATES, type PayoutEligibleSeller, type PayoutItem } from '@app/contracts';
+import {
+  PAYOUT_STATES,
+  type PayoutEligibleSeller,
+  type PayoutItem,
+  type PayoutRunSummary,
+} from '@app/contracts';
 import { useState } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
@@ -8,7 +13,7 @@ import { SandboxNotice } from '@/components/commerce-ui';
 import { DecisionButtons, SandboxComplete } from '@/components/finance-ops';
 import { StateBadge } from '@/components/fulfilment-ui';
 import { Resource } from '@/components/resource';
-import { Button, ConfirmDialog, Empty, PageHeader, Pager } from '@/components/ui';
+import { Button, ConfirmDialog, DefinitionList, Empty, PageHeader, Pager } from '@/components/ui';
 import { formatDubaiTime } from '@/i18n/messages';
 import { useCursor, useMutation, useResource } from '@/lib/use-resource';
 
@@ -43,6 +48,45 @@ function RequestPayout({ s, onDone }: { s: PayoutEligibleSeller; onDone: () => v
         }}
       />
     </>
+  );
+}
+
+/** Weekly payout run (C-04) and the balance approvals are checked against. */
+function PayoutRun() {
+  const t = useT();
+  const res = useResource<PayoutRunSummary>('/admin/payouts/run');
+  return (
+    <section className="card" aria-labelledby="po-run">
+      <h2 id="po-run" className="h3">
+        {t('payout.run_title')}
+      </h2>
+      <p className="muted small">{t('payout.run_note')}</p>
+      <Resource state={res.state} reload={res.reload} lines={2}>
+        {(r) => (
+          <div data-testid="payout-run">
+            <DefinitionList
+              items={[
+                [
+                  t('payout.week', { date: r.week_start }),
+                  t('payout.run_week', { start: r.week_start, end: r.week_end }),
+                ],
+                [t('payout.run_count'), String(r.payout_count)],
+                [t('payout.run_amount'), <Money key="a" fils={r.amount_fils} />],
+                [
+                  t('payout.available'),
+                  <span key="b">
+                    <Money fils={r.available_fils} />
+                    {r.sandbox ? (
+                      <span className="muted small block">{t('payout.available_sandbox')}</span>
+                    ) : null}
+                  </span>,
+                ],
+              ]}
+            />
+          </div>
+        )}
+      </Resource>
+    </section>
   );
 }
 
@@ -114,12 +158,18 @@ function Payouts() {
     state: state || undefined,
     cursor: pager.cursor,
   });
+  const [version, setVersion] = useState(0);
+  const changed = () => {
+    res.reload();
+    setVersion((v) => v + 1);
+  };
   return (
     <>
       <PageHeader title={t('admin.nav.payouts')} />
       <p className="muted">{t('payout.intro')}</p>
       <SandboxNotice />
-      <Eligible canRequest={canRequest} onChange={res.reload} />
+      <PayoutRun key={version} />
+      <Eligible canRequest={canRequest} onChange={changed} />
       <section className="card" aria-labelledby="po-list">
         <h2 id="po-list" className="h3">
           {t('payout.list')}
@@ -170,6 +220,11 @@ function Payouts() {
                               {formatDubaiTime(p.created_at, locale)} ·{' '}
                               {t('order.line_count', { count: p.order_count })}
                             </span>
+                            {p.week_start ? (
+                              <span className="muted small block">
+                                {t('payout.week', { date: p.week_start })}
+                              </span>
+                            ) : null}
                           </td>
                           <td>{p.seller_company_name}</td>
                           <td>
@@ -200,7 +255,7 @@ function Payouts() {
                                 path={`/admin/payouts/${p.id}`}
                                 number={p.number}
                                 ns="payout"
-                                onDone={res.reload}
+                                onDone={changed}
                               />
                             ) : null}
                             {p.state === 'REQUESTED' && p.requested_by_me ? (

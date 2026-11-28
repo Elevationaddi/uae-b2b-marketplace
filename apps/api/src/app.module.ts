@@ -71,7 +71,9 @@ import {
 import { OrderService } from './commerce/order.service';
 import { PaymentWebhookService } from './commerce/payment-webhook.service';
 import { DisputeService } from './fulfilment/dispute.service';
+import { FinancialPolicyService } from './fulfilment/financial-policy.service';
 import {
+  AdminFinancialPolicyController,
   AdminFulfilmentController,
   BuyerFulfilmentController,
   SellerFulfilmentController,
@@ -151,6 +153,7 @@ export class AppModule implements NestModule {
         SellerFulfilmentController,
         BuyerFulfilmentController,
         AdminFulfilmentController,
+        AdminFinancialPolicyController,
         SupportController,
         AdminOperationsController,
       ],
@@ -193,6 +196,7 @@ export class AppModule implements NestModule {
         FulfilmentService,
         DisputeService,
         SettlementService,
+        FinancialPolicyService,
         SupportService,
         OverviewService,
         ExportService,
