@@ -121,12 +121,19 @@ export function buildFulfilment(
       ? { rating: o.review.rating, comment: o.review.comment, state: o.review.state }
       : null,
     actions: {
-      can_process: ship && o.state === 'CONFIRMED',
-      can_dispatch: ship && (o.state === 'CONFIRMED' || o.state === 'PROCESSING'),
+      can_process: ship && o.state === 'CONFIRMED' && !o.sellerCancelRequestedAt,
+      can_dispatch:
+        ship && (o.state === 'CONFIRMED' || o.state === 'PROCESSING') && !o.sellerCancelRequestedAt,
       can_deliver: ship && o.state === 'DISPATCHED',
       can_confirm_receipt: act && (o.state === 'DISPATCHED' || o.state === 'DELIVERED'),
       can_dispute: canDispute,
       can_review: act && o.state === 'COMPLETED' && !o.review,
+      can_cancel:
+        ship &&
+        (o.state === 'CONFIRMED' || o.state === 'PROCESSING') &&
+        !o.sellerCancelRequestedAt &&
+        o.settlementState !== 'IN_PAYOUT' &&
+        o.settlementState !== 'PAID_OUT',
     },
   };
 }

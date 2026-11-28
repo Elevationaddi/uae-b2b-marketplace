@@ -300,11 +300,13 @@ async function processRefund(tx: TxClient, ev: PaymentEvent, failureCode: string
   const refundedFils = order.refundedFils + refund.amountFils;
   const fullyRefunded = refundedFils >= order.totalFils;
   const cancel = fullyRefunded && (order.state === 'CONFIRMED' || order.state === 'PROCESSING');
+  // C-07: a supplier-requested cancellation is recorded as such.
+  const cancelReason = order.sellerCancelRequestedAt ? 'cancelled_by_supplier' : 'refunded_in_full';
   await tx.order.update({
     where: { id: order.id },
     data: {
       refundedFils,
-      ...(cancel ? { state: 'CANCELLED', cancelledAt: now, cancelReason: 'refunded_in_full' } : {}),
+      ...(cancel ? { state: 'CANCELLED', cancelledAt: now, cancelReason } : {}),
       version: { increment: 1 },
     },
   });
@@ -317,7 +319,7 @@ async function processRefund(tx: TxClient, ev: PaymentEvent, failureCode: string
         orderId: order.id,
         kind: 'order.cancelled',
         actorSide: 'SYSTEM',
-        reason: 'refunded_in_full',
+        reason: cancelReason,
       },
     });
   // Payment state reflects everything confirmed refunded against the capture.

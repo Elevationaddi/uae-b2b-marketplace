@@ -64,6 +64,12 @@ function Preview({ p }: { p: CheckoutPreview }) {
             taxBps={g.tax_bps}
             total={g.total_fils}
           />
+          <div className="small" data-testid="checkout-return-policy">
+            <strong>{t('checkout.return_policy')}:</strong>{' '}
+            {g.return_policy
+              ? L(g.return_policy.en ?? g.return_policy.ar ?? '', g.return_policy.ar)
+              : t('checkout.no_return_policy')}
+          </div>
           <p className="muted small" data-testid="checkout-tax-code">
             {t('tax.code')}: {t(`taxcode.${g.tax_code}`)}
           </p>
