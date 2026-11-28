@@ -75,6 +75,18 @@ export function createAdmin(
   return email;
 }
 
+/**
+ * SANDBOX test clock: treat an order's 14-day dispute window as ended and run the settlement
+ * sweep for it (the CLI refuses outside PAYMENT_MODE=mock and in production).
+ */
+export function endDisputeWindow(orderId: string): void {
+  execFileSync(
+    'pnpm',
+    ['--silent', '--filter', '@app/api', 'run', 'sandbox:end-dispute-window', orderId],
+    { cwd: ROOT, env: process.env, stdio: 'pipe' },
+  );
+}
+
 export async function adminContext(
   browser: Browser,
   opts: Parameters<Browser['newContext']>[0] = {},

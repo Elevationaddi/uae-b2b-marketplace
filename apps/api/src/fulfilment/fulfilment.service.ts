@@ -7,7 +7,14 @@ import type {
   shipmentDispatchRequest,
 } from '@app/contracts';
 import type { AppEnv } from '@app/config';
-import { Prisma, recomputeSettlement, writeAudit, type PrismaClient, type User } from '@app/db';
+import {
+  Prisma,
+  recomputeSettlement,
+  verifyDelivery,
+  writeAudit,
+  type PrismaClient,
+  type User,
+} from '@app/db';
 import type { z } from 'zod';
 import { assertUuid, decodeOffset, encodeOffset } from '../catalog/access';
 import { ApiError } from '../common/api-error';
@@ -231,6 +238,12 @@ export class FulfilmentService {
         where: { id: o.id },
         data: { state: 'DELIVERED', deliveredAt: now, version: { increment: 1 } },
       });
+      // Delivery with proof is verified delivery (C-02): the dispute window starts now. Without
+      // proof the window starts when the buyer confirms receipt.
+      if (f) {
+        await verifyDelivery(tx, o, now, 'PROOF_OF_DELIVERY', this.env.DISPUTE_WINDOW_DAYS);
+        await recomputeSettlement(tx, o.id, now);
+      }
       await this.event(tx, o.id, 'order.delivered', 'SELLER', user.id);
       await this.audit(tx, ctx, user, 'order.delivered', o.id, meta, { proof: !!f });
       await this.tellBuyer(tx, o, 'order.delivered');
@@ -281,13 +294,17 @@ export class FulfilmentService {
       const o = await lockScopedOrder(tx, id, { buyerWorkspaceId: ctx.workspace.id });
       if (o.state !== 'DISPATCHED' && o.state !== 'DELIVERED')
         throw new ApiError('CONFLICT', 'order.invalid_transition');
+      const now = new Date();
       await tx.order.update({
         where: { id: o.id },
-        data: { state: 'COMPLETED', completedAt: new Date(), version: { increment: 1 } },
+        data: { state: 'COMPLETED', completedAt: now, version: { increment: 1 } },
       });
+      // Receipt verifies delivery if proof did not already; it never shortens the window (C-02).
+      await verifyDelivery(tx, o, now, 'BUYER_CONFIRMED', this.env.DISPUTE_WINDOW_DAYS);
       await this.event(tx, o.id, 'order.completed', 'BUYER', user.id);
-      // Eligible for a payout, not paid: a provider payout event marks it paid (T25).
-      await recomputeSettlement(tx, o.id);
+      // Payout eligibility waits for the end of the dispute window (C-01); a provider payout
+      // event marks it paid (T25).
+      await recomputeSettlement(tx, o.id, now);
       await this.audit(tx, ctx, user, 'order.receipt_confirmed', o.id, meta);
       await notify(
         tx,

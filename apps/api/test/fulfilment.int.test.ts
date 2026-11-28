@@ -11,12 +11,14 @@ import {
   completeSandboxSession,
   createSandboxPsp,
   processPendingPaymentEvents,
+  runSettlementSweep,
   signWebhook,
   submitApprovedSettlements,
   webhookSecret,
   type PrismaClient,
 } from '@app/db';
 import { randomBytes } from 'node:crypto';
+import { authenticator } from 'otplib';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   commerceFixtures,
@@ -62,6 +64,24 @@ async function shipAndComplete(s: Seller, b: Buyer, id: string) {
     .post(`${sellerOrder(s, id)}/dispatch`, { carrier: 'Test Freight LLC', tracking_code: 'TF-1' })
     .expect(200);
   await b.client.post(`${buyerOrder(b, id)}/confirm-receipt`).expect(200);
+}
+
+const DAY = 86_400_000;
+/**
+ * Test clock: move this order's verified delivery and dispute window into the past (as if the
+ * 14 days had passed), then run the worker's settlement sweep for this order only.
+ */
+async function endDisputeWindow(id: string) {
+  const o = await prisma.order.findUniqueOrThrow({ where: { id } });
+  expect(o.deliveryVerifiedAt).not.toBeNull();
+  await prisma.order.update({
+    where: { id },
+    data: {
+      deliveryVerifiedAt: new Date(Date.now() - 15 * DAY),
+      disputeWindowEndsAt: new Date(Date.now() - DAY),
+    },
+  });
+  return runSettlementSweep(prisma, { orderIds: [id] });
 }
 
 /** Worker step + sandbox provider completion + signed webhook + exactly-once processing. */
@@ -115,7 +135,7 @@ describe('T24–T26 fulfilment and receipt', () => {
     expect(await prisma.shipment.count({ where: { orderId: id } })).toBe(0);
   });
 
-  it('T25: seller processes, dispatches and delivers with proof; buyer confirms; eligible, not paid', async () => {
+  it('T25: seller processes, dispatches and delivers with proof; buyer confirms; eligible only after the window, not paid', async () => {
     const s = await seller();
     const b = await buyer();
     const o = await paidOrder(s, b);
@@ -150,6 +170,10 @@ describe('T24–T26 fulfilment and receipt', () => {
     ).body.data;
     expect(d.state).toBe('DELIVERED');
     expect(d.fulfilment.shipment.has_proof).toBe(true);
+    // C-02: delivery with proof is verified delivery; the 14-day dispute window starts now.
+    expect(d.fulfilment.delivery_verification).toBe('PROOF_OF_DELIVERY');
+    const verifiedAt = Date.parse(d.fulfilment.delivery_verified_at);
+    expect(Date.parse(d.fulfilment.dispute_window_ends_at) - verifiedAt).toBe(14 * DAY);
 
     // The buyer sees the shipment and can download the proof; never the commission.
     let bd = (await b.client.get(buyerOrder(b, o.id)).expect(200)).body.data;
@@ -171,12 +195,23 @@ describe('T24–T26 fulfilment and receipt', () => {
       ]),
     );
     await b.client.post(`${buyerOrder(b, o.id)}/confirm-receipt`).expect(409);
+    // Buyer confirmation neither restarts nor waives the window (C-02).
+    expect(bd.fulfilment.delivery_verification).toBe('PROOF_OF_DELIVERY');
+    expect(Date.parse(bd.fulfilment.delivery_verified_at)).toBe(verifiedAt);
 
-    // Eligible for payout, but nothing is paid automatically.
-    const after = await prisma.order.findUniqueOrThrow({ where: { id: o.id } });
+    // C-01: completed, but not eligible for a payout inside the dispute window.
+    let after = await prisma.order.findUniqueOrThrow({ where: { id: o.id } });
+    expect(after.settlementState).toBe('NOT_ELIGIBLE');
+    let fin = (await s.client.get(`/seller/workspaces/${s.ws}/finance`).expect(200)).body.data;
+    expect(fin.not_yet_eligible_fils).toBe(after.sellerPayableFils.toString());
+    expect(fin.eligible_fils).toBe('0');
+
+    // After the window: eligible for payout, but nothing is paid automatically.
+    await endDisputeWindow(o.id);
+    after = await prisma.order.findUniqueOrThrow({ where: { id: o.id } });
     expect(after.settlementState).toBe('ELIGIBLE');
     expect(await prisma.payout.count({ where: { sellerWorkspaceId: s.ws } })).toBe(0);
-    const fin = (await s.client.get(`/seller/workspaces/${s.ws}/finance`).expect(200)).body.data;
+    fin = (await s.client.get(`/seller/workspaces/${s.ws}/finance`).expect(200)).body.data;
     expect(fin.eligible_fils).toBe(after.sellerPayableFils.toString());
     expect(fin.paid_out_fils).toBe('0');
   });
@@ -284,6 +319,11 @@ describe('T27 disputes hold settlement', () => {
         .expect(200)
     ).body.data;
     expect(closed.state).toBe('CLOSED');
+    // Released from the hold, but still inside the dispute window (C-01).
+    expect((await prisma.order.findUniqueOrThrow({ where: { id: o.id } })).settlementState).toBe(
+      'NOT_ELIGIBLE',
+    );
+    await endDisputeWindow(o.id);
     expect((await prisma.order.findUniqueOrThrow({ where: { id: o.id } })).settlementState).toBe(
       'ELIGIBLE',
     );
@@ -474,6 +514,7 @@ describe('T31 payouts', () => {
     const b = await buyer();
     const o = await paidOrder(s, b);
     await shipAndComplete(s, b, o.id);
+    await endDisputeWindow(o.id);
     const eligible = (await finance.get('/admin/payouts/eligible').expect(200)).body.data;
     const mine = eligible.find(
       (e: { seller_workspace_id: string }) => e.seller_workspace_id === s.ws,
@@ -483,6 +524,10 @@ describe('T31 payouts', () => {
     const p = (await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(201)).body
       .data;
     expect(p.number).toMatch(/^PAY-/);
+    expect(p.week_start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // One live payout per supplier per weekly run (C-04).
+    const again = await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(409);
+    expect(again.body.error.message_key).toBe('payout.already_in_run');
     await finance.post(`/admin/payouts/${p.id}/approve`, { reason: 'Mine' }).expect(403);
     await approver.post(`/admin/payouts/${p.id}/approve`, { reason: 'Checked' }).expect(200);
     await settle('payout', p.id, 'failure');
@@ -565,5 +610,327 @@ describe('T39 reviews', () => {
     await expect(
       prisma.review.update({ where: { id: item.id }, data: { rating: 1 } }),
     ).rejects.toThrow();
+  });
+});
+
+// ------------------------------------------------------------------ Phase 8 financial policies
+
+async function deliverWithProof(s: Seller, id: string) {
+  await s.client
+    .post(`${sellerOrder(s, id)}/dispatch`, { carrier: 'Test Freight LLC' })
+    .expect(200);
+  await s.client
+    .upload(`${sellerOrder(s, id)}/deliver`, {}, { name: 'pod.pdf', content: SAMPLE_PDF })
+    .expect(200);
+}
+
+const settlementOf = async (id: string) =>
+  (await prisma.order.findUniqueOrThrow({ where: { id } })).settlementState;
+
+describe('Phase 8: dispute window after verified delivery (C-02)', () => {
+  it('without proof the window starts at buyer receipt; after it, disputes are refused', async () => {
+    const s = await seller();
+    const b = await buyer();
+    const o = await paidOrder(s, b);
+    await s.client
+      .post(`${sellerOrder(s, o.id)}/dispatch`, { carrier: 'Test Freight' })
+      .expect(200);
+    // Delivered without proof: not verified, no window yet.
+    let d = (await s.client.post(`${sellerOrder(s, o.id)}/deliver`, {}).expect(200)).body.data;
+    expect(d.fulfilment.delivery_verified_at).toBeNull();
+    expect(d.fulfilment.dispute_window_ends_at).toBeNull();
+    // An unverified delivery is never auto-completed or paid out, however long ago.
+    await prisma.order.update({ where: { id: o.id }, data: { deliveredAt: new Date(0) } });
+    expect(await runSettlementSweep(prisma, { orderIds: [o.id] })).toEqual({
+      auto_completed: 0,
+      recomputed: 0,
+    });
+    d = (await b.client.post(`${buyerOrder(b, o.id)}/confirm-receipt`).expect(200)).body.data;
+    expect(d.fulfilment.delivery_verification).toBe('BUYER_CONFIRMED');
+    expect(
+      Date.parse(d.fulfilment.dispute_window_ends_at) -
+        Date.parse(d.fulfilment.delivery_verified_at),
+    ).toBe(14 * DAY);
+    expect(d.fulfilment.actions.can_dispute).toBe(true);
+    await endDisputeWindow(o.id);
+    d = (await b.client.get(buyerOrder(b, o.id)).expect(200)).body.data;
+    expect(d.fulfilment.actions.can_dispute).toBe(false);
+    const late = await b.client
+      .post(`${buyerOrder(b, o.id)}/disputes`, { type: 'OTHER', reason: 'Too late' })
+      .expect(409);
+    expect(late.body.error.message_key).toBe('dispute.not_allowed');
+  });
+});
+
+describe('Phase 8: auto-completion and settlement holds (C-01, C-03)', () => {
+  it('completes a delivered order after the window unless a hold is active; holds block payouts', async () => {
+    const s = await seller();
+    const b = await buyer();
+    const o = await paidOrder(s, b);
+    await deliverWithProof(s, o.id);
+    expect(await settlementOf(o.id)).toBe('NOT_ELIGIBLE');
+
+    const compliance = (await loggedInAdmin(app, env, prisma, ['COMPLIANCE'])).client;
+    // Support cannot place holds; outsiders' order ids give 404.
+    await support.post('/admin/holds', { order_id: o.id, kind: 'FRAUD', reason: 'x' }).expect(403);
+    await compliance
+      .post('/admin/holds', {
+        order_id: '00000000-0000-4000-8000-000000000000',
+        kind: 'FRAUD',
+        reason: 'x',
+      })
+      .expect(404);
+    const h = (
+      await compliance
+        .post('/admin/holds', {
+          order_id: o.id,
+          kind: 'COMPLIANCE',
+          reason: 'Trade licence under review',
+        })
+        .expect(201)
+    ).body.data;
+    expect(h.settlement_state).toBe('HELD');
+    const dup = await finance
+      .post('/admin/holds', { order_id: o.id, kind: 'COMPLIANCE', reason: 'Again' })
+      .expect(409);
+    expect(dup.body.error.message_key).toBe('hold.exists');
+
+    // The window ends, but the hold stops both auto-completion and the payout.
+    expect((await endDisputeWindow(o.id)).auto_completed).toBe(0);
+    let row = await prisma.order.findUniqueOrThrow({ where: { id: o.id } });
+    expect(row.state).toBe('DELIVERED');
+    expect(row.settlementState).toBe('HELD');
+    await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(409);
+    // A hold can only be released once, with a reason, and is never deleted.
+    await compliance.post(`/admin/holds/${h.id}/release`, { reason: '' }).expect(422);
+    const released = (
+      await compliance
+        .post(`/admin/holds/${h.id}/release`, { reason: 'Licence renewed' })
+        .expect(200)
+    ).body.data;
+    expect(released.released_at).not.toBeNull();
+    await compliance.post(`/admin/holds/${h.id}/release`, { reason: 'Again' }).expect(409);
+    await expect(prisma.orderHold.delete({ where: { id: h.id } })).rejects.toThrow();
+
+    const sweep = await runSettlementSweep(prisma, { orderIds: [o.id] });
+    expect(sweep.auto_completed).toBe(1);
+    row = await prisma.order.findUniqueOrThrow({ where: { id: o.id } });
+    expect(row.state).toBe('COMPLETED');
+    expect(row.settlementState).toBe('ELIGIBLE');
+    expect(
+      await prisma.orderEvent.count({ where: { orderId: o.id, kind: 'order.auto_completed' } }),
+    ).toBe(1);
+    // Idempotent: a second sweep changes nothing.
+    expect(await runSettlementSweep(prisma, { orderIds: [o.id] })).toEqual({
+      auto_completed: 0,
+      recomputed: 0,
+    });
+
+    // A hold placed after the payout request makes approval fail until it is released.
+    const p = (await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(201)).body
+      .data;
+    const fraud = (
+      await finance
+        .post('/admin/holds', { order_id: o.id, kind: 'FRAUD', reason: 'Card testing pattern' })
+        .expect(201)
+    ).body.data;
+    expect(fraud.settlement_state).toBe('IN_PAYOUT');
+    const held = await approver
+      .post(`/admin/payouts/${p.id}/approve`, { reason: 'Checked' })
+      .expect(409);
+    expect(held.body.error.message_key).toBe('payout.order_held');
+    await finance
+      .post(`/admin/holds/${fraud.id}/release`, { reason: 'False positive' })
+      .expect(200);
+    await approver.post(`/admin/payouts/${p.id}/approve`, { reason: 'Checked' }).expect(200);
+    const audit = await prisma.auditEvent.count({
+      where: { resourceType: 'order_hold', resourceId: { in: [h.id, fraud.id] } },
+    });
+    expect(audit).toBe(4);
+  });
+
+  it('an open reconciliation case or a pending refund holds the payout until resolved', async () => {
+    const s = await seller();
+    const b = await buyer();
+    const o = await paidOrder(s, b);
+    await shipAndComplete(s, b, o.id);
+    await endDisputeWindow(o.id);
+    expect(await settlementOf(o.id)).toBe('ELIGIBLE');
+
+    // Pending refund: HELD; rejected: eligible again.
+    const r = (
+      await finance
+        .post('/admin/refunds', { order_id: o.id, amount_fils: '500', reason: 'Goodwill' })
+        .expect(201)
+    ).body.data;
+    expect(await settlementOf(o.id)).toBe('HELD');
+    await approver.post(`/admin/refunds/${r.id}/reject`, { reason: 'Not agreed' }).expect(200);
+    expect(await settlementOf(o.id)).toBe('ELIGIBLE');
+
+    // An open case on the order's checkout holds it; only an approver can resolve it.
+    const c = await prisma.reconciliationCase.create({
+      data: { kind: 'AMOUNT_MISMATCH', checkoutId: o.checkoutId, details: { test: 'phase8' } },
+    });
+    await runSettlementSweep(prisma, { orderIds: [o.id] });
+    expect(await settlementOf(o.id)).toBe('HELD');
+    await finance
+      .post(`/admin/finance/reconciliation/${c.id}/resolve`, { resolution: 'x' })
+      .expect(403);
+    await approver
+      .post(`/admin/finance/reconciliation/${c.id}/resolve`, {
+        resolution: 'Provider confirmed the captured amount',
+      })
+      .expect(200);
+    expect(await settlementOf(o.id)).toBe('ELIGIBLE');
+    await approver
+      .post(`/admin/finance/reconciliation/${c.id}/resolve`, { resolution: 'Again' })
+      .expect(409);
+  });
+});
+
+describe('Phase 8: weekly payout run (C-04)', () => {
+  it('one live payout per supplier per Dubai week; the run shows the available balance', async () => {
+    const s = await seller();
+    const b = await buyer();
+    const first = await paidOrder(s, b);
+    const second = await paidOrder(s, b);
+    await shipAndComplete(s, b, first.id);
+    await shipAndComplete(s, b, second.id);
+    await endDisputeWindow(first.id);
+    const p = (await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(201)).body
+      .data;
+    expect(p.order_count).toBe(1);
+    await endDisputeWindow(second.id);
+    expect(await settlementOf(second.id)).toBe('ELIGIBLE');
+    const again = await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(409);
+    expect(again.body.error.message_key).toBe('payout.already_in_run');
+    const run = (await finance.get('/admin/payouts/run').expect(200)).body.data;
+    expect(run.week_start).toBe(p.week_start);
+    expect(run.payout_count).toBeGreaterThanOrEqual(1);
+    expect(BigInt(run.available_fils) > 0n).toBe(true);
+    expect(run.sandbox).toBe(true);
+    // Once this week's payout is rejected, the supplier can be paid in this run.
+    await approver.post(`/admin/payouts/${p.id}/reject`, { reason: 'Recheck' }).expect(200);
+    const p2 = (await finance.post('/admin/payouts', { seller_workspace_id: s.ws }).expect(201))
+      .body.data;
+    expect(p2.order_count).toBe(2);
+  });
+});
+
+describe('Phase 8: refund split and merchandise-only commission (C-06)', () => {
+  it('a delivery refund reverses no commission; splits must fit each part', async () => {
+    const s = await seller();
+    const b = await buyer();
+    const o = await paidOrder(s, b);
+    const bad = await finance
+      .post('/admin/refunds', {
+        order_id: o.id,
+        amount_fils: '5250',
+        reason: 'Delivery refund',
+        merchandise_fils: '0',
+        shipping_fils: '5000',
+      })
+      .expect(422);
+    expect(bad.body.error.field_errors.tax_fils).toBe('required');
+    const mismatch = await finance
+      .post('/admin/refunds', {
+        order_id: o.id,
+        amount_fils: '5250',
+        reason: 'Delivery refund',
+        merchandise_fils: '0',
+        shipping_fils: '5000',
+        tax_fils: '200',
+      })
+      .expect(422);
+    expect(mismatch.body.error.field_errors.amount_fils).toBe('split_mismatch');
+    const tooMuch = await finance
+      .post('/admin/refunds', {
+        order_id: o.id,
+        amount_fils: (o.shippingFils + 1n).toString(),
+        reason: 'Delivery refund',
+        merchandise_fils: '0',
+        shipping_fils: (o.shippingFils + 1n).toString(),
+        tax_fils: '0',
+      })
+      .expect(409);
+    expect(tooMuch.body.error.message_key).toBe('refund.exceeds_component');
+    const deliveryVat = o.shippingFils / 20n; // 5% VAT on delivery
+    const r = (
+      await finance
+        .post('/admin/refunds', {
+          order_id: o.id,
+          amount_fils: (o.shippingFils + deliveryVat).toString(),
+          reason: 'Delivery was free',
+          merchandise_fils: '0',
+          shipping_fils: o.shippingFils.toString(),
+          tax_fils: deliveryVat.toString(),
+        })
+        .expect(201)
+    ).body.data;
+    expect(r.commission_fils).toBe('0');
+    expect(r.shipping_fils).toBe(o.shippingFils.toString());
+    // The rest, unsplit, is merchandise and its VAT, and reverses the whole commission.
+    const rest = o.totalFils - o.shippingFils - deliveryVat;
+    const r2 = (
+      await finance
+        .post('/admin/refunds', { order_id: o.id, amount_fils: rest.toString(), reason: 'Rest' })
+        .expect(201)
+    ).body.data;
+    expect(r2.merchandise_fils).toBe(o.merchandiseFils.toString());
+    expect(r2.shipping_fils).toBe('0');
+    expect(r2.commission_fils).toBe(o.commissionFils.toString());
+  });
+});
+
+describe('Phase 8: commission policy (C-05)', () => {
+  it('only a finance approver with a fresh TOTP code records a version; new orders record it', async () => {
+    // Uses the approved 10% rate so parallel tests that expect 10% are unaffected.
+    const appr = await loggedInAdmin(app, env, prisma, ['FINANCE_APPROVER']);
+    const code = (step: -1 | 1) =>
+      authenticator.clone({ epoch: Date.now() + step * 30_000 }).generate(appr.secret);
+    const before = (await finance.get('/admin/finance/commission').expect(200)).body.data;
+    expect(before.can_manage).toBe(false);
+    await finance
+      .post('/admin/finance/commission', { rate_bps: 1000, reason: 'x', totp_code: '123456' })
+      .expect(403);
+    const wrong = await appr.client
+      .post('/admin/finance/commission', {
+        rate_bps: 1000,
+        reason: 'Founder decision',
+        totp_code: '000000',
+      })
+      .expect(422);
+    expect(wrong.body.error.field_errors.totp_code).toBe('invalid');
+    await appr.client
+      .post('/admin/finance/commission', { rate_bps: 5001, reason: 'x', totp_code: code(1) })
+      .expect(422);
+    const after = (
+      await appr.client
+        .post('/admin/finance/commission', {
+          rate_bps: 1000,
+          reason: 'Founder decision of 28 Nov 2026: 10% of merchandise',
+          totp_code: code(1),
+        })
+        .expect(200)
+    ).body.data;
+    expect(after.can_manage).toBe(true);
+    expect(after.current).toMatchObject({ rate_bps: 1000, source: 'policy' });
+    expect(after.history[0].version).toBe(after.current.version);
+    expect(after.history[0].base).toBe('MERCHANDISE_EX_VAT_DELIVERY');
+    // Append-only at the database level.
+    await expect(
+      prisma.commissionPolicy.update({
+        where: { id: after.history[0].id },
+        data: { rateBps: 1 },
+      }),
+    ).rejects.toThrow();
+
+    const s = await seller();
+    const b = await buyer();
+    const o = await paidOrder(s, b);
+    const latest = await prisma.commissionPolicy.findFirstOrThrow({ orderBy: { version: 'desc' } });
+    expect(o.commissionPolicyId).toBe(latest.id);
+    expect(o.commissionBps).toBe(latest.rateBps);
+    expect(o.commissionFils).toBe((o.merchandiseFils * BigInt(latest.rateBps)) / 10_000n);
   });
 });

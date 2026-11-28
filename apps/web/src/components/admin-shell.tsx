@@ -119,6 +119,8 @@ export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode
     { href: `${base}/finance`, label: t('admin.nav.finance'), cap: 'admin.finance.read' },
     { href: `${base}/refunds`, label: t('admin.nav.refunds'), cap: 'admin.finance.read' },
     { href: `${base}/payouts`, label: t('admin.nav.payouts'), cap: 'admin.finance.read' },
+    { href: `${base}/holds`, label: t('admin.nav.holds'), cap: 'admin.holds.manage' },
+    { href: `${base}/commission`, label: t('admin.nav.commission'), cap: 'admin.finance.read' },
     {
       href: `${base}/supplier-reviews`,
       label: t('admin.nav.supplier_reviews'),

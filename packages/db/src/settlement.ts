@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { type Prisma, type PrismaClient, type PaymentEvent } from '@prisma/client';
 import type { PspAdapter, PspEvent } from './commerce';
 import { BUYER_ROLES, notifyWorkspace, openCase, SELLER_ORDER_ROLES } from './commerce-shared';
+import { canAutoComplete, settlementBlockers, settlementStateFor } from './financial-policy';
 
 /**
  * Phase 5 settlement: sandbox refunds and payouts, settlement eligibility and holds
@@ -12,13 +13,6 @@ import { BUYER_ROLES, notifyWorkspace, openCase, SELLER_ORDER_ROLES } from './co
 
 type TxClient = Prisma.TransactionClient;
 const SELLER_FINANCE_ROLES = ['OWNER', 'FINANCE'] as const;
-
-/** Commission share reversed with a refund: pro rata of the order total, half-up to the fil. */
-export function refundCommissionShare(amount: bigint, commission: bigint, total: bigint): bigint {
-  if (total <= 0n || commission <= 0n) return 0n;
-  const share = (amount * commission * 2n + total) / (2n * total);
-  return share > commission ? commission : share;
-}
 
 /** Seller payable still owed on an order after confirmed refunds (never negative). */
 export async function remainingPayable(tx: TxClient, orderId: string): Promise<bigint> {
@@ -33,19 +27,97 @@ export async function remainingPayable(tx: TxClient, orderId: string): Promise<b
 }
 
 /**
- * Recompute an order's settlement eligibility after receipt, a dispute change or a refund.
- * Orders already in a payout are left alone (the payout outcome decides). docs/09-workflows.md:
- * INELIGIBLE→ELIGIBLE on completion with no active hold; HELD while a dispute is open.
+ * Recompute an order's settlement eligibility after delivery, receipt, a dispute, hold, refund or
+ * reconciliation change, and when its dispute window ends. Orders already in a payout are left
+ * alone (the payout outcome decides). Founder decision C-01: ELIGIBLE only after verified delivery
+ * and the end of the dispute window, with no dispute, hold, open reconciliation case or pending
+ * refund; HELD while any of those is active; otherwise NOT_ELIGIBLE.
  */
-export async function recomputeSettlement(tx: TxClient, orderId: string): Promise<void> {
+export async function recomputeSettlement(
+  tx: TxClient,
+  orderId: string,
+  now: Date = new Date(),
+): Promise<void> {
   const o = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
   if (o.settlementState === 'IN_PAYOUT' || o.settlementState === 'PAID_OUT') return;
-  const active = await tx.dispute.count({ where: { orderId, state: { not: 'CLOSED' } } });
-  let next: 'NOT_ELIGIBLE' | 'ELIGIBLE' | 'HELD' = 'NOT_ELIGIBLE';
-  if (active > 0) next = 'HELD';
-  else if (o.state === 'COMPLETED' && (await remainingPayable(tx, orderId)) > 0n) next = 'ELIGIBLE';
+  const blockers = await settlementBlockers(tx, o, await remainingPayable(tx, orderId), now);
+  const next = settlementStateFor(blockers);
   if (next !== o.settlementState)
     await tx.order.update({ where: { id: orderId }, data: { settlementState: next } });
+}
+
+/**
+ * Worker sweep (idempotent; safe to run often and on several workers): completes delivered orders
+ * whose dispute window has ended with no dispute, hold, open reconciliation case or pending refund
+ * (C-03), then recomputes eligibility of orders whose window has ended (C-01). `orderIds` limits
+ * the sweep (tests); `now` is the clock.
+ */
+export async function runSettlementSweep(
+  prisma: PrismaClient,
+  opts: { now?: Date; orderIds?: string[]; batch?: number } = {},
+): Promise<{ auto_completed: number; recomputed: number }> {
+  const now = opts.now ?? new Date();
+  const scope = opts.orderIds ? { id: { in: opts.orderIds } } : {};
+  const due = await prisma.order.findMany({
+    where: {
+      ...scope,
+      disputeWindowEndsAt: { lte: now },
+      state: { in: ['DELIVERED', 'COMPLETED'] },
+      // ELIGIBLE orders are re-checked too: a reconciliation case opened by a provider event
+      // must move them to HELD before the next payout run (payout requests re-check as well).
+      OR: [
+        { state: 'DELIVERED' },
+        { settlementState: { in: ['NOT_ELIGIBLE', 'HELD', 'ELIGIBLE'] } },
+      ],
+    },
+    select: { id: true },
+    orderBy: { disputeWindowEndsAt: 'asc' },
+    take: opts.batch ?? 200,
+  });
+  let autoCompleted = 0;
+  let recomputed = 0;
+  for (const { id } of due) {
+    await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<
+        { id: string }[]
+      >`SELECT id FROM orders WHERE id = ${id}::uuid FOR UPDATE SKIP LOCKED`;
+      if (rows.length === 0) return;
+      const o = await tx.order.findUniqueOrThrow({ where: { id } });
+      const blockers = await settlementBlockers(tx, o, await remainingPayable(tx, id), now);
+      if (canAutoComplete(o, blockers)) {
+        await tx.order.update({
+          where: { id },
+          data: { state: 'COMPLETED', completedAt: now, version: { increment: 1 } },
+        });
+        await tx.orderEvent.create({
+          data: {
+            orderId: id,
+            kind: 'order.auto_completed',
+            actorSide: 'SYSTEM',
+            reason: 'dispute_window_ended',
+          },
+        });
+        const p = { order_id: o.id, order_number: o.number };
+        await notifyWorkspace(tx, o.buyerWorkspaceId, BUYER_ROLES, 'order.auto_completed', {
+          ...p,
+          path: `/app/buyer/${o.buyerWorkspaceId}/orders/${o.id}`,
+        });
+        await notifyWorkspace(tx, o.sellerWorkspaceId, SELLER_ORDER_ROLES, 'order.auto_completed', {
+          ...p,
+          path: `/app/seller/${o.sellerWorkspaceId}/orders/${o.id}`,
+        });
+        autoCompleted++;
+      }
+      const before = o.settlementState;
+      await recomputeSettlement(tx, id, now);
+      const after = await tx.order.findUniqueOrThrow({
+        where: { id },
+        select: { settlementState: true },
+      });
+      if (after.settlementState !== before) recomputed++;
+    });
+  }
+  return { auto_completed: autoCompleted, recomputed };
 }
 
 /** Worker: submit approved refunds and payouts to the provider (APPROVED→SUBMITTED/PENDING). */
@@ -215,6 +287,8 @@ async function processRefund(tx: TxClient, ev: PaymentEvent, failureCode: string
           body: `refund_failed:${refund.number}`,
         },
       });
+    // The failed refund no longer blocks settlement, but its reconciliation case now holds it.
+    await recomputeSettlement(tx, order.id);
     return done('PROCESSED', 'refund_failed');
   }
   if (ev.type !== 'refund.succeeded') return done('IGNORED', 'unsupported_type');

@@ -11550,7 +11550,10 @@
                               "admin.reviews.moderate",
                               "admin.support.read",
                               "admin.support.manage",
-                              "admin.reports.export"
+                              "admin.reports.export",
+                              "admin.holds.manage",
+                              "admin.commission.manage",
+                              "admin.reconciliation.resolve"
                             ]
                           }
                         },
@@ -116935,6 +116938,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -117032,6 +117060,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -118282,6 +118313,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -118379,6 +118435,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -120656,6 +120715,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -120753,6 +120837,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -122730,6 +122817,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -122827,6 +122939,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -123653,6 +123768,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -123750,6 +123890,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -124568,6 +124711,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -124665,6 +124833,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -128142,6 +128313,12 @@
                               "sandbox": {
                                 "type": "boolean"
                               },
+                              "week_start": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -128166,6 +128343,7 @@
                               "provider_ref",
                               "failure_code",
                               "sandbox",
+                              "week_start",
                               "created_at",
                               "paid_at"
                             ]
@@ -128948,6 +129126,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -129045,6 +129248,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -129867,6 +130073,31 @@
                               ],
                               "format": "date-time"
                             },
+                            "delivery_verified_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "delivery_verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "PROOF_OF_DELIVERY",
+                                "BUYER_CONFIRMED",
+                                null
+                              ]
+                            },
+                            "dispute_window_ends_at": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
                             "dispute": {
                               "type": [
                                 "object",
@@ -129964,6 +130195,9 @@
                             "settlement_state",
                             "refunded_fils",
                             "completed_at",
+                            "delivery_verified_at",
+                            "delivery_verification",
+                            "dispute_window_ends_at",
                             "dispute",
                             "review",
                             "actions"
@@ -137672,6 +137906,27 @@
                             "type": "string",
                             "pattern": "^\\d{1,15}$"
                           },
+                          "merchandise_fils": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{1,15}$"
+                          },
+                          "shipping_fils": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{1,15}$"
+                          },
+                          "tax_fils": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{1,15}$"
+                          },
                           "state": {
                             "type": "string",
                             "enum": [
@@ -137739,6 +137994,9 @@
                           "dispute_id",
                           "amount_fils",
                           "commission_fils",
+                          "merchandise_fils",
+                          "shipping_fils",
+                          "tax_fils",
                           "state",
                           "reason",
                           "requested_by",
@@ -138074,6 +138332,21 @@
                   "dispute_id": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "merchandise_fils": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9]\\d{0,14})$",
+                    "description": "Non-negative integer fils"
+                  },
+                  "shipping_fils": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9]\\d{0,14})$",
+                    "description": "Non-negative integer fils"
+                  },
+                  "tax_fils": {
+                    "type": "string",
+                    "pattern": "^(0|[1-9]\\d{0,14})$",
+                    "description": "Non-negative integer fils"
                   }
                 },
                 "required": [
@@ -138123,6 +138396,27 @@
                         },
                         "commission_fils": {
                           "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "merchandise_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
                           "pattern": "^\\d{1,15}$"
                         },
                         "state": {
@@ -138192,6 +138486,9 @@
                         "dispute_id",
                         "amount_fils",
                         "commission_fils",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
                         "state",
                         "reason",
                         "requested_by",
@@ -138575,6 +138872,27 @@
                           "type": "string",
                           "pattern": "^\\d{1,15}$"
                         },
+                        "merchandise_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
                         "state": {
                           "type": "string",
                           "enum": [
@@ -138642,6 +138960,9 @@
                         "dispute_id",
                         "amount_fils",
                         "commission_fils",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
                         "state",
                         "reason",
                         "requested_by",
@@ -139025,6 +139346,27 @@
                           "type": "string",
                           "pattern": "^\\d{1,15}$"
                         },
+                        "merchandise_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{1,15}$"
+                        },
                         "state": {
                           "type": "string",
                           "enum": [
@@ -139092,6 +139434,9 @@
                         "dispute_id",
                         "amount_fils",
                         "commission_fils",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
                         "state",
                         "reason",
                         "requested_by",
@@ -139393,7 +139738,7 @@
     },
     "/api/v1/admin/payouts/eligible": {
       "get": {
-        "summary": "Sellers with eligible, undisputed completed orders",
+        "summary": "Sellers with orders past the dispute window after verified delivery, with no dispute, hold, open reconciliation case or pending refund",
         "description": "Requires: admin.finance.read.",
         "tags": [
           "Admin disputes, refunds, payouts, reviews"
@@ -139845,6 +140190,12 @@
                           "sandbox": {
                             "type": "boolean"
                           },
+                          "week_start": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
                           "created_at": {
                             "type": "string",
                             "format": "date-time"
@@ -139872,6 +140223,7 @@
                           "provider_ref",
                           "failure_code",
                           "sandbox",
+                          "week_start",
                           "created_at",
                           "paid_at"
                         ]
@@ -140163,7 +140515,7 @@
         }
       },
       "post": {
-        "summary": "Request a payout of all eligible orders for one seller",
+        "summary": "Request this week's payout of all eligible orders for one seller (one live payout per seller per Dubai week)",
         "description": "Requires: admin.payouts.request.",
         "tags": [
           "Admin disputes, refunds, payouts, reviews"
@@ -140272,6 +140624,12 @@
                         "sandbox": {
                           "type": "boolean"
                         },
+                        "week_start": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "created_at": {
                           "type": "string",
                           "format": "date-time"
@@ -140299,6 +140657,7 @@
                         "provider_ref",
                         "failure_code",
                         "sandbox",
+                        "week_start",
                         "created_at",
                         "paid_at"
                       ]
@@ -140591,7 +140950,7 @@
     },
     "/api/v1/admin/payouts/{id}/approve": {
       "post": {
-        "summary": "Approve a payout (a different finance user; dual control)",
+        "summary": "Approve a payout (a different finance user; dual control). Refused when an order is held or disputed, or the provider balance is insufficient",
         "description": "Requires: admin.payouts.approve.",
         "tags": [
           "Admin disputes, refunds, payouts, reviews"
@@ -140712,6 +141071,12 @@
                         "sandbox": {
                           "type": "boolean"
                         },
+                        "week_start": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "created_at": {
                           "type": "string",
                           "format": "date-time"
@@ -140739,6 +141104,7 @@
                         "provider_ref",
                         "failure_code",
                         "sandbox",
+                        "week_start",
                         "created_at",
                         "paid_at"
                       ]
@@ -141152,6 +141518,12 @@
                         "sandbox": {
                           "type": "boolean"
                         },
+                        "week_start": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
                         "created_at": {
                           "type": "string",
                           "format": "date-time"
@@ -141179,6 +141551,7 @@
                         "provider_ref",
                         "failure_code",
                         "sandbox",
+                        "week_start",
                         "created_at",
                         "paid_at"
                       ]
@@ -142643,6 +143016,2747 @@
                           "enum": [
                             "PUBLISHED",
                             "HIDDEN"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "state"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/payouts/run": {
+      "get": {
+        "summary": "Current weekly payout run and available provider balance",
+        "description": "Requires: admin.finance.read.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "week_start": {
+                          "type": "string"
+                        },
+                        "week_end": {
+                          "type": "string"
+                        },
+                        "payout_count": {
+                          "type": "integer"
+                        },
+                        "amount_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "available_fils": {
+                          "type": "string"
+                        },
+                        "sandbox": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "week_start",
+                        "week_end",
+                        "payout_count",
+                        "amount_fils",
+                        "available_fils",
+                        "sandbox"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/holds": {
+      "get": {
+        "summary": "Settlement holds on orders",
+        "description": "Requires: admin.holds.manage.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            },
+            "required": false,
+            "name": "active",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": false,
+            "name": "order_id",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "order_id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "order_number": {
+                            "type": "string"
+                          },
+                          "seller_company_name": {
+                            "type": "string"
+                          },
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "COMPLIANCE",
+                              "FRAUD",
+                              "RECONCILIATION",
+                              "PAYMENT_INVESTIGATION"
+                            ]
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "placed_by": {
+                            "type": "string"
+                          },
+                          "placed_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "released_by": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "released_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "release_reason": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "settlement_state": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "order_id",
+                          "order_number",
+                          "seller_company_name",
+                          "kind",
+                          "reason",
+                          "placed_by",
+                          "placed_at",
+                          "released_by",
+                          "released_at",
+                          "release_reason",
+                          "settlement_state"
+                        ]
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Place a compliance, fraud, reconciliation or payment-investigation hold",
+        "description": "Requires: admin.holds.manage.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "order_id": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "COMPLIANCE",
+                      "FRAUD",
+                      "RECONCILIATION",
+                      "PAYMENT_INVESTIGATION"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "order_id",
+                  "kind",
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_number": {
+                          "type": "string"
+                        },
+                        "seller_company_name": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "COMPLIANCE",
+                            "FRAUD",
+                            "RECONCILIATION",
+                            "PAYMENT_INVESTIGATION"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "placed_by": {
+                          "type": "string"
+                        },
+                        "placed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "released_by": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "released_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "release_reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "settlement_state": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "order_id",
+                        "order_number",
+                        "seller_company_name",
+                        "kind",
+                        "reason",
+                        "placed_by",
+                        "placed_at",
+                        "released_by",
+                        "released_at",
+                        "release_reason",
+                        "settlement_state"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/holds/{id}/release": {
+      "post": {
+        "summary": "Release a hold (reason recorded)",
+        "description": "Requires: admin.holds.manage.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_number": {
+                          "type": "string"
+                        },
+                        "seller_company_name": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "COMPLIANCE",
+                            "FRAUD",
+                            "RECONCILIATION",
+                            "PAYMENT_INVESTIGATION"
+                          ]
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "placed_by": {
+                          "type": "string"
+                        },
+                        "placed_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "released_by": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "released_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "release_reason": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "settlement_state": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "order_id",
+                        "order_number",
+                        "seller_company_name",
+                        "kind",
+                        "reason",
+                        "placed_by",
+                        "placed_at",
+                        "released_by",
+                        "released_at",
+                        "release_reason",
+                        "settlement_state"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/commission": {
+      "get": {
+        "summary": "Current commission policy and its history",
+        "description": "Requires: admin.finance.read.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "current": {
+                          "type": "object",
+                          "properties": {
+                            "rate_bps": {
+                              "type": "integer"
+                            },
+                            "version": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "policy",
+                                "configuration"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "rate_bps",
+                            "version",
+                            "source"
+                          ]
+                        },
+                        "can_manage": {
+                          "type": "boolean"
+                        },
+                        "history": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "version": {
+                                "type": "integer"
+                              },
+                              "rate_bps": {
+                                "type": "integer"
+                              },
+                              "base": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "created_by": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "version",
+                              "rate_bps",
+                              "base",
+                              "reason",
+                              "created_by",
+                              "created_at"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "current",
+                        "can_manage",
+                        "history"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Record a new commission policy version (TOTP step-up; applies to new checkouts)",
+        "description": "Requires: admin.commission.manage.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rate_bps": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 5000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  },
+                  "totp_code": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                },
+                "required": [
+                  "rate_bps",
+                  "reason",
+                  "totp_code"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "current": {
+                          "type": "object",
+                          "properties": {
+                            "rate_bps": {
+                              "type": "integer"
+                            },
+                            "version": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "source": {
+                              "type": "string",
+                              "enum": [
+                                "policy",
+                                "configuration"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "rate_bps",
+                            "version",
+                            "source"
+                          ]
+                        },
+                        "can_manage": {
+                          "type": "boolean"
+                        },
+                        "history": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "version": {
+                                "type": "integer"
+                              },
+                              "rate_bps": {
+                                "type": "integer"
+                              },
+                              "base": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "created_by": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "version",
+                              "rate_bps",
+                              "base",
+                              "reason",
+                              "created_by",
+                              "created_at"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "current",
+                        "can_manage",
+                        "history"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/finance/reconciliation/{id}/resolve": {
+      "post": {
+        "summary": "Resolve an open reconciliation case (reason recorded)",
+        "description": "Requires: admin.reconciliation.resolve.",
+        "tags": [
+          "Admin disputes, refunds, payouts, reviews"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resolution": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "resolution"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string",
+                          "enum": [
+                            "RESOLVED"
                           ]
                         }
                       },

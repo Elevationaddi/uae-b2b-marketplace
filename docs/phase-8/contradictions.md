@@ -9,6 +9,17 @@ Severity levels:
 - **Required:** must change before the pilot (8G).
 - **Minor:** copy or default value.
 
+## Progress (code changes)
+| ID | Status | Notes |
+|---|---|---|
+| C-01 | **Fixed in code** | Eligibility only after verified delivery and the end of the window; blockers listed in P8-2. |
+| C-02 | **Fixed in code** | Window from verified delivery (P8-1), stored per order, shown to buyers and suppliers. |
+| C-03 | **Fixed in code** | Auto-completion sweep and order holds (P8-3, P8-4). |
+| C-04 | **Fixed in code (sandbox)** | Weekly run, one live payout per supplier per week, approval re-checks orders and the balance (P8-5). Live provider balance check is a launch blocker until a live adapter exists. |
+| C-05 | **Fixed in code** | Versioned commission policy with step-up and audit (P8-6). |
+| C-06 | **Fixed in code** | Refund split and merchandise-only commission reversal (P8-7). |
+| C-07 to C-24 | Open | Next pull requests. |
+
 ## Money, payouts and order completion
 
 | ID | Founder decision | Current implementation | Severity | Workstream |

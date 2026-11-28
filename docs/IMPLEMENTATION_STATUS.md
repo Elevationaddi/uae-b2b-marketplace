@@ -11,9 +11,33 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS: 8A only (preparation, nothing provisioned) | Branch `phase-8a-infrastructure`; see Phase 8A section | Provisioning approval (cost), provider eligibility, tax/legal approvals; 8B–8H not started |
+| 8 | IN PROGRESS (code only, nothing provisioned) | 8A merged f3e5f53 (PR #10; Azure plan since rejected by the founder on 2026-11-28 09:28 UTC). Financial conflicts C-01 to C-06 fixed in code: see "Phase 8: financial policy conflicts" | Founder's zero-cost Vercel-first revision in progress; provider eligibility, tax/legal approvals |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: financial policy conflicts (C-01 to C-06)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-financial-conflicts`. **Authority:** founder message of 2026-11-28 09:28 UTC: code-only changes for the approved business policies, financial conflicts first. Nothing provisioned, no live service connected, still sandbox mode.
+
+**Delivered**
+- Migration `20261203000000_phase8_financial_policies` (additive only; existing orders backfilled from stored data): `commission_policies` (append-only), `order_holds` (never deleted, released once), `payout_runs`, order columns for verified delivery, the dispute window and the commission rate and policy, refund split columns, and `payouts.run_id` with one live payout per supplier per run.
+- Payout eligibility only after verified delivery plus the 14-day window, with no dispute, hold, open reconciliation case or pending refund (C-01, C-02). Auto-completion and eligibility sweep in the worker every 5 minutes (C-03).
+- Weekly payout run, approval re-checks of every order, and a provider balance check (ledger-derived in sandbox) (C-04).
+- Versioned commission policy set by FINANCE_APPROVER with TOTP step-up, reason and audit; each checkout and order records its rate and policy (C-05).
+- Refund split (merchandise, delivery, VAT) with commission reversed on merchandise only (C-06).
+- Admin screens: settlement holds, commission, weekly payout run card, refund split fields, reconciliation case resolution. Order pages show verified delivery and the dispute window (EN/AR).
+- New API routes: `GET/POST /admin/holds`, `POST /admin/holds/{id}/release`, `GET /admin/payouts/run`, `GET/POST /admin/finance/commission`, `POST /admin/finance/reconciliation/{id}/resolve` (OpenAPI regenerated).
+- New capabilities: `admin.holds.manage` (COMPLIANCE, FINANCE, FINANCE_APPROVER), `admin.commission.manage` and `admin.reconciliation.resolve` (FINANCE_APPROVER).
+- SANDBOX-only test clock CLI `sandbox:end-dispute-window` for browser journeys (refuses in production and unless `PAYMENT_MODE=mock`; audited).
+- Provisional rules P8-1 to P8-8 in `docs/00-decisions.md`.
+
+**Tests actually run locally (2026-11-28)**
+- API (unit and PostgreSQL integration): 14 files, **142 passed**, 0 failed, including 14 new unit tests and 6 new integration tests for the financial rules.
+- Contracts 62 passed; config 21 passed; web 10 passed; worker 4 passed. Lint and Prettier clean; typecheck clean for API, web, worker and E2E.
+- Browser E2E was not run locally; it runs in CI on the pull request.
+
+**Known limits**
+- The provider balance is derived from the ledger in sandbox. A live adapter must query the provider's available balance before approval (launch blocker).
+- A reconciliation case opened by a provider event holds an already-eligible order at the next 5-minute sweep; payout requests and approvals re-check immediately.
 
 ## Phase 8A: infrastructure architecture, IaC and cost estimates
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8a-infrastructure`.

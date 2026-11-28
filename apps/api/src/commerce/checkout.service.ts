@@ -8,6 +8,7 @@ import {
   type paymentStartRequest,
 } from '@app/contracts';
 import {
+  activeCommission,
   closeUnpaidCheckout,
   Prisma,
   writeAudit,
@@ -106,6 +107,8 @@ export class CheckoutService {
       if (p.blocked) throw new ApiError('CONFLICT', 'checkout.blocked');
       if (p.groups.some((g) => g.group.seller_company_id === ctx.company.id))
         throw new ApiError('CONFLICT', 'cart.self_trade');
+      // Commission policy in force now (C-05); recorded on the checkout and every order.
+      const commission = await activeCommission(tx, this.config.commissionBps);
 
       // Reserve in a stable order (sku id) so concurrent checkouts cannot deadlock. The
       // conditional update is the race guard for the last unit (T11).
@@ -138,7 +141,8 @@ export class CheckoutService {
           taxFils: p.tax,
           totalFils: p.total,
           taxRule: { code: 'STANDARD', bps: this.config.taxBps, base: 'merchandise+shipping' },
-          commissionBps: this.config.commissionBps,
+          commissionBps: commission.bps,
+          commissionPolicyId: commission.policyId,
           reservationExpiresAt: expiresAt,
           payBy: expiresAt,
         },
@@ -163,7 +167,7 @@ export class CheckoutService {
         });
       }
       for (const g of p.groups) {
-        const commission = bpsOf(g.group.merchandise, this.config.commissionBps);
+        const commissionFils = bpsOf(g.group.merchandise, commission.bps);
         const order = await tx.order.create({
           data: {
             number: await nextNumber(tx, 'order'),
@@ -176,14 +180,17 @@ export class CheckoutService {
             shippingFils: g.shipping,
             taxFils: g.tax,
             totalFils: g.total,
-            commissionFils: commission,
-            sellerPayableFils: g.total - commission,
+            commissionFils,
+            sellerPayableFils: g.total - commissionFils,
+            commissionBps: commission.bps,
+            commissionPolicyId: commission.policyId,
             snapshot: {
               buyer: { company_name: ctx.company.displayName },
               seller: { company_name: g.group.seller.company_name },
               delivery: { fee_fils: g.shipping.toString(), days: g.group.delivery.days },
               address: p.address,
-              commission_bps: this.config.commissionBps,
+              commission_bps: commission.bps,
+              commission_policy_version: commission.version,
             },
             lines: {
               create: g.group.lines.map((l, i) => ({
@@ -420,11 +427,13 @@ export async function createQuoteCheckout(
     userId: string;
     payBy: Date;
     poReference: string | null;
-    commissionBps: number;
+    /** Rate used when no commission policy version has been recorded yet. */
+    commissionFallbackBps: number;
   },
 ): Promise<{ checkoutId: string; orderId: string }> {
   const v = input.version;
-  const commission = bpsOf(v.subtotalFils, input.commissionBps);
+  const policy = await activeCommission(tx, input.commissionFallbackBps);
+  const commission = bpsOf(v.subtotalFils, policy.bps);
   const checkout = await tx.checkout.create({
     data: {
       number: await nextNumber(tx, 'checkout'),
@@ -440,7 +449,8 @@ export async function createQuoteCheckout(
       taxFils: v.taxFils,
       totalFils: v.totalFils,
       taxRule: { code: v.taxCode, bps: v.taxBps, base: 'merchandise+shipping', source: 'quote' },
-      commissionBps: input.commissionBps,
+      commissionBps: policy.bps,
+      commissionPolicyId: policy.policyId,
       payBy: input.payBy,
     },
   });
@@ -458,6 +468,8 @@ export async function createQuoteCheckout(
       totalFils: v.totalFils,
       commissionFils: commission,
       sellerPayableFils: v.totalFils - commission,
+      commissionBps: policy.bps,
+      commissionPolicyId: policy.policyId,
       snapshot: {
         buyer: { company_name: input.buyer.companyName },
         seller: { company_name: input.seller.companyName },
@@ -469,7 +481,8 @@ export async function createQuoteCheckout(
         },
         rfq: { id: input.rfq.id, number: input.rfq.number },
         quote_version_id: v.id,
-        commission_bps: input.commissionBps,
+        commission_bps: policy.bps,
+        commission_policy_version: policy.version,
       },
       lines: {
         create: [

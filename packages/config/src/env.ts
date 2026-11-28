@@ -107,10 +107,16 @@ export const rawEnvSchema = z.object({
   TAX_STANDARD_BPS: z.coerce.number().int().min(0).max(10000).optional(),
 
   /**
-   * Platform commission on merchandise, in basis points (D05 open). Unset outside production uses
-   * the 1000 bps fixture from docs/08-finance.md; production requires an explicit value.
+   * Platform commission on merchandise, in basis points (founder: 10%). Used only until a restricted
+   * admin records the first commission policy version (C-05). Unset outside production uses the
+   * 1000 bps fixture; production requires an explicit value.
    */
   COMMISSION_BPS: z.coerce.number().int().min(0).max(5000).optional(),
+  /**
+   * Days after verified delivery during which a dispute can be opened; payouts wait for the end of
+   * this window (founder decision 28 Nov 2026: 14). Each order stores its own window end.
+   */
+  DISPUTE_WINDOW_DAYS: z.coerce.number().int().min(1).max(90).default(14),
   /** Minutes a checkout holds stock while payment is pending (D11: 15). */
   RESERVATION_MINUTES: z.coerce.number().int().min(5).max(120).default(15),
 

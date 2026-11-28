@@ -55,7 +55,10 @@ export type DisputeState = (typeof DISPUTE_STATES)[number];
 
 /** Provisional limits (P5-x decisions pending founder); enforced server-side. */
 export const FULFILMENT_LIMITS = {
-  /** A dispute can be opened until this many days after the buyer confirmed receipt. */
+  /**
+   * Default days after verified delivery during which a dispute can be opened (founder decision
+   * 28 Nov 2026). The API uses DISPUTE_WINDOW_DAYS; each order stores its own window end.
+   */
   disputeWindowDays: 14,
   maxDisputeMessages: 200,
   reviewCommentMax: 1000,
@@ -172,12 +175,37 @@ export const disputeDetail = disputeSummary.extend({
 
 // ------------------------------------------------------------------ refunds and payouts (admin)
 
-export const refundCreateRequest = z.object({
-  order_id: uuid,
-  amount_fils: positiveFils,
-  reason: text(1000),
-  dispute_id: uuid.optional(),
-});
+const nonNegativeFils = z
+  .string()
+  .regex(/^(0|[1-9]\d{0,14})$/, 'invalid')
+  .describe('Non-negative integer fils');
+/**
+ * A refund may say which parts of the order it covers (merchandise, delivery, VAT). Commission is
+ * reversed on the merchandise part only (C-06). Without a split the amount is spread pro rata.
+ */
+export const refundCreateRequest = z
+  .object({
+    order_id: uuid,
+    amount_fils: positiveFils,
+    reason: text(1000),
+    dispute_id: uuid.optional(),
+    merchandise_fils: nonNegativeFils.optional(),
+    shipping_fils: nonNegativeFils.optional(),
+    tax_fils: nonNegativeFils.optional(),
+  })
+  .superRefine((v, c) => {
+    const parts = [v.merchandise_fils, v.shipping_fils, v.tax_fils];
+    const given = parts.filter((p) => p !== undefined).length;
+    if (given === 0) return;
+    if (given !== 3) {
+      for (const k of ['merchandise_fils', 'shipping_fils', 'tax_fils'] as const)
+        if (v[k] === undefined) c.addIssue({ code: 'custom', path: [k], message: 'required' });
+      return;
+    }
+    const sum = parts.reduce((s, p) => s + BigInt(p!), 0n);
+    if (/^[1-9]\d{0,14}$/.test(v.amount_fils) && sum !== BigInt(v.amount_fils))
+      c.addIssue({ code: 'custom', path: ['amount_fils'], message: 'split_mismatch' });
+  });
 export const financeDecisionRequest = z.object({ reason: text(1000) });
 export const refundListQuery = z.object({
   state: z.enum(REFUND_STATES).optional(),
@@ -191,6 +219,10 @@ export const refundItem = z.object({
   dispute_id: uuid.nullable(),
   amount_fils: filsString,
   commission_fils: filsString,
+  /** Null on refunds made before Phase 8 (they were split pro rata of the order total). */
+  merchandise_fils: filsString.nullable(),
+  shipping_fils: filsString.nullable(),
+  tax_fils: filsString.nullable(),
   state: z.enum(REFUND_STATES),
   reason: z.string(),
   requested_by: z.string(),
@@ -224,6 +256,8 @@ export const payoutItem = z.object({
   provider_ref: z.string().nullable(),
   failure_code: z.string().nullable(),
   sandbox: z.boolean(),
+  /** Monday of the Dubai week whose payout run this payout belongs to (null before Phase 8). */
+  week_start: z.string().nullable(),
   created_at: isoDateTime,
   paid_at: isoDateTime.nullable(),
 });
@@ -285,6 +319,11 @@ export const orderFulfilment = z.object({
   settlement_state: z.enum(SETTLEMENT_STATES).nullable(),
   refunded_fils: filsString,
   completed_at: isoDateTime.nullable(),
+  /** Verified delivery (C-02): delivery with proof or buyer receipt, whichever came first. */
+  delivery_verified_at: isoDateTime.nullable(),
+  delivery_verification: z.enum(['PROOF_OF_DELIVERY', 'BUYER_CONFIRMED']).nullable(),
+  /** Disputes can be opened until then; supplier payouts wait for it (C-01). */
+  dispute_window_ends_at: isoDateTime.nullable(),
   dispute: z.object({ id: uuid, number: z.string(), state: z.enum(DISPUTE_STATES) }).nullable(),
   review: z
     .object({

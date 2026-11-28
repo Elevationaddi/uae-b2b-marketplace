@@ -168,6 +168,10 @@ export const ADMIN_CAPABILITIES = [
   'admin.support.read',
   'admin.support.manage',
   'admin.reports.export',
+  /** Phase 8: settlement holds, commission policy, reconciliation case resolution. */
+  'admin.holds.manage',
+  'admin.commission.manage',
+  'admin.reconciliation.resolve',
 ] as const;
 export type AdminCapability = (typeof ADMIN_CAPABILITIES)[number];
 
@@ -188,6 +192,8 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.rfqs.read',
     'admin.rfqs.moderate',
     'admin.reviews.moderate',
+    // Compliance holds on an order's settlement (C-03).
+    'admin.holds.manage',
   ],
   SUPPORT: [
     'admin.companies.read',
@@ -209,6 +215,7 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.refunds.request',
     'admin.payouts.request',
     'admin.reports.export',
+    'admin.holds.manage',
   ],
   // Independent approver (dual control): never the requester of the same refund or payout.
   FINANCE_APPROVER: [
@@ -219,6 +226,10 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.refunds.approve',
     'admin.payouts.approve',
     'admin.reports.export',
+    'admin.holds.manage',
+    // Restricted settings (C-05) and closing reconciliation cases, with a stated reason.
+    'admin.commission.manage',
+    'admin.reconciliation.resolve',
   ],
   // Super-admin manages roles/config/system; no implicit compliance or financial approval.
   SUPER_ADMIN: [

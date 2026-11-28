@@ -4,6 +4,7 @@ import {
   createPrismaClient,
   createSandboxPsp,
   submitApprovedSettlements,
+  runSettlementSweep,
   expireCheckouts,
   expireExports,
   pingDatabase,
@@ -37,6 +38,9 @@ import {
  * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
  * - settlement.submit: sends dual-approved refunds and payouts to the provider adapter (every
  *   2 s; idempotency key per refund/payout, so a retry never pays twice).
+ * - settlement.sweep: completes delivered orders whose dispute window ended with no dispute,
+ *   hold, open reconciliation case or pending refund, and makes their payable eligible for the
+ *   weekly payout run (every 5 min; idempotent, row locks with SKIP LOCKED; C-01, C-03).
  * - export.cleanup: deletes the bytes of report exports past their 24 h retention (every 10 min;
  *   the audit row stays).
  */
@@ -51,6 +55,7 @@ export const CHECKOUT_EXPIRY_JOB = 'checkout.expiry';
 export const SANDBOX_WEBHOOK_JOB = 'sandbox.webhooks';
 export const SETTLEMENT_SUBMIT_JOB = 'settlement.submit';
 export const EXPORT_CLEANUP_JOB = 'export.cleanup';
+export const SETTLEMENT_SWEEP_JOB = 'settlement.sweep';
 const HEARTBEAT_EVERY_MS = 60_000;
 const HEARTBEAT_STALE_MS = 3 * HEARTBEAT_EVERY_MS;
 
@@ -148,6 +153,11 @@ export async function startWorker(
           if (res.refunds || res.payouts) log.info(res, 'settlements submitted');
           return res;
         }
+        case SETTLEMENT_SWEEP_JOB: {
+          const res = await runSettlementSweep(prisma);
+          if (res.auto_completed || res.recomputed) log.info(res, 'settlement sweep');
+          return res;
+        }
         case EXPORT_CLEANUP_JOB: {
           const expired = await expireExports(prisma);
           if (expired) log.info({ expired }, 'report exports expired');
@@ -197,6 +207,11 @@ export async function startWorker(
     'settlement-submit',
     { every: opts.outboxEveryMs ?? 2_000 },
     { name: SETTLEMENT_SUBMIT_JOB, opts: oneShot },
+  );
+  await queue.upsertJobScheduler(
+    'settlement-sweep',
+    { every: 5 * 60_000 },
+    { name: SETTLEMENT_SWEEP_JOB, opts: oneShot },
   );
   await queue.upsertJobScheduler(
     'export-cleanup',
