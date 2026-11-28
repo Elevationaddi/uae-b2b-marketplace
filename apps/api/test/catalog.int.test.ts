@@ -219,7 +219,7 @@ describe('T07/T08 listing lifecycle and moderation', () => {
     const asGuest = (await guest.get(`/marketplace/products/${d.id}`).expect(200)).body.data;
     expect(asGuest.price_visible).toBe(false);
     expect(asGuest.skus[0].tiers).toBeNull();
-    expect(asGuest.viewer.trading).toEqual({ available: false, reason: 'sign_in' });
+    expect(asGuest.viewer.trading).toEqual({ available: false, reason: 'sign_in', rfq: false });
     const search = (await guest.get(`/marketplace/products?q=${t}`).expect(200)).body.data;
     expect(search.items[0].price.min_price_fils).toBeNull();
 

@@ -120,9 +120,8 @@ export const catalogEn = {
   'pd.trading.requires_approved_buyer':
     'Quotations and orders are available to verified buyer companies. Complete company verification to trade.',
   'pd.trading.phase_unavailable':
-    'Quotations and ordering are not available yet. They open in a later release.',
-  'pd.trading.quote_only':
-    'This product is priced on request. Quotation requests open in a later release.',
+    'Request a quotation from this supplier. Direct ordering opens in a later release.',
+  'pd.trading.quote_only': 'This product is priced on request. Request a quotation to get a price.',
   'pd.sign_in_to_save': 'Sign in with a verified email to save and compare.',
   'pd.unavailable': 'No longer available',
   'pd.selected_variant': 'Variant',
@@ -673,8 +672,8 @@ export const catalogAr: Record<keyof typeof catalogEn, string> = {
   'pd.trading.sign_in': 'سجّل الدخول لطلب عروض الأسعار أو الشراء.',
   'pd.trading.requires_approved_buyer':
     'عروض الأسعار والطلبات متاحة لشركات المشترين الموثقة. أكمل توثيق شركتك للتداول.',
-  'pd.trading.phase_unavailable': 'عروض الأسعار والطلبات غير متاحة بعد. ستتوفر في إصدار لاحق.',
-  'pd.trading.quote_only': 'سعر هذا المنتج عند الطلب. ستتوفر طلبات عروض الأسعار في إصدار لاحق.',
+  'pd.trading.phase_unavailable': 'اطلب عرض سعر من هذا المورد. سيتوفر الطلب المباشر في إصدار لاحق.',
+  'pd.trading.quote_only': 'سعر هذا المنتج عند الطلب. اطلب عرض سعر للحصول على السعر.',
   'pd.sign_in_to_save': 'سجّل الدخول ببريد موثق للحفظ والمقارنة.',
   'pd.unavailable': 'لم يعد متاحاً',
   'pd.selected_variant': 'الصنف',

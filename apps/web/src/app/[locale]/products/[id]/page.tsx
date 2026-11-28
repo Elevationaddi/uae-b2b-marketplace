@@ -190,12 +190,25 @@ function BuyerActions({
 
 function TradingActions({ d }: { d: PublicProductDetail }) {
   const t = useT();
+  const { locale } = useApp();
+  const L = useLocalized();
   const reasonId = `trading-${d.id}`;
+  const rfqHref = `/${locale}/app/rfqs/new?${new URLSearchParams({
+    category: d.category.id,
+    title: L(d.title_en, d.title_ar).slice(0, 160),
+    ...(d.supplier.storefront_id ? { invite: d.supplier.storefront_id } : {}),
+  })}`;
   return (
     <div className="pd-trade">
-      <Button type="button" disabled aria-describedby={reasonId}>
-        {t('pd.request_quote')}
-      </Button>
+      {d.viewer.trading.rfq ? (
+        <Link className="btn btn-primary" href={rfqHref}>
+          {t('pd.request_quote')}
+        </Link>
+      ) : (
+        <Button type="button" disabled aria-describedby={reasonId}>
+          {t('pd.request_quote')}
+        </Button>
+      )}
       {d.price_type !== 'QUOTE_ONLY' ? (
         <Button type="button" variant="secondary" disabled aria-describedby={reasonId}>
           {t('pd.buy')}

@@ -44,6 +44,19 @@ import { MediaService } from './catalog/media.service';
 import { SellerCatalogController } from './catalog/seller-catalog.controller';
 import { SellerProductsService } from './catalog/seller-products.service';
 import { StorefrontService } from './catalog/storefront.service';
+import { AdminRfqService } from './rfq/admin-rfq.service';
+import { AttachmentService } from './rfq/attachments';
+import { ConversationService } from './rfq/conversation.service';
+import { NotificationService } from './rfq/notification.service';
+import { QuoteService } from './rfq/quote.service';
+import {
+  AdminRfqController,
+  BuyerRfqController,
+  ConversationController,
+  NotificationController,
+  SellerRfqController,
+} from './rfq/rfq.controller';
+import { RfqService } from './rfq/rfq.service';
 
 /** Paths redacted from every log line (docs/10-security.md: no credentials or tokens in logs). */
 export const LOG_REDACT_PATHS = [
@@ -100,6 +113,11 @@ export class AppModule implements NestModule {
         PublicMediaController,
         SellerCatalogController,
         AdminCatalogController,
+        BuyerRfqController,
+        SellerRfqController,
+        ConversationController,
+        NotificationController,
+        AdminRfqController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
@@ -125,6 +143,12 @@ export class AppModule implements NestModule {
         MarketplaceService,
         BuyerListsService,
         AdminCatalogService,
+        AttachmentService,
+        RfqService,
+        QuoteService,
+        ConversationService,
+        NotificationService,
+        AdminRfqService,
       ],
     };
   }

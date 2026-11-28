@@ -8,3 +8,4 @@ export * from './team';
 export * from './admin';
 export * from './money';
 export * from './catalog';
+export * from './rfq';

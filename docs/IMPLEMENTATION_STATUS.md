@@ -1,18 +1,106 @@
 # Implementation status
-Phases 0 and 1 are merged and approved. Phase 2 (marketplace catalog) is implemented on `phase-2-marketplace-catalog` and merged once CI is green, under the founder's standing instruction to continue without per-phase approval. Phases 3–7 have no application code yet.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is implemented on `phase-3-rfq-quotes` and merged once CI is green, under the founder's standing instruction to continue without per-phase approval. Phase 3 business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
 | 0 | DONE | Merged to `main` as 08a127e (PR #1), CI run 46055408891 green | None |
 | 1 | DONE | Approved by the founder 2026-11-28; merged to `main` as 7cddb66 (PR #2); GitHub Actions green including WebKit | None |
-| 2 | DONE (pending CI on the PR) | Branch `phase-2-marketplace-catalog`; 164 unit/integration and 55 E2E tests pass locally | WebKit runs in CI only |
-| 3–7 | NOT_STARTED | None | Decisions listed under Phase 2 |
+| 2 | DONE | Merged to `main` as a0f0126; CI run 46081580836 green (110 passed, 2 skipped incl. WebKit) | None |
+| 3 | DONE (pending CI on the PR) | Branch `phase-3-rfq-quotes`; unit/integration and E2E counts below | Provisional decisions P3-1…P3-7 need confirmation |
+| 4–7 | NOT_STARTED | None | Decisions listed under Phase 3 |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 3: RFQs, quotes, award, messaging, notifications
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-3-rfq-quotes`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T19–T23.
+
+### Delivered
+- **Buyer RFQs:** list with state tabs, create/edit draft (title, category, specifications, quantity and unit, delivery emirate, optional budget in AED, deadline in Dubai time, needed-by date), audience choice (matching suppliers or invited only) with eligible-supplier search, attachments (scanned, private), publish, cancel with reason, timeline. Entry points: "Request quotation" on product pages and storefronts for approved buyers (prefills category, title and invitee); guests and unapproved companies still see the disabled button with the reason.
+- **Quote comparison and award:** side-by-side current versions (total, unit price, shipping, tax, delivery date, validity, lowest total marked), full quote detail with deviations, terms, files and earlier versions; request revision, decline, and accept the exact version shown (Idempotency-Key, confirmation dialog). Accepting records the award, declines the other quotes and starts the payment deadline (A05). No order or payment is created; the UI says so.
+- **Supplier inbox and quotes:** inbox with all/invited/matching/quoted tabs and search, RFQ detail without competitor information, quote draft (server-computed tax and totals, live pre-tax preview), attachments, submit, revise (new immutable version; after the deadline only when the buyer asked), withdraw, quotes list.
+- **Messaging:** buyer↔supplier conversations, general or per RFQ (supplier "ask the buyer", buyer "message supplier" from a quote or storefront), unread counts, read receipts, 15-second refresh while open, sending gated by trading eligibility (A12), rate-limited.
+- **Notifications:** in-app centre (links to the resource, mark read / all read, unread filter), header badges for notifications and messages, activity emails through the outbox (sandbox mail catcher) with per-user preferences in Settings.
+- **Admin:** RFQ list (state, hidden, search) and detail with metadata and quote states only (no prices or documents), hide/restore with audited reason (COMPLIANCE).
+- **Worker:** `rfq.expiry` every minute: expires lapsed quotes, then RFQs with no valid quote; notifies both sides; purges idempotency keys after 24 hours.
+
+### Routes, schema, permissions
+- 40 new API operations, documented in `docs/api/README.md` (Phase 3 sections) and `docs/api/openapi.json` (version `1.0.0-phase3`).
+- Migration `20261129000000_phase3_rfq_quotes` (13 tables, sequence, CHECKs, partial unique indexes, immutability triggers), additive only: `docs/db/phase-3-schema.md`.
+- Config: `TAX_STANDARD_BPS` (required in production), existing `QUOTE_PAYMENT_WINDOW_HOURS` (A05).
+
+| Action | Buyer owner | Procurement | Buyer viewer | Seller owner | Sales | Warehouse | Finance | Seller viewer | Admin |
+|---|---|---|---|---|---|---|---|---|---|
+| View own workspace RFQs and quotes | Y | Y | Y | — | — | — | — | — | — |
+| Create, edit, publish, cancel RFQs; revise/decline/accept quotes | Y | Y | — | — | — | — | — | — | — |
+| See RFQs invited to / matching pool | — | — | — | Y | Y | Y | Y | Y | — |
+| Draft, submit, revise, withdraw quotes | — | — | — | Y | Y | — | — | — | — |
+| Read and send messages | Y | Y | — | Y | Y | — | — | — | — |
+| RFQ metadata and quote states (no prices) | — | — | — | — | — | — | — | — | COMPLIANCE, SUPPORT, SUPER_ADMIN |
+| Hide / restore an RFQ | — | — | — | — | — | — | — | — | COMPLIANCE |
+
+Every trading action additionally needs an approved company with an unexpired licence (A08, A12); the API returns 403 with the specific reason.
+
+### Commands actually run
+| Command | Result |
+|---|---|
+| `pnpm lint` | pass (0 warnings) |
+| `pnpm format` / `pnpm format:check` | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` | pass: 181 tests, 0 failed (config 20, contracts 62, api integration 85, web 10, worker 4). The worker heartbeat test fails if a local worker server is consuming the same Redis queue; it passes with the server stopped. |
+| `pnpm build` (production) | pass |
+| `pnpm --filter @app/contracts openapi` | regenerated (`1.0.0-phase3`) |
+| `pnpm test:e2e --project=chromium --project=mobile-360` | pass: 60 passed, 2 skipped (long two-party journeys are desktop-only), 0 failed |
+| Screenshots (`rfq.screenshots.spec.ts`, deviceScaleFactor 2) | pass: 4 tests, 55 screenshots (EN/AR, desktop/phone) |
+| WebKit / mobile Safari | not available in this environment; run in CI |
+
+### Acceptance tests
+| Test | Covered by | Result |
+|---|---|---|
+| T19 invite-only RFQ and attachments hidden from non-invitees (404) | `rfq.int.test.ts` | pass |
+| T20 seller cannot read a competitor's quote (404) | `rfq.int.test.ts` | pass |
+| T21 accepting a superseded or expired version → 409, no award | `rfq.int.test.ts` | pass |
+| T22 concurrent acceptance of two quotes → exactly one award; Idempotency-Key replay returns the same result | `rfq.int.test.ts` | pass |
+| T23 accepted/submitted versions immutable (API 409 and DB trigger) | `rfq.int.test.ts` | pass |
+| Pool eligibility by category, self-dealing refused, viewer role read-only | `rfq.int.test.ts`, `rfq.spec.ts` | pass |
+| Messaging and notifications, admin moderation without prices | `rfq.int.test.ts` | pass |
+| Expiry job (quotes then RFQs, notifications) | `rfq-expiry.int.test.ts` | pass |
+| Full buyer → supplier → award journey in the browser; Arabic RTL on a phone | `rfq.spec.ts` | pass |
+
+### Security review
+| Area | Control |
+|---|---|
+| Tenant isolation | Every route resolves workspace membership; RFQ visibility for sellers is one SQL rule (invited or pool-eligible, never own company); other suppliers' quotes, counts and attachments are never returned to a seller; cross-tenant IDs return 404 |
+| Award integrity | RFQ row lock plus unique accepted version; exact version id required; idempotency keys bound to user, route and body hash |
+| Immutability | DB triggers keep submitted versions and the RFQ timeline append-only; revisions create new versions |
+| Money and tax | Integer fils; totals and tax computed server-side with BigInt half-up rounding; CHECK `total = subtotal + shipping + tax` |
+| Files | Magic-byte sniffing, malware scan, only CLEAN files publish or download; download access re-checked and audited |
+| Messaging | Trading-gated sending, 60 messages per user per minute, text only, notification payloads carry names and references, never prices |
+| Admin | Metadata only; hide/restore audited with reason |
+| Notifications | In-app links accept only internal `/app/...` paths written by the server |
+
+### Known issues and limitations
+- Orders, checkout, stock reservation and payment are Phase 4; an award records the decision and the payment deadline only.
+- Message attachments are not built (the column is reserved); messages refresh by polling, no realtime channel.
+- Expiry notifications are in-app only (no email).
+- Delivery address is not captured at acceptance; it arrives with checkout.
+- Tax rate is configuration pending D06; the UI says tax is computed by the platform, not that it is legally correct.
+- Arabic copy needs native-speaker review.
+- Integration and E2E tests add fictional RFQs to the development database.
+
+### Decisions needed before Phase 4 (orders, checkout, payments sandbox)
+1. Confirm or change provisional Phase 3 rules P3-1 to P3-7 (`docs/00-decisions.md`).
+2. Stock reservation at checkout (D11, 15 minutes) and whether made-to-order items reserve capacity.
+3. Delivery: who sets shipping for catalogue orders and which emirates are served (D07).
+4. VAT treatment and tax invoice issuer (D06).
+5. Sandbox payment provider to model (no live connection) and payout model (D05).
+6. Minimum order values, if any.
+
+### Next gate
+Phase 3 merged under the standing instruction once CI is green; Phase 4 proceeds with sandbox adapters only.
+
 ## Phase 2: storefronts, catalog, moderation, inventory, marketplace
-**Date:** 2026-11-27/28 (UTC). **Branch:** `phase-2-marketplace-catalog`. **Exit gate (docs/13-roadmap.md):** T07–T10, search isolation, guest vs verified access (A12), seller eligibility (A10), moderation (A11).
+**Date:** 2026-11-27/28 (UTC). **Branch:** `phase-2-marketplace-catalog`, merged as a0f0126 (CI run 46081580836: 110 passed, 2 skipped). **Exit gate (docs/13-roadmap.md):** T07–T10, search isolation, guest vs verified access (A12), seller eligibility (A10), moderation (A11).
 
 ### Delivered
 - **Buyer marketplace (A12):** home (priority categories, featured products and suppliers labelled "Featured", verified manufacturers, new arrivals, "for you" from preferences), category directory and category pages with subcategories and seller requirements, search with autocomplete (EN/AR normalised trigram search), URL-driven filters (category, fulfilment mode, supplier type, emirate, price range, MOQ, lead time, dispatch time, in stock, customisation, private/white label, samples, category attributes), sorts, grid/list view, pagination and clear-all, product detail (gallery, variants and tier table, specifications, certifications, supplier card, related products, server-side price estimate), supplier directory and storefronts. Guests see no prices and cannot use price filters/sorts (API 422). Request quotation / order buttons are visible but disabled with the reason (sign in, approved business needed, or arrives in Phase 3); no fake transaction.

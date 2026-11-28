@@ -1,5 +1,5 @@
 'use client';
-import type { MeResponse } from '@app/contracts';
+import type { MeResponse, NotificationPreferences } from '@app/contracts';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useApp, useT } from '@/components/app-context';
@@ -15,7 +15,7 @@ import {
   SelectField,
   useFieldError,
 } from '@/components/ui';
-import { formatDubaiTime } from '@/i18n/messages';
+import { formatDubaiTime, type MessageKey } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
 
 type SessionItem = {
@@ -223,6 +223,51 @@ function Sessions({ tick }: { tick: number }) {
   );
 }
 
+const PREF_KEYS = ['email_rfqs', 'email_quotes', 'email_messages'] as const;
+
+/** Activity email preferences. In-app notifications are always kept. */
+function EmailPreferences() {
+  const t = useT();
+  const prefs = useResource<NotificationPreferences>('/notifications/preferences');
+  const m = useMutation();
+  const [saved, setSaved] = useState(false);
+  return (
+    <section className="card" aria-labelledby="prefs-heading">
+      <h2 id="prefs-heading">{t('settings.email_prefs')}</h2>
+      <p className="muted small">{t('settings.email_prefs_hint')}</p>
+      {saved ? <Alert kind="success">{t('common.saved')}</Alert> : null}
+      {m.error ? <ApiErrorAlert error={m.error} /> : null}
+      <Resource state={prefs.state} reload={prefs.reload}>
+        {(p) => (
+          <fieldset disabled={m.busy}>
+            <legend className="sr-only">{t('settings.email_prefs')}</legend>
+            {PREF_KEYS.map((k) => (
+              <label key={k} className="check">
+                <input
+                  type="checkbox"
+                  checked={p[k]}
+                  onChange={async (e) => {
+                    setSaved(false);
+                    const r = await m.run<NotificationPreferences>('/notifications/preferences', {
+                      method: 'PATCH',
+                      body: { [k]: e.target.checked },
+                    });
+                    if (r.ok) {
+                      prefs.setData(r.data);
+                      setSaved(true);
+                    }
+                  }}
+                />
+                <span>{t(`settings.pref.${k}` as MessageKey)}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+      </Resource>
+    </section>
+  );
+}
+
 function Settings() {
   const t = useT();
   const [tick, setTick] = useState(0);
@@ -232,6 +277,7 @@ function Settings() {
       <Profile />
       <Password onChanged={() => setTick((n) => n + 1)} />
       <Sessions tick={tick} />
+      <EmailPreferences />
     </>
   );
 }

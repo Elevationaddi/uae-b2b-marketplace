@@ -34,6 +34,7 @@ const prod = {
   EMAIL_API_KEY: 'live-email-api-key-123',
   EMAIL_FROM: 'no-reply@app.invalid',
   FILE_SCANNER: 'live',
+  TAX_STANDARD_BPS: '500',
 };
 
 function issuesOf(source: Record<string, string>): string[] {
@@ -182,5 +183,14 @@ describe('retention (A13, provisional)', () => {
     expect(() => parseEnv({ ...dev, RETENTION_DELETION_ENABLED: 'true' })).toThrow(
       EnvValidationError,
     );
+  });
+});
+
+describe('quote tax configuration (D06)', () => {
+  it('is optional outside production and required in production', () => {
+    expect(parseEnv(dev).TAX_STANDARD_BPS).toBeUndefined();
+    const { TAX_STANDARD_BPS: _omit, ...noTax } = prod;
+    expect(issuesOf(noTax).join()).toMatch(/TAX_STANDARD_BPS/);
+    expect(issuesOf({ ...dev, TAX_STANDARD_BPS: '10001' }).join()).toMatch(/TAX_STANDARD_BPS/);
   });
 });

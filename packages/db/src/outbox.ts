@@ -16,6 +16,8 @@ export const EMAIL_TEMPLATES = [
   'catalog_decision',
   'listing_enforcement',
   'storefront_enforcement',
+  /** Phase 3: RFQ, quote and message activity (summary + authenticated link only). */
+  'activity',
 ] as const;
 export type EmailTemplate = (typeof EMAIL_TEMPLATES)[number];
 

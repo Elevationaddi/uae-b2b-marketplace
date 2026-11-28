@@ -90,7 +90,7 @@ export class MarketplaceService {
         JOIN workspaces w ON w.id = m.workspace_id AND w.kind = 'BUYER' AND w.status = 'ACTIVE'
         JOIN companies c ON c.id = w.company_id AND c.status = 'APPROVED'
          AND c.licence_expiry >= (now() AT TIME ZONE 'UTC')::date
-       WHERE m.user_id = ${user.id}::uuid AND m.status = 'ACTIVE'`;
+       WHERE m.user_id = ${user.id}::uuid AND m.status = 'ACTIVE' AND m.role IN ('OWNER', 'PROCUREMENT')`;
     return { userId: user.id, verified: true, approvedBuyer: (buyer[0]?.n ?? 0) > 0 };
   }
 
@@ -387,11 +387,13 @@ export class MarketplaceService {
   }
 
   private tradingFor(viewer: Viewer, priceType: string) {
-    if (!viewer.verified) return { available: false, reason: 'sign_in' as const };
+    if (!viewer.verified) return { available: false, reason: 'sign_in' as const, rfq: false };
     if (!viewer.approvedBuyer)
-      return { available: false, reason: 'requires_approved_buyer' as const };
-    if (priceType === 'QUOTE_ONLY') return { available: false, reason: 'quote_only' as const };
-    return { available: false, reason: 'phase_unavailable' as const };
+      return { available: false, reason: 'requires_approved_buyer' as const, rfq: false };
+    // Purchase (cart/checkout) arrives in Phase 4; quotations are available from Phase 3.
+    if (priceType === 'QUOTE_ONLY')
+      return { available: false, reason: 'quote_only' as const, rfq: true };
+    return { available: false, reason: 'phase_unavailable' as const, rfq: true };
   }
 
   async product(id: string, viewer: Viewer): Promise<PublicProductDetail> {

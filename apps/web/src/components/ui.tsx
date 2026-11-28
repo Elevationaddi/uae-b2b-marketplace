@@ -285,6 +285,10 @@ const TONE: Record<string, 'ok' | 'warn' | 'bad' | 'neutral' | 'info'> = {
   SUPERSEDED: 'neutral',
   WITHDRAWN: 'neutral',
   REMOVED: 'bad',
+  OPEN: 'info',
+  AWARDED: 'ok',
+  CANCELLED: 'neutral',
+  DECLINED: 'bad',
 };
 
 /** Status shown as text plus colour, never colour alone (docs/05-ui.md). */
