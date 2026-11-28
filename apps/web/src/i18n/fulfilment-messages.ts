@@ -79,7 +79,7 @@ export const fulfilmentEn = {
   'ful.confirm_receipt': 'Confirm receipt',
   'ful.confirm_receipt_title': 'Confirm you received this order?',
   'ful.confirm_receipt_body':
-    'This completes the order. You can still open a dispute for 14 days after confirming.',
+    'This records verified delivery. You can still open a dispute until the dispute window ends (14 days from verified delivery).',
   'ful.saved': 'Saved.',
   'ful.buyer_next_dispatched':
     'The supplier has dispatched this order. Confirm receipt once the goods arrive.',
@@ -100,7 +100,7 @@ export const fulfilmentEn = {
   'review.section': 'Buyer reviews',
   'review.none': 'No reviews yet.',
   'review.average': 'Average {avg} from {count} reviews',
-  'review.verified_buyer': 'Verified buyer',
+  'review.verified_buyer': 'Verified business buyer',
   'review.hide': 'Hide',
   'review.unhide': 'Publish again',
   'review.hide_title': 'Hide this review?',
@@ -115,7 +115,7 @@ export const fulfilmentEn = {
   'dispute.type': 'Problem',
   'dispute.reason': 'What happened?',
   'dispute.window_note':
-    'Disputes can be opened until 14 days after receipt is confirmed and never after the supplier is paid out.',
+    'Disputes can be opened until 14 days after verified delivery (proof of delivery or your receipt confirmation, whichever comes first).',
   'dispute.view': 'View dispute {number}',
   'dispute.list_intro': 'Disputes on orders for this workspace.',
   'dispute.empty': 'No disputes.',
@@ -323,7 +323,8 @@ export const fulfilmentAr: Record<keyof typeof fulfilmentEn, string> = {
   'ful.proof_file': 'إثبات التسليم (PDF أو PNG أو JPEG)',
   'ful.confirm_receipt': 'تأكيد الاستلام',
   'ful.confirm_receipt_title': 'هل تؤكد استلام هذا الطلب؟',
-  'ful.confirm_receipt_body': 'يؤدي ذلك إلى إكمال الطلب. يمكنك فتح نزاع خلال 14 يوماً بعد التأكيد.',
+  'ful.confirm_receipt_body':
+    'يسجّل ذلك التسليم الموثّق. يمكنك فتح نزاع حتى انتهاء مهلة النزاع (14 يوماً من التسليم الموثّق).',
   'ful.saved': 'تم الحفظ.',
   'ful.buyer_next_dispatched': 'شحن المورد هذا الطلب. أكد الاستلام عند وصول البضائع.',
   'ful.seller_next_confirmed': 'تم تأكيد الدفع. جهّز البضائع وسجّل الشحن.',
@@ -343,7 +344,7 @@ export const fulfilmentAr: Record<keyof typeof fulfilmentEn, string> = {
   'review.section': 'تقييمات المشترين',
   'review.none': 'لا توجد تقييمات بعد.',
   'review.average': 'المتوسط {avg} من {count} تقييمات',
-  'review.verified_buyer': 'مشترٍ موثق',
+  'review.verified_buyer': 'مشترٍ تجاري موثّق',
   'review.hide': 'إخفاء',
   'review.unhide': 'إعادة النشر',
   'review.hide_title': 'هل تريد إخفاء هذا التقييم؟',
@@ -358,7 +359,7 @@ export const fulfilmentAr: Record<keyof typeof fulfilmentEn, string> = {
   'dispute.type': 'المشكلة',
   'dispute.reason': 'ماذا حدث؟',
   'dispute.window_note':
-    'يمكن فتح النزاع خلال 14 يوماً من تأكيد الاستلام، ولا يمكن فتحه بعد التحويل إلى المورد.',
+    'يمكن فتح النزاع خلال 14 يوماً من التسليم الموثّق (إثبات التسليم أو تأكيد استلامك، أيهما أسبق).',
   'dispute.view': 'عرض النزاع {number}',
   'dispute.list_intro': 'النزاعات على طلبات مساحة العمل هذه.',
   'dispute.empty': 'لا توجد نزاعات.',

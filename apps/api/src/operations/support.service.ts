@@ -1,6 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   OPERATIONS_LIMITS,
+  URGENT_SUPPORT_CATEGORIES,
+  type SupportLimitResponse,
+  type supportLimitRequest,
   type adminSupportListQuery,
   type supportCreateRequest,
   type supportListQuery,
@@ -96,13 +99,18 @@ export class SupportService {
         });
     }
     const id = await this.prisma.$transaction(async (tx) => {
-      // Serialise ticket creation per workspace so the open-ticket cap holds under concurrency.
-      await tx.$queryRaw`SELECT id FROM workspaces WHERE id = ${ctx.workspace.id}::uuid FOR UPDATE`;
-      const open = await tx.supportTicket.count({
-        where: { workspaceId: ctx.workspace.id, state: { in: [...LIVE] } },
-      });
-      if (open >= OPERATIONS_LIMITS.openTicketsPerWorkspace)
-        throw new ApiError('CONFLICT', 'support.too_many_open');
+      // Serialise ticket creation per company so the open-ticket cap holds under concurrency.
+      const [company] = await tx.$queryRaw<{ support_ticket_limit: number | null }[]>`
+        SELECT support_ticket_limit FROM companies WHERE id = ${ctx.company.id}::uuid FOR UPDATE`;
+      // C-17: at most 10 open tickets per company (admin exceptions); urgent cases always pass.
+      if (!(URGENT_SUPPORT_CATEGORIES as readonly string[]).includes(b.category)) {
+        const open = await tx.supportTicket.count({
+          where: { companyId: ctx.company.id, state: { in: [...LIVE] } },
+        });
+        const limit = company?.support_ticket_limit ?? OPERATIONS_LIMITS.openTicketsPerCompany;
+        if (open >= limit)
+          throw new ApiError('CONFLICT', 'support.too_many_open', { limit: String(limit) });
+      }
       const n = await tx.$queryRaw<
         { n: bigint }[]
       >`SELECT nextval('support_ticket_number_seq') AS n`;
@@ -225,6 +233,56 @@ export class SupportService {
       });
       return { action: 'support.reopened' };
     });
+  }
+
+  // ---------------------------------------------------------------- per-company limit (C-17)
+
+  async limit(companyId: string): Promise<SupportLimitResponse> {
+    assertUuid(companyId);
+    const c = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { id: true, supportTicketLimit: true },
+    });
+    if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
+    const open = await this.prisma.supportTicket.count({
+      where: { companyId, state: { in: [...LIVE] } },
+    });
+    return {
+      company_id: c.id,
+      limit: c.supportTicketLimit ?? OPERATIONS_LIMITS.openTicketsPerCompany,
+      default_limit: OPERATIONS_LIMITS.openTicketsPerCompany,
+      exception: c.supportTicketLimit !== null,
+      open_tickets: open,
+    };
+  }
+
+  /** Support managers set (or clear) a company's exception to the open-ticket limit, audited. */
+  async setLimit(
+    admin: User,
+    companyId: string,
+    b: z.infer<typeof supportLimitRequest>,
+    meta: RequestMeta,
+  ): Promise<SupportLimitResponse> {
+    assertUuid(companyId);
+    await this.prisma.$transaction(async (tx) => {
+      const [c] = await tx.$queryRaw<{ support_ticket_limit: number | null }[]>`
+        SELECT support_ticket_limit FROM companies WHERE id = ${companyId}::uuid FOR UPDATE`;
+      if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
+      await tx.company.update({ where: { id: companyId }, data: { supportTicketLimit: b.limit } });
+      await writeAudit(tx, {
+        actorId: admin.id,
+        actorType: 'admin',
+        action: 'support.limit_changed',
+        resourceType: 'company',
+        resourceId: companyId,
+        companyId,
+        reason: b.reason,
+        details: { limit: b.limit, previous_limit: c.support_ticket_limit },
+        requestId: meta.requestId,
+        ip: meta.ip,
+      });
+    });
+    return this.limit(companyId);
   }
 
   // ---------------------------------------------------------------- admin (support)

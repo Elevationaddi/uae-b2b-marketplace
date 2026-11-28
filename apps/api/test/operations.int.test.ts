@@ -7,6 +7,7 @@
 import type { INestApplication } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
 import {
+  autoCloseResolvedTickets,
   completeSandboxSession,
   expireExports,
   processPendingPaymentEvents,
@@ -453,5 +454,88 @@ describe('T35 seller licence expiry', () => {
         .expect(200)
     ).body.data;
     expect(d.state).toBe('DISPATCHED');
+  });
+});
+
+describe('Phase 8 support rules (C-16, C-17)', () => {
+  const ticket = (b: Buyer, category = 'OTHER') =>
+    b.client.post(support(b), {
+      category,
+      subject: 'Help please',
+      body: 'Details of the question.',
+    });
+
+  it('limits open tickets per company, lets urgent cases through and honours admin exceptions', async () => {
+    const b = await buyer();
+    for (let i = 0; i < 10; i++) await ticket(b).expect(201);
+    const refused = await ticket(b).expect(409);
+    expect(refused.body.error.message_key).toBe('support.too_many_open');
+    // Urgent payment, security and compliance cases are never blocked.
+    for (const c of ['PAYMENT', 'SECURITY', 'COMPLIANCE']) await ticket(b, c).expect(201);
+
+    const sup = admins.support!.client;
+    let l = (await sup.get(`/admin/companies/${b.companyId}/support-limit`).expect(200)).body.data;
+    expect(l).toMatchObject({ limit: 10, default_limit: 10, exception: false, open_tickets: 13 });
+    // Finance cannot change it (needs admin.support.manage).
+    await admins
+      .finance!.client.post(`/admin/companies/${b.companyId}/support-limit`, {
+        limit: 20,
+        reason: 'Big account',
+      })
+      .expect(403);
+    await sup
+      .post(`/admin/companies/${b.companyId}/support-limit`, { limit: 0, reason: 'Big account' })
+      .expect(422);
+    l = (
+      await sup
+        .post(`/admin/companies/${b.companyId}/support-limit`, {
+          limit: 15,
+          reason: 'Large buyer onboarding many sites',
+        })
+        .expect(200)
+    ).body.data;
+    expect(l).toMatchObject({ limit: 15, exception: true });
+    await ticket(b).expect(201);
+    const audit = await prisma.auditEvent.findFirst({
+      where: { action: 'support.limit_changed', resourceId: b.companyId },
+    });
+    expect(audit?.reason).toBe('Large buyer onboarding many sites');
+    l = (
+      await sup
+        .post(`/admin/companies/${b.companyId}/support-limit`, {
+          limit: null,
+          reason: 'Onboarding finished',
+        })
+        .expect(200)
+    ).body.data;
+    expect(l).toMatchObject({ limit: 10, exception: false });
+  });
+
+  it('closes resolved tickets after 7 days without a customer response', async () => {
+    const b = await buyer();
+    const silent = (await ticket(b).expect(201)).body.data;
+    const answered = (await ticket(b).expect(201)).body.data;
+    const sup = admins.support!.client;
+    for (const t of [silent, answered]) {
+      await sup.post(`/admin/support/${t.id}/assign`).expect(200);
+      await sup.post(`/admin/support/${t.id}/resolve`, { body: 'Done.' }).expect(200);
+    }
+    // The customer reopens one; only the silent one stays resolved.
+    await b.client.post(support(b, `/${answered.id}/reopen`)).expect(200);
+    const eightDaysAgo = new Date(Date.now() - 8 * 86_400_000);
+    await prisma.supportTicket.updateMany({
+      where: { id: { in: [silent.id, answered.id] } },
+      data: { resolvedAt: eightDaysAgo },
+    });
+    expect(await autoCloseResolvedTickets(prisma)).toBeGreaterThanOrEqual(1);
+    const rows = await prisma.supportTicket.findMany({
+      where: { id: { in: [silent.id, answered.id] } },
+    });
+    expect(rows.find((r) => r.id === silent.id)?.state).toBe('CLOSED');
+    expect(rows.find((r) => r.id === answered.id)?.state).not.toBe('CLOSED');
+    const audit = await prisma.auditEvent.findFirst({
+      where: { action: 'support.auto_closed', resourceId: silent.id },
+    });
+    expect(audit?.actorType).toBe('system');
   });
 });
