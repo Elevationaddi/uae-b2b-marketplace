@@ -15,6 +15,24 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: PostgreSQL scheduler for background work
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-job-queue`. **Authority:** founder message of 2026-11-28 09:28 UTC: build a PostgreSQL job queue, do not assume BullMQ runs on Vercel, and never lose financial operations when a function stops. Nothing deployed or provisioned.
+
+**Delivered**
+- Migration `20261205000000_phase8_background_tasks` (additive): `background_tasks` with cadence, lease, last outcome and failure counters.
+- `packages/db/src/background-tasks.ts`: register, claim with a lease (database clock), finish (only the lease owner), exponential backoff capped at 15 minutes, `runDueTasks` with a deadline, and a health view (P8-12).
+- The worker now drives this scheduler every second instead of BullMQ; Redis is no longer needed by the worker (`bullmq` and `ioredis` removed from it). Its readiness check covers the database and the heartbeat task.
+- `apps/worker/api/cron.ts` and `apps/worker/vercel.json`: a Vercel Function for Vercel Cron (every minute). Each call runs passes about a second apart for up to 45 s, so two-second tasks such as email and payment events still run many times per minute. It refuses without `CRON_SECRET` (bearer, constant-time comparison). Not deployed.
+- Admin overview shows the health of every background task (running, failing, overdue) in EN/AR.
+
+**Tests actually run locally (2026-11-28)**
+- Worker: 4 files, **10 passed**, including 6 new scheduler tests: single claim under concurrency, recovery after a killed run, late finish by a dead runner ignored, backoff, deadline, and cron authentication.
+- API, contracts, config and web suites: see the PR description for counts.
+
+**Limits to know**
+- Vercel Cron runs at most once a minute and only on a paid Vercel plan; on the Hobby plan crons run once a day, which is not enough. Email and payment processing can therefore lag up to about a minute when running only from cron. The long-running worker has no such lag.
+- Function run time counts towards the Vercel plan's included usage; see the cost document in PR 6.
+
 ## Phase 8: tax configuration (C-08, C-09)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-tax-configuration`. **Authority:** founder message of 2026-11-28 09:28 UTC: remove the automatic standard VAT assumption, make tax treatment configurable, add supplier VAT status and invoice preparation, and make no real tax calculation or binding invoice without professional approval. Nothing provisioned; still sandbox mode.
 
@@ -774,7 +792,7 @@ Phase 1 approved and merged 2026-11-28. Next: founder answers the decisions abov
 **Date:** 2026-11-27. **Branch:** `phase-0-foundation` (pull request into `main`). **Exit gate (docs/13-roadmap.md):** clean install/build/lint/typecheck, DB connection, documented commands.
 
 ### Delivered
-- pnpm monorepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ on Redis), `packages/config`, `packages/contracts`, `packages/db` (Prisma), `packages/ui` (tokens), `e2e` (Playwright), `infra`. Versions pinned and recorded in `docs/DEVELOPMENT.md`.
+- pnpm monorepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (background tasks; BullMQ until Phase 8, now the PostgreSQL scheduler), `packages/config`, `packages/contracts`, `packages/db` (Prisma), `packages/ui` (tokens), `e2e` (Playwright), `infra`. Versions pinned and recorded in `docs/DEVELOPMENT.md`.
 - `docker-compose.yml`: PostgreSQL 16, Redis 7, SeaweedFS (S3-compatible), Mailpit. Bound to 127.0.0.1 only.
 - Environment validation (`packages/config`), shared by API and worker. Production refuses mock payments, the dev mail catcher, weak/placeholder secrets, missing storage keys, non-https origins, live payments without PSP keys or the explicit `FEATURE_REAL_PAYMENTS` flag, and trading without a live provider. Live payments are refused outside production. Feature flags (`TRADING_ENABLED`, `FEATURE_REAL_PAYMENTS`, `FEATURE_SUBSCRIPTIONS`, `FEATURE_MILESTONE_PAYMENTS`) default false.
 - API: `/api/v1` prefix, documented success and error envelopes, error codes mapped to the HTTP statuses in docs/07-api.md, request IDs (`X-Request-Id`), structured pino logs with credential/cookie/token redaction and no query strings, helmet headers, CORS restricted to `WEB_ORIGIN`, 1 MB JSON limit, graceful shutdown.

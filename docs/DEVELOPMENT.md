@@ -51,7 +51,7 @@ built API, worker and web, reads emails from Mailpit, and creates throwaway admi
 |---|---|
 | `apps/web` | Next.js App Router web: company app and admin portal; `/api/v1` proxied to the API; middleware routes admin vs web host |
 | `apps/api` | NestJS REST API under `/api/v1` |
-| `apps/worker` | BullMQ (Redis) background worker |
+| `apps/worker` | Background tasks on the PostgreSQL scheduler (long-running loop locally; `api/cron.ts` for Vercel Cron). Redis is used only by the API for rate limiting. |
 | `packages/config` | Validated runtime environment contract; production fails closed |
 | `packages/contracts` | Shared zod contracts (DTOs, role/permission matrix, error codes) and the OpenAPI generator |
 | `packages/db` | Prisma schema, migrations, seed and client factory |
@@ -98,7 +98,7 @@ available but not yet adopted).
 | NestJS | 11.1.29 |
 | Prisma | 6.19.3 |
 | PostgreSQL / Redis images | postgres:16.10-alpine / redis:7.4.6-alpine |
-| BullMQ / ioredis | 5.61.2 / 5.11.1 |
+| ioredis (API rate limiting) | 5.11.1 |
 | zod | 4.6.7 |
 | Vitest / Playwright | 3.2.7 / 1.63.0 |
 | @axe-core/playwright (E2E accessibility) | 4.10.2 |

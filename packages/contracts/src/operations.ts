@@ -124,6 +124,21 @@ export const operationsOverview = z.object({
     refunds_awaiting_approval: z.number().int(),
     payouts_awaiting_approval: z.number().int(),
   }),
+  /**
+   * Background tasks run by the PostgreSQL scheduler (Phase 8): overdue means not run within twice
+   * its cadence plus a minute (the worker or the cron is not running, or a task keeps failing).
+   */
+  background_tasks: z.array(
+    z.object({
+      name: z.string(),
+      every_seconds: z.number().int(),
+      last_status: z.enum(['succeeded', 'failed']).nullable(),
+      last_finished_at: isoDateTime.nullable(),
+      next_run_at: isoDateTime,
+      consecutive_failures: z.number().int(),
+      overdue: z.boolean(),
+    }),
+  ),
   generated_at: isoDateTime,
 });
 
