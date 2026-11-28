@@ -88,6 +88,8 @@ export const shipmentDispatchRequest = z.object({
     .optional(),
 });
 /** Multipart form field next to the optional `file` (proof of delivery, PDF/PNG/JPEG). */
+/** C-07: supplier cancels an unfulfilled order; a full refund is requested for finance approval. */
+export const sellerCancelRequest = z.object({ reason: text(1000) });
 export const shipmentDeliverRequest = z.object({ note: optionalText(500) });
 
 export const shipmentView = z.object({
@@ -312,6 +314,8 @@ export const orderActions = z.object({
   can_confirm_receipt: z.boolean(),
   can_dispute: z.boolean(),
   can_review: z.boolean(),
+  /** Seller: cancel this paid, not yet dispatched order (C-07). */
+  can_cancel: z.boolean(),
 });
 export const orderFulfilment = z.object({
   shipment: shipmentView.nullable(),

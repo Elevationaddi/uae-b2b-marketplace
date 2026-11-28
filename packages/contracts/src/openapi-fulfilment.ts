@@ -53,6 +53,12 @@ const admin = (
 
 export const FULFILMENT_ROUTES: CatalogRoute[] = [
   // ---------------------------------------------------------------- seller
+  seller(
+    'post',
+    '/orders/{id}/cancel',
+    'Cancel a paid, undispatched order; requests a full refund for finance approval (C-07)',
+    { body: f.sellerCancelRequest, response: orderDetail, capability: ship },
+  ),
   seller('post', '/orders/{id}/process', 'Start processing a confirmed order', {
     response: orderDetail,
     capability: ship,

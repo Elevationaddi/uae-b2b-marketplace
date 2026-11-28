@@ -642,6 +642,9 @@ model Storefront {
   deliveryFeeFils       BigInt?          @map("delivery_fee_fils")
   deliveryEmirates      Emirate[]        @default([]) @map("delivery_emirates")
   deliveryDays          Int?             @map("delivery_days")
+  /// Disclosed change-of-mind return policy (C-11), shown before payment and copied onto orders.
+  returnPolicyEn        String?          @map("return_policy_en")
+  returnPolicyAr        String?          @map("return_policy_ar")
   publishedAt           DateTime?        @map("published_at") @db.Timestamptz(3)
   adminHiddenAt         DateTime?        @map("admin_hidden_at") @db.Timestamptz(3)
   adminHiddenReason     String?          @map("admin_hidden_reason")
@@ -1414,43 +1417,46 @@ model Checkout {
 }
 
 model Order {
-  id                   String          @id @default(uuid()) @db.Uuid
-  number               String          @unique
-  checkoutId           String          @map("checkout_id") @db.Uuid
-  buyerWorkspaceId     String          @map("buyer_workspace_id") @db.Uuid
-  buyerCompanyId       String          @map("buyer_company_id") @db.Uuid
-  sellerWorkspaceId    String          @map("seller_workspace_id") @db.Uuid
-  sellerCompanyId      String          @map("seller_company_id") @db.Uuid
-  state                OrderState      @default(AWAITING_PAYMENT)
-  merchandiseFils      BigInt          @map("merchandise_fils")
-  shippingFils         BigInt          @map("shipping_fils")
-  taxFils              BigInt          @map("tax_fils")
-  totalFils            BigInt          @map("total_fils")
-  commissionFils       BigInt          @map("commission_fils")
-  sellerPayableFils    BigInt          @map("seller_payable_fils")
+  id                      String          @id @default(uuid()) @db.Uuid
+  number                  String          @unique
+  checkoutId              String          @map("checkout_id") @db.Uuid
+  buyerWorkspaceId        String          @map("buyer_workspace_id") @db.Uuid
+  buyerCompanyId          String          @map("buyer_company_id") @db.Uuid
+  sellerWorkspaceId       String          @map("seller_workspace_id") @db.Uuid
+  sellerCompanyId         String          @map("seller_company_id") @db.Uuid
+  state                   OrderState      @default(AWAITING_PAYMENT)
+  merchandiseFils         BigInt          @map("merchandise_fils")
+  shippingFils            BigInt          @map("shipping_fils")
+  taxFils                 BigInt          @map("tax_fils")
+  totalFils               BigInt          @map("total_fils")
+  commissionFils          BigInt          @map("commission_fils")
+  sellerPayableFils       BigInt          @map("seller_payable_fils")
   /// Buyer, seller and delivery terms as agreed at checkout (never re-read from live data).
-  snapshot             Json
-  confirmedAt          DateTime?       @map("confirmed_at") @db.Timestamptz(3)
-  cancelledAt          DateTime?       @map("cancelled_at") @db.Timestamptz(3)
-  cancelReason         String?         @map("cancel_reason")
-  settlementState      SettlementState @default(NOT_ELIGIBLE) @map("settlement_state")
-  refundedFils         BigInt          @default(0) @map("refunded_fils")
-  processingAt         DateTime?       @map("processing_at") @db.Timestamptz(3)
-  dispatchedAt         DateTime?       @map("dispatched_at") @db.Timestamptz(3)
-  deliveredAt          DateTime?       @map("delivered_at") @db.Timestamptz(3)
-  completedAt          DateTime?       @map("completed_at") @db.Timestamptz(3)
+  snapshot                Json
+  confirmedAt             DateTime?       @map("confirmed_at") @db.Timestamptz(3)
+  cancelledAt             DateTime?       @map("cancelled_at") @db.Timestamptz(3)
+  cancelReason            String?         @map("cancel_reason")
+  settlementState         SettlementState @default(NOT_ELIGIBLE) @map("settlement_state")
+  refundedFils            BigInt          @default(0) @map("refunded_fils")
+  processingAt            DateTime?       @map("processing_at") @db.Timestamptz(3)
+  dispatchedAt            DateTime?       @map("dispatched_at") @db.Timestamptz(3)
+  deliveredAt             DateTime?       @map("delivered_at") @db.Timestamptz(3)
+  completedAt             DateTime?       @map("completed_at") @db.Timestamptz(3)
   /// Commission rate (basis points of merchandise) and policy this order was priced with.
-  commissionBps        Int?            @map("commission_bps")
-  commissionPolicyId   String?         @map("commission_policy_id") @db.Uuid
+  commissionBps           Int?            @map("commission_bps")
+  commissionPolicyId      String?         @map("commission_policy_id") @db.Uuid
   /// Verified delivery (C-02): supplier delivery with proof, or buyer receipt, whichever is first.
-  deliveryVerifiedAt   DateTime?       @map("delivery_verified_at") @db.Timestamptz(3)
+  deliveryVerifiedAt      DateTime?       @map("delivery_verified_at") @db.Timestamptz(3)
   /// PROOF_OF_DELIVERY or BUYER_CONFIRMED.
-  deliveryVerification String?         @map("delivery_verification")
+  deliveryVerification    String?         @map("delivery_verification")
   /// Disputes can be opened until this moment; payouts only after it (C-01).
-  disputeWindowEndsAt  DateTime?       @map("dispute_window_ends_at") @db.Timestamptz(3)
-  version              Int             @default(1)
-  createdAt            DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  disputeWindowEndsAt     DateTime?       @map("dispute_window_ends_at") @db.Timestamptz(3)
+  version                 Int             @default(1)
+  createdAt               DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
+  /// C-07: supplier asked to cancel (fulfilment stops until finance decides the full refund).
+  sellerCancelRequestedAt DateTime?       @map("seller_cancel_requested_at") @db.Timestamptz(3)
+  sellerCancelReason      String?         @map("seller_cancel_reason")
 
   checkout         Checkout          @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
   commissionPolicy CommissionPolicy? @relation(fields: [commissionPolicyId], references: [id], onDelete: Restrict)
@@ -1781,30 +1787,32 @@ model DisputeMessage {
 }
 
 model Refund {
-  id              String      @id @default(uuid()) @db.Uuid
-  number          String      @unique
-  orderId         String      @map("order_id") @db.Uuid
-  paymentId       String      @map("payment_id") @db.Uuid
-  disputeId       String?     @map("dispute_id") @db.Uuid
-  amountFils      BigInt      @map("amount_fils")
+  id                 String      @id @default(uuid()) @db.Uuid
+  number             String      @unique
+  orderId            String      @map("order_id") @db.Uuid
+  paymentId          String      @map("payment_id") @db.Uuid
+  disputeId          String?     @map("dispute_id") @db.Uuid
+  amountFils         BigInt      @map("amount_fils")
   /// Commission share reversed with this refund (merchandise part only since Phase 8, C-06).
-  commissionFils  BigInt      @map("commission_fils")
+  commissionFils     BigInt      @map("commission_fils")
   /// Parts of the order this refund covers; null on refunds made before Phase 8.
-  merchandiseFils BigInt?     @map("merchandise_fils")
-  shippingFils    BigInt?     @map("shipping_fils")
-  taxFils         BigInt?     @map("tax_fils")
-  currency        String      @default("AED")
-  state           RefundState @default(REQUESTED)
-  reason          String
-  requestedById   String      @map("requested_by_id") @db.Uuid
-  approvedById    String?     @map("approved_by_id") @db.Uuid
-  decisionReason  String?     @map("decision_reason")
-  providerRef     String?     @unique @map("provider_ref")
-  failureCode     String?     @map("failure_code")
-  submittedAt     DateTime?   @map("submitted_at") @db.Timestamptz(3)
-  completedAt     DateTime?   @map("completed_at") @db.Timestamptz(3)
-  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  merchandiseFils    BigInt?     @map("merchandise_fils")
+  shippingFils       BigInt?     @map("shipping_fils")
+  taxFils            BigInt?     @map("tax_fils")
+  currency           String      @default("AED")
+  state              RefundState @default(REQUESTED)
+  reason             String
+  /// C-07: requested by the supplier cancelling an unfulfilled order.
+  sellerCancellation Boolean     @default(false) @map("seller_cancellation")
+  requestedById      String      @map("requested_by_id") @db.Uuid
+  approvedById       String?     @map("approved_by_id") @db.Uuid
+  decisionReason     String?     @map("decision_reason")
+  providerRef        String?     @unique @map("provider_ref")
+  failureCode        String?     @map("failure_code")
+  submittedAt        DateTime?   @map("submitted_at") @db.Timestamptz(3)
+  completedAt        DateTime?   @map("completed_at") @db.Timestamptz(3)
+  createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Restrict)
   dispute Dispute? @relation(fields: [disputeId], references: [id], onDelete: Restrict)

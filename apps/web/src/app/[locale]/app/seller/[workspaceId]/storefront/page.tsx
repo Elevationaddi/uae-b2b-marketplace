@@ -99,6 +99,8 @@ function Storefront({ ws }: { ws: Workspace }) {
               delivery_fee_fils: feeFils === null ? null : feeFils.toString(),
               delivery_emirates: fd.getAll('delivery_emirates').map(String),
               delivery_days: days ? Number(days) : null,
+              return_policy_en: String(fd.get('return_policy_en') ?? '').trim() || null,
+              return_policy_ar: String(fd.get('return_policy_ar') ?? '').trim() || null,
             },
           });
           if (r.ok) {
@@ -343,6 +345,26 @@ function Storefront({ ws }: { ws: Workspace }) {
                   ))}
                 </div>
               </fieldset>
+              <p className="muted small">{t('storefront.return_policy_hint')}</p>
+              <TextArea
+                label={t('storefront.return_policy_en')}
+                name="return_policy_en"
+                rows={3}
+                maxLength={2000}
+                optional
+                defaultValue={s.return_policy_en ?? ''}
+                error={fieldText(locale, delivery.error?.fieldErrors.return_policy_en)}
+              />
+              <TextArea
+                label={t('storefront.return_policy_ar')}
+                name="return_policy_ar"
+                dir="rtl"
+                rows={3}
+                maxLength={2000}
+                optional
+                defaultValue={s.return_policy_ar ?? ''}
+                error={fieldText(locale, delivery.error?.fieldErrors.return_policy_ar)}
+              />
               {delivery.error ? <ApiErrorAlert error={delivery.error} /> : null}
               {deliverySaved ? <Alert kind="success">{t('seller.saved')}</Alert> : null}
               <Button type="submit" busy={delivery.busy}>

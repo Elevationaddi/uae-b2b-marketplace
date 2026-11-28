@@ -38,6 +38,8 @@ const FIELD_MAP: Record<string, string> = {
   delivery_fee_fils: 'deliveryFeeFils',
   delivery_emirates: 'deliveryEmirates',
   delivery_days: 'deliveryDays',
+  return_policy_en: 'returnPolicyEn',
+  return_policy_ar: 'returnPolicyAr',
 };
 
 /**
@@ -110,6 +112,8 @@ export class StorefrontService {
         delivery_fee_fils: null,
         delivery_emirates: [],
         delivery_days: null,
+        return_policy_en: null,
+        return_policy_ar: null,
         version: 0,
         published_at: null,
       };
