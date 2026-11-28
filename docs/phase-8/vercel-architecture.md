@@ -53,6 +53,22 @@ flowchart LR
 | Payments | Sandbox adapter only. No live provider calls. | Done (sandbox). |
 | CI | GitHub Actions on this repository. | Done. The Azure Terraform job is removed in this change. |
 
+## 1a. Backend compatibility assessment
+
+| Component | Runs on Vercel as is? | Adaptation needed | Status |
+|---|---|---|---|
+| Next.js web (public, buyer, supplier and admin areas) | Yes | None. Admin stays on a separate host (a second Vercel project or domain alias). | Ready |
+| NestJS API (`apps/api`) | Yes, as a Node.js Vercel Function | A small serverless entry that boots the Nest app once per instance and reuses it; build settings. The API keeps no state in memory between requests. | 8B, small |
+| Prisma and PostgreSQL | Yes | A pooled connection string for functions and a direct one for migrations. Migrations, constraints, audit triggers, journals and row locks are standard PostgreSQL and need no change. | 8B, config only |
+| BullMQ worker | **No** (needs a process that never stops) | Replaced by the PostgreSQL scheduler with leases (PR #15). BullMQ and ioredis are already removed from the worker. | Done |
+| Background tasks (stock reservation expiry, quote expiry, licence expiry, email outbox, auto-completion, dispute window, payout eligibility, weekly payouts, ticket auto-close, notifications, payment event processing and reconciliation cases) | Yes, through one scheduled function | Each task is a row in `background_tasks`, claimed under a lease, retried with backoff, idempotent and shown on the admin overview. Email uses a transactional outbox: it retries with exponential backoff and moves to a dead state after the maximum attempts, so nothing is silently dropped. | Done |
+| Redis in the API (rate limits, TOTP replay guard, readiness check) | Yes, with Upstash (TLS Redis protocol) | Point `REDIS_URL` at Upstash. Redis never holds financial data. A PostgreSQL fallback for rate limits is proposed so a free-tier cap cannot turn into allow-all. | 8B |
+| File storage (S3 interface) | Partly | Vercel Blob is not S3-compatible, so a Vercel Blob adapter is needed behind the existing storage interface. Until it exists, confidential uploads stay in sandbox mode, as the founder required. | 8B (C-21) |
+| Malware scanner | **No** inside a function | See section 5. | Decision needed |
+| Email adapter | Sandbox now | A Resend adapter behind the existing interface, after domain and data-processing approval. | 8D |
+
+Nothing from Phases 0 to 7 is removed to fit the platform. Where a component cannot run on Vercel, it is replaced by an equivalent with the same guarantees (the scheduler), or kept in sandbox mode until an approved option exists.
+
 ## 2. Services in the founder's four categories
 
 | Service | Category | Use | Commercial use allowed on the free option? | Trial that converts? | Card needed? | What happens at the limit | Region | Verdict |
@@ -89,6 +105,19 @@ These are the things that can cost money without anyone buying anything.
 | GitHub Actions minutes | Spending limit $0. CI uses one job and caches dependencies. The Terraform job is removed. |
 | A free tier that silently converts to paid | Only plans that are free with no card are used. Anything that asks for a card is a stop-and-ask. |
 | Domain purchase | None. Staging uses the `*.vercel.app` address. Email waits for an existing domain. |
+
+**Which controls stop usage, and which only notify:**
+
+| Control | Stops usage? | Notes |
+|---|---|---|
+| Vercel Spend Management budget **with pause** | **Yes**: production deployments are paused when the budget is reached | Owner or Billing role. The site goes offline until it is resumed, which is acceptable for staging. |
+| Vercel Spend Management budget without pause, and its webhook | No, notify only | Use it at 50% and 80% for warning. |
+| Free plans that need no card (Neon, Upstash, Resend free) | **Yes**: the service refuses or throttles at its cap; it cannot bill | Confirm each one's behaviour on the day it is chosen. |
+| GitHub Actions spending limit of $0 | **Yes**: jobs stop when the included minutes run out | |
+| App rate limits (per IP and per account) | **Yes**: requests above the limit get HTTP 429 | Already built. |
+| Upload size limit (`UPLOAD_MAX_BYTES`) and file-type checks | **Yes**: larger or disallowed files are refused | Already built. |
+| Vercel Authentication on staging | **Yes**: blocks anonymous and automated traffic | Also keeps staging private, as required. |
+| Database and email usage dashboards | No, notify only | Checked weekly. The admin overview shows background-task health. |
 
 ## 4. Background work on Vercel
 
@@ -137,15 +166,34 @@ These are the things that can cost money without anyone buying anything.
 | No UAE region confirmed | Residency question | Legal review. A UAE-hosted database for production (approval). |
 | Vercel Function duration limits | Long exports or reports could time out | Exports already stream. Long jobs run as scheduler tasks in short batches. |
 
-## 8. Work remaining to deploy staging (8B, after approval)
+## 8. Staging deployment instructions (to run only after approval)
 
-1. Vercel entry for the API (NestJS as a function) and build settings for the web, API and scheduler projects.
-2. Vercel Blob storage adapter behind the existing storage interface (`STORAGE_DRIVER=vercel-blob`), with tests.
-3. PostgreSQL fallback for rate limits.
-4. Opportunistic scheduler run after webhook intake.
-5. Spend Management budget with pause, Vercel Authentication on staging, and environment variables set by the founder (no secrets in git).
+Nothing below has been run. Each step that creates a resource needs the founder's go-ahead.
 
-None of these steps will be taken until the founder approves connecting the services.
+**Code to finish first (8B):**
+1. Staging profile `APP_ENV=staging` (C-20): production-like settings with labelled sandbox adapters allowed.
+2. Vercel entry for the API (NestJS as a function).
+3. Vercel Blob storage adapter (`STORAGE_DRIVER=vercel-blob`), with tests.
+4. PostgreSQL fallback for rate limits.
+5. Opportunistic scheduler run after webhook intake.
+
+**Then, in order:**
+1. **Founder:** set a Spend Management budget with pause on the Vercel account (Settings, Billing, Spend Management).
+2. **Founder:** create free accounts directly (not through the Vercel Marketplace): Neon Free (project `marketplace-staging`) and Upstash Redis Free. Check that neither asks for a card.
+3. Create three Vercel projects from this repository: `web` (root `apps/web`), `api` (root `apps/api`) and `worker` (root `apps/worker`, which only holds the cron entry). Turn on Vercel Authentication for all three.
+4. Set environment variables in each project, from the inventory in `environment-variables.md`:
+   - `NODE_ENV=production`, plus the staging profile once C-20 (`APP_ENV=staging`) is built. Until then, production's refusal to start without live integrations blocks a staging deploy, which is exactly why C-20 is listed in 8B;
+   - `PAYMENT_MODE=mock` (the labelled sandbox provider), `EMAIL_PROVIDER=disabled` or `smtp-dev`, `FILE_SCANNER=sandbox-eicar` with fictional files only, `TRADING_ENABLED` and `FEATURE_REAL_PAYMENTS` off;
+   - `DATABASE_URL` (pooled), plus a direct URL for migrations (to be added with the Vercel entry);
+   - `REDIS_URL`;
+   - session and webhook secrets (generated, never committed);
+   - `CRON_SECRET` (at least 32 characters);
+   - `TAX_TREATMENT=provisional_standard`.
+
+   No production credentials, and no live payment or email keys.
+5. Run `prisma migrate deploy` against the staging database (direct URL) from CI, then seed fictional companies only.
+6. Deploy. Check `/api/v1/health/ready`, sign in with a seeded account, and confirm that the admin overview shows background tasks running.
+7. Run the restore drill (`pnpm db:restore-check`) against staging to rehearse the procedure. **This does not prove the production RPO.**
 
 ## Questions for the founder
 1. Which Vercel plan is the subscription? Hobby does not allow commercial use, and its schedule frequency is lower.
