@@ -81,6 +81,8 @@ function List() {
                     ),
                     title: String(n.payload.title ?? ''),
                     company: String(n.payload.company ?? ''),
+                    rate: String(n.payload.rate ?? ''),
+                    date: String(n.payload.effective_date ?? ''),
                   });
                   return (
                     <li key={n.id} className={n.read_at ? undefined : 'unread'}>

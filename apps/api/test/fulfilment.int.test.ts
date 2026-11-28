@@ -9,8 +9,11 @@ import type { INestApplication } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
 import {
   completeSandboxSession,
+  activeCommission,
   createSandboxPsp,
+  dubaiWeekStart,
   processPendingPaymentEvents,
+  proposeWeeklyPayouts,
   runSettlementSweep,
   signWebhook,
   submitApprovedSettlements,
@@ -67,6 +70,7 @@ async function shipAndComplete(s: Seller, b: Buyer, id: string) {
 }
 
 const DAY = 86_400_000;
+const notice = (days: number) => new Date(Date.now() + days * DAY).toISOString();
 /**
  * Test clock: move this order's verified delivery and dispute window into the past (as if the
  * 14 days had passed), then run the worker's settlement sweep for this order only.
@@ -817,6 +821,117 @@ describe('Phase 8: weekly payout run (C-04)', () => {
   });
 });
 
+describe('Phase 8: scheduled weekly payouts (Q9)', () => {
+  it('proposes on the scheduled day, after a holiday; finance confirms and a second user approves', async () => {
+    const s = await seller();
+    const s2 = await seller();
+    const b = await buyer();
+    const o = await paidOrder(s, b);
+    const o2 = await paidOrder(s2, b);
+    await shipAndComplete(s, b, o.id);
+    await shipAndComplete(s2, b, o2.id);
+    await endDisputeWindow(o.id);
+    await endDisputeWindow(o2.id);
+
+    // A random far-future week keeps this run separate from real and repeated test runs.
+    const year = 2040 + Math.floor(Math.random() * 50);
+    const monday = dubaiWeekStart(new Date(Date.UTC(year, Math.floor(Math.random() * 11), 10)));
+    const date = monday.toISOString().slice(0, 10);
+    await approver
+      .post('/admin/payouts/holidays', { date, name: 'Test public holiday' })
+      .expect(403);
+    const h = (
+      await finance
+        .post('/admin/payouts/holidays', { date, name: 'Test public holiday' })
+        .expect(201)
+    ).body.data;
+    expect(h.date).toBe(date);
+    const dup = await finance
+      .post('/admin/payouts/holidays', { date, name: 'Same day again' })
+      .expect(409);
+    expect(dup.body.error.message_key).toBe('payout_holiday.exists');
+    await finance.post('/admin/payouts/holidays', { date: '2041-02-30', name: 'Bad' }).expect(422);
+    const list = (await finance.get('/admin/payouts/holidays').expect(200)).body.data;
+    expect(list.some((x: { date: string }) => x.date === date)).toBe(true);
+
+    const cfg = { weekday: 1, time: '10:00' };
+    const scope = { sellerWorkspaceIds: [s.ws, s2.ws] };
+    // Monday is a holiday, so the run is due Tuesday 10:00 Dubai (06:00 UTC).
+    const tuesday = monday.getTime() + DAY;
+    const early = await proposeWeeklyPayouts(prisma, cfg, {
+      ...scope,
+      now: new Date(monday.getTime() + 7 * 3_600_000),
+    });
+    expect(early.week_start).toBeNull();
+    const before = await proposeWeeklyPayouts(prisma, cfg, {
+      ...scope,
+      now: new Date(tuesday + 6 * 3_600_000 - 60_000),
+    });
+    expect(before.week_start).toBeNull();
+    const due = await proposeWeeklyPayouts(prisma, cfg, {
+      ...scope,
+      now: new Date(tuesday + 6 * 3_600_000 + 60_000),
+    });
+    expect(due).toEqual({ week_start: date, proposed: 2, skipped: 0 });
+    // Idempotent: the run is proposed once.
+    const again = await proposeWeeklyPayouts(prisma, cfg, {
+      ...scope,
+      now: new Date(tuesday + 7 * 3_600_000),
+    });
+    expect(again.week_start).toBeNull();
+    const run = await prisma.payoutRun.findUniqueOrThrow({ where: { weekStart: monday } });
+    expect(run.scheduledFor?.toISOString()).toBe(new Date(tuesday + 6 * 3_600_000).toISOString());
+    expect(run.proposedCount).toBe(2);
+
+    const proposed = (await finance.get('/admin/payouts?state=PROPOSED').expect(200)).body.data as {
+      id: string;
+      seller_workspace_id: string;
+      requested_by: string | null;
+    }[];
+    const p = proposed.find((x) => x.seller_workspace_id === s.ws)!;
+    const p2 = proposed.find((x) => x.seller_workspace_id === s2.ws)!;
+    expect(p.requested_by).toBeNull();
+    expect(await settlementOf(o.id)).toBe('IN_PAYOUT');
+
+    // The schedule never bypasses dual control: a proposal cannot be approved directly.
+    const direct = await approver
+      .post(`/admin/payouts/${p.id}/approve`, { reason: 'Skip confirmation' })
+      .expect(409);
+    expect(direct.body.error.message_key).toBe('payout.invalid_transition');
+    await approver.post(`/admin/payouts/${p.id}/confirm`).expect(403);
+    const confirmed = (await finance.post(`/admin/payouts/${p.id}/confirm`).expect(200)).body.data;
+    expect(confirmed.state).toBe('REQUESTED');
+    expect(confirmed.requested_by_me).toBe(true);
+    await finance.post(`/admin/payouts/${p.id}/confirm`).expect(409);
+    const approved = (
+      await approver.post(`/admin/payouts/${p.id}/approve`, { reason: 'Checked' }).expect(200)
+    ).body.data;
+    expect(approved.state).toBe('APPROVED');
+
+    // Withdrawing a proposal records the reason and releases its order.
+    await finance.post(`/admin/payouts/${p2.id}/withdraw`, { reason: '' }).expect(422);
+    const withdrawn = (
+      await finance
+        .post(`/admin/payouts/${p2.id}/withdraw`, { reason: 'Supplier bank details under review' })
+        .expect(200)
+    ).body.data;
+    expect(withdrawn.state).toBe('REJECTED');
+    expect(await settlementOf(o2.id)).toBe('ELIGIBLE');
+    await finance.post(`/admin/payouts/${p2.id}/withdraw`, { reason: 'Again' }).expect(409);
+    const audit = await prisma.auditEvent.findFirst({
+      where: { action: 'payout.proposed', resourceId: p.id, actorType: 'system' },
+    });
+    expect(audit).not.toBeNull();
+
+    const summary = (await finance.get('/admin/payouts/run').expect(200)).body.data;
+    expect(summary.schedule).toEqual({ weekday: 1, time: '10:00' });
+    expect(new Date(summary.scheduled_for).getUTCHours()).toBe(6);
+
+    await finance.delete(`/admin/payouts/holidays/${date}`).expect(200);
+    await finance.delete(`/admin/payouts/holidays/${date}`).expect(404);
+  });
+});
+
 describe('Phase 8: refund split and merchandise-only commission (C-06)', () => {
   it('a delivery refund reverses no commission; splits must fit each part', async () => {
     const s = await seller();
@@ -891,31 +1006,68 @@ describe('Phase 8: commission policy (C-05)', () => {
     const before = (await finance.get('/admin/finance/commission').expect(200)).body.data;
     expect(before.can_manage).toBe(false);
     await finance
-      .post('/admin/finance/commission', { rate_bps: 1000, reason: 'x', totp_code: '123456' })
+      .post('/admin/finance/commission', {
+        rate_bps: 1000,
+        reason: 'x',
+        totp_code: '123456',
+        effective_from: notice(31),
+      })
       .expect(403);
     const wrong = await appr.client
       .post('/admin/finance/commission', {
         rate_bps: 1000,
         reason: 'Founder decision',
         totp_code: '000000',
+        effective_from: notice(31),
       })
       .expect(422);
     expect(wrong.body.error.field_errors.totp_code).toBe('invalid');
     await appr.client
-      .post('/admin/finance/commission', { rate_bps: 5001, reason: 'x', totp_code: code(1) })
+      .post('/admin/finance/commission', {
+        rate_bps: 5001,
+        reason: 'x',
+        totp_code: code(1),
+        effective_from: notice(31),
+      })
       .expect(422);
-    const after = (
+    // FD-05: less than 30 days' notice is refused (before the TOTP code is used).
+    const short = await appr.client
+      .post('/admin/finance/commission', {
+        rate_bps: 1000,
+        reason: 'Too soon',
+        totp_code: code(-1),
+        effective_from: notice(29),
+      })
+      .expect(422);
+    expect(short.body.error.message_key).toBe('commission.notice_too_short');
+    const s = await seller();
+    const scheduled = (
       await appr.client
         .post('/admin/finance/commission', {
           rate_bps: 1000,
           reason: 'Founder decision of 28 Nov 2026: 10% of merchandise',
           totp_code: code(1),
+          effective_from: notice(31),
         })
         .expect(200)
     ).body.data;
-    expect(after.can_manage).toBe(true);
-    expect(after.current).toMatchObject({ rate_bps: 1000, source: 'policy' });
-    expect(after.history[0].version).toBe(after.current.version);
+    expect(scheduled.can_manage).toBe(true);
+    expect(scheduled.notice_days).toBe(30);
+    expect(scheduled.history[0].scheduled).toBe(true);
+    // Not in effect until its date; suppliers' finance users were notified.
+    expect(scheduled.current.version).not.toBe(scheduled.history[0].version);
+    const notes = (await s.client.get('/notifications').expect(200)).body.data;
+    const note = notes.find((n: { type: string }) => n.type === 'commission.change_scheduled');
+    expect(note?.payload.rate).toBe('10%');
+    // Test clock: from its effective date the new version prices checkouts.
+    const v = scheduled.history[0];
+    const later = await activeCommission(
+      prisma,
+      env.COMMISSION_BPS ?? 1000,
+      new Date(Date.parse(v.effective_from) + 60_000),
+    );
+    expect(later).toMatchObject({ bps: 1000, version: v.version, policyId: v.id });
+    const after = scheduled;
     expect(after.history[0].base).toBe('MERCHANDISE_EX_VAT_DELIVERY');
     // Append-only at the database level.
     await expect(
@@ -925,12 +1077,18 @@ describe('Phase 8: commission policy (C-05)', () => {
       }),
     ).rejects.toThrow();
 
-    const s = await seller();
     const b = await buyer();
     const o = await paidOrder(s, b);
-    const latest = await prisma.commissionPolicy.findFirstOrThrow({ orderBy: { version: 'desc' } });
-    expect(o.commissionPolicyId).toBe(latest.id);
-    expect(o.commissionBps).toBe(latest.rateBps);
-    expect(o.commissionFils).toBe((o.merchandiseFils * BigInt(latest.rateBps)) / 10_000n);
+    // The scheduled version is not in effect yet: the order uses the version in effect now, or
+    // the configured fallback when none is (a fresh database).
+    const inEffect = await prisma.commissionPolicy.findFirst({
+      where: { effectiveFrom: { lte: new Date() } },
+      orderBy: [{ effectiveFrom: 'desc' }, { version: 'desc' }],
+    });
+    expect(o.commissionPolicyId).toBe(inEffect?.id ?? null);
+    expect(o.commissionPolicyId).not.toBe(v.id);
+    const bps = inEffect?.rateBps ?? env.COMMISSION_BPS ?? 1000;
+    expect(o.commissionBps).toBe(bps);
+    expect(o.commissionFils).toBe((o.merchandiseFils * BigInt(bps)) / 10_000n);
   });
 });

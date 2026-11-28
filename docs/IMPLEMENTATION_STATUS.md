@@ -11,9 +11,26 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). 14 of 24 conflicts fixed in code | Founder answers (Vercel plan, free-tier sign-ups, provisional rules P8-1 to P8-14, 21 UX questions); C-10, C-14, C-18 to C-24; launch blockers in the readiness checklist |
+| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16). 14 of 24 conflicts fixed in code | Remaining authorised code: C-10, C-14, C-18 to C-21, buyer cancellation, sample requests, staging profile; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: scheduled weekly payouts and commission notice (founder decisions 2026-11-28 16:33 UTC)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-payout-schedule`.
+
+**Delivered**
+- Decision register: P8-1 to P8-14 marked approved; P8-15 (payout schedule) and P8-16 (commission notice) added; summary table of the evening decisions and FD-01 to FD-21 answers.
+- Migration `20261208000000_phase8_payout_schedule` (additive): payout state `PROPOSED`, `payouts.proposed_at` and nullable `requested_by_id` (only for proposals, enforced by a check constraint), `payout_runs.scheduled_for`, `proposed_at`, `proposed_count`, table `payout_holidays`, `commission_policies.effective_from`.
+- Scheduler task `payouts.weekly_proposal` (every 5 minutes, idempotent): once the run is due (Monday 10:00 Dubai by default, `PAYOUT_WEEKDAY`, `PAYOUT_TIME`; weekends and recorded holidays move it to the next working day), proposes one payout per supplier with eligible orders. No minimum amount.
+- Finance confirms a proposal (`POST /admin/payouts/{id}/confirm`, it becomes a request with the confirmer as requester) or withdraws it with a reason (`/withdraw`, orders released). A proposal cannot be approved directly; a different finance approver approves as before.
+- Holiday calendar: `GET/POST /admin/payouts/holidays`, `DELETE /admin/payouts/holidays/{date}` (audited). Admin payouts page shows the scheduled time, proposal status, next run and the holiday list, with Confirm and Withdraw on proposals.
+- Commission changes need an effective date at least `COMMISSION_NOTICE_DAYS` (30) ahead; suppliers' owners and finance users get an in-app notice (EN/AR); the history shows effective dates and scheduled versions.
+
+**Tests actually run locally (2026-11-28)**
+- New unit tests `apps/api/src/fulfilment/payout-schedule.test.ts` (4): default time, holiday shift, weekend skip, configured weekday.
+- New integration test (scheduled payouts): holiday CRUD and permissions, not proposed before the shifted time, proposed once after it, proposal cannot be approved directly, confirm then second-user approval, withdraw releases orders, system audit.
+- Commission test updated: under 30 days refused, scheduled version not in effect until its date, supplier notified.
+- Full API suite 163 passed (18 files); config 23, web 12, worker 10. Lint, Prettier, typecheck clean.
 
 ## Phase 8: Vercel-first architecture at zero added cost (founder message 2026-11-28 09:28 UTC)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-vercel-docs`. Documentation only; nothing provisioned, connected or subscribed.

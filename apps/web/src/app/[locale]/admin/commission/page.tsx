@@ -26,8 +26,22 @@ function percentToBps(v: string): number | null {
 }
 const bpsToPercent = (bps: number) => `${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 2)}%`;
 
-function NewRate({ onDone }: { onDone: (s: CommissionSettings) => void }) {
+/** YYYY-MM-DD of a UTC instant in Asia/Dubai (UTC+4, no daylight saving). */
+const dubaiDate = (iso: string) =>
+  new Date(new Date(iso).getTime() + 4 * 3_600_000).toISOString().slice(0, 10);
+
+function NewRate({
+  settings,
+  onDone,
+}: {
+  settings: CommissionSettings;
+  onDone: (s: CommissionSettings) => void;
+}) {
   const t = useT();
+  const { locale } = useApp();
+  // The earliest Dubai calendar day that gives the full notice period, at 00:00 Dubai.
+  const earliest = new Date(settings.earliest_effective_from);
+  const minDay = dubaiDate(new Date(earliest.getTime() + 86_400_000 - 1).toISOString());
   const m = useMutation();
   const fe = useFieldError(m.error);
   const [ok, setOk] = useState(false);
@@ -43,12 +57,17 @@ function NewRate({ onDone }: { onDone: (s: CommissionSettings) => void }) {
       return;
     }
     setRateError(undefined);
+    const day = String(fd.get('effective_date') ?? '');
+    const effective = /^\d{4}-\d{2}-\d{2}$/.test(day)
+      ? new Date(`${day}T00:00:00+04:00`).toISOString()
+      : '';
     const r = await m.run<CommissionSettings>('/admin/finance/commission', {
       method: 'POST',
       body: {
         rate_bps: bps,
         reason: String(fd.get('reason') ?? ''),
         totp_code: String(fd.get('totp_code') ?? '').replace(/\s/g, ''),
+        effective_from: effective,
       },
     });
     // A used or wrong code cannot be retried; clear it either way.
@@ -73,6 +92,19 @@ function NewRate({ onDone }: { onDone: (s: CommissionSettings) => void }) {
         required
         hint={t('commission.rate_hint')}
         error={rateError ?? fe('rate_bps')}
+      />
+      <Field
+        label={t('commission.effective_from')}
+        name="effective_date"
+        type="date"
+        min={minDay}
+        defaultValue={minDay}
+        required
+        hint={t('commission.effective_hint', {
+          days: String(settings.notice_days),
+          date: formatDubaiTime(settings.earliest_effective_from, locale),
+        })}
+        error={fe('effective_from')}
       />
       <TextArea
         label={t('commission.reason')}
@@ -128,7 +160,7 @@ function Commission() {
               </div>
             </section>
             {s.can_manage ? (
-              <NewRate onDone={res.reload} />
+              <NewRate settings={s} onDone={res.reload} />
             ) : (
               <p className="muted">{t('commission.readonly')}</p>
             )}
@@ -147,6 +179,7 @@ function Commission() {
                       <tr>
                         <th scope="col">{t('commission.history')}</th>
                         <th scope="col">{t('commission.rate')}</th>
+                        <th scope="col">{t('commission.effective_from')}</th>
                         <th scope="col">{t('commission.reason')}</th>
                       </tr>
                     </thead>
@@ -161,6 +194,12 @@ function Commission() {
                             </span>
                           </td>
                           <td>{bpsToPercent(h.rate_bps)}</td>
+                          <td>
+                            {formatDubaiTime(h.effective_from, locale)}
+                            {h.scheduled ? (
+                              <span className="pill small block">{t('commission.scheduled')}</span>
+                            ) : null}
+                          </td>
                           <td>{h.reason}</td>
                         </tr>
                       ))}

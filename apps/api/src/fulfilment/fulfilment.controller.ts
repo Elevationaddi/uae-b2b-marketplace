@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
@@ -27,6 +28,7 @@ import {
   orderHoldListQuery,
   orderHoldReleaseRequest,
   payoutCreateRequest,
+  payoutHolidayCreateRequest,
   payoutListQuery,
   refundCreateRequest,
   refundListQuery,
@@ -602,6 +604,33 @@ export class AdminFulfilmentController {
     );
   }
 
+  /** Q9: a finance user confirms a scheduled proposal; it then needs a different approver. */
+  @Post('payouts/:id/confirm')
+  @HttpCode(200)
+  @RequireAdmin('admin.payouts.request')
+  async confirmPayout(@Auth() a: AuthContext, @Param('id') id: string, @Req() req: Request) {
+    return ok(await this.settlement.confirmProposal(a.user, id, requestMeta(req)));
+  }
+
+  @Post('payouts/:id/withdraw')
+  @HttpCode(200)
+  @RequireAdmin('admin.payouts.request')
+  async withdrawPayout(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.settlement.withdrawProposal(
+        a.user,
+        id,
+        parse(financeDecisionRequest, b),
+        requestMeta(req),
+      ),
+    );
+  }
+
   /** Sandbox only: stands in for the provider finishing a refund or payout (labelled in the UI). */
   @Post('sandbox/operations/:ref/complete')
   @HttpCode(200)
@@ -706,6 +735,26 @@ export class AdminFinancialPolicyController {
   @RequireAdmin('admin.finance.read')
   async payoutRun() {
     return ok(await this.policy.payoutRun());
+  }
+
+  @Get('payouts/holidays')
+  @RequireAdmin('admin.finance.read')
+  async holidays() {
+    return ok(await this.policy.holidays());
+  }
+
+  @Post('payouts/holidays')
+  @RequireAdmin('admin.payouts.request')
+  async addHoliday(@Auth() a: AuthContext, @Body() b: unknown, @Req() req: Request) {
+    return ok(
+      await this.policy.addHoliday(a.user, parse(payoutHolidayCreateRequest, b), requestMeta(req)),
+    );
+  }
+
+  @Delete('payouts/holidays/:date')
+  @RequireAdmin('admin.payouts.request')
+  async removeHoliday(@Auth() a: AuthContext, @Param('date') date: string, @Req() req: Request) {
+    return ok(await this.policy.removeHoliday(a.user, date, requestMeta(req)));
   }
 
   @Get('finance/commission')

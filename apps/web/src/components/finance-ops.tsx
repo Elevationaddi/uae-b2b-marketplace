@@ -91,3 +91,71 @@ export function SandboxComplete({
     </span>
   );
 }
+
+/**
+ * Q9: a payout proposed by the weekly schedule. Confirming makes it a request (a different finance
+ * approver must still approve it); withdrawing records a reason and releases its orders.
+ */
+export function ProposalButtons({
+  id,
+  number,
+  onDone,
+}: {
+  id: string;
+  number: string;
+  onDone: () => void;
+}) {
+  const t = useT();
+  const m = useMutation();
+  const fe = useFieldError(m.error);
+  const [mode, setMode] = useState<'confirm' | 'withdraw' | null>(null);
+  const [reason, setReason] = useState('');
+  return (
+    <span className="row-actions">
+      <Button variant="secondary" onClick={() => setMode('confirm')}>
+        {t('payout.confirm')}
+      </Button>
+      <Button variant="link" onClick={() => setMode('withdraw')}>
+        {t('payout.withdraw')}
+      </Button>
+      <ConfirmDialog
+        open={mode !== null}
+        title={t(mode === 'withdraw' ? 'payout.withdraw_title' : 'payout.confirm_title', {
+          number,
+        })}
+        confirmLabel={mode === 'withdraw' ? t('payout.withdraw') : t('payout.confirm')}
+        danger={mode === 'withdraw'}
+        busy={m.busy}
+        error={m.error && Object.keys(m.error.fieldErrors).length === 0 ? m.error : null}
+        onClose={() => {
+          setMode(null);
+          m.setError(null);
+        }}
+        onConfirm={async () => {
+          const r = await m.run(`/admin/payouts/${id}/${mode}`, {
+            method: 'POST',
+            body: mode === 'withdraw' ? { reason } : undefined,
+          });
+          if (r.ok) {
+            setMode(null);
+            setReason('');
+            onDone();
+          }
+        }}
+      >
+        {mode === 'withdraw' ? (
+          <TextArea
+            label={t('refund.decision_reason')}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            required
+            rows={2}
+            error={fe('reason')}
+          />
+        ) : (
+          <p>{t('payout.confirm_body')}</p>
+        )}
+      </ConfirmDialog>
+    </span>
+  );
+}
