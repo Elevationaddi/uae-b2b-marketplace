@@ -1955,6 +1955,25 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+/* C-10: compact inputs inside the per-emirate delivery table. */
+.input-sm {
+  width: 100%;
+  max-width: 8rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.radio-group {
+  display: grid;
+  gap: var(--space-2);
+  margin-block: var(--space-3);
+  border: 0;
+  padding: 0;
+}
+
 /* Staging mail catcher */
 .mail-body {
   white-space: pre-wrap;

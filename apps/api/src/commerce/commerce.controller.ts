@@ -129,7 +129,8 @@ export class BuyerCommerceController {
   @Post('checkout/preview')
   @HttpCode(200)
   async preview(@Auth() a: AuthContext, @Param('ws') ws: string, @Body() b: unknown) {
-    return ok(await this.checkout.preview(a.user, ws, parse(checkoutPreviewRequest, b).address_id));
+    const req = parse(checkoutPreviewRequest, b);
+    return ok(await this.checkout.preview(a.user, ws, req.address_id, req.methods ?? {}));
   }
 
   /** Create checkout and reserve stock: requires Idempotency-Key (docs/07-api.md). */

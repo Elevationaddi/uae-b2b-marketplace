@@ -1,9 +1,12 @@
-import type {
-  SellerProductDetail,
-  SkuDetail,
-  StorefrontResponse,
-  VersionDetail,
+import {
+  deliveryRate,
+  type DeliveryRate,
+  type SellerProductDetail,
+  type SkuDetail,
+  type StorefrontResponse,
+  type VersionDetail,
 } from '@app/contracts';
+import { z } from 'zod';
 import {
   toIsoDate,
   type Category,
@@ -215,6 +218,12 @@ export function baseProductDetail(
   };
 }
 
+/** Stored per-emirate rates (validated on write); malformed entries are dropped, never priced. */
+export function parseDeliveryRates(v: unknown): DeliveryRate[] {
+  const r = z.array(deliveryRate).safeParse(v);
+  return r.success ? r.data : [];
+}
+
 export function mapStorefront(
   s: Storefront & { media: StorefrontMedia[] },
   companyName: string,
@@ -246,9 +255,12 @@ export function mapStorefront(
     fulfilment_en: s.fulfilmentEn,
     fulfilment_ar: s.fulfilmentAr,
     certifications: mapCertifications(s.certifications),
-    delivery_fee_fils: s.deliveryFeeFils?.toString() ?? null,
-    delivery_emirates: s.deliveryEmirates,
-    delivery_days: s.deliveryDays,
+    delivery_rates: parseDeliveryRates(s.deliveryRates),
+    collection_enabled: s.collectionEnabled,
+    collection_emirate: s.collectionEmirate,
+    collection_instructions_en: s.collectionInstructionsEn,
+    collection_instructions_ar: s.collectionInstructionsAr,
+    collection_days: s.collectionDays,
     return_policy_en: s.returnPolicyEn,
     return_policy_ar: s.returnPolicyAr,
     media: [...s.media]

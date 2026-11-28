@@ -620,41 +620,49 @@ model CategoryAttribute {
 /// Supplier storefront (one per seller workspace). Public only while published, not hidden by an
 /// admin, and the company is approved with a valid licence.
 model Storefront {
-  id                    String           @id @default(uuid()) @db.Uuid
-  sellerWorkspaceId     String           @unique @map("seller_workspace_id") @db.Uuid
-  companyId             String           @map("company_id") @db.Uuid
-  status                StorefrontStatus @default(DRAFT)
-  businessType          BusinessType?    @map("business_type")
-  descriptionEn         String?          @map("description_en")
-  descriptionAr         String?          @map("description_ar")
-  yearEstablished       Int?             @map("year_established")
-  city                  String?
-  specializationEn      String?          @map("specialization_en")
-  specializationAr      String?          @map("specialization_ar")
-  capabilitiesEn        String?          @map("capabilities_en")
-  capabilitiesAr        String?          @map("capabilities_ar")
-  productionCapacity    String?          @map("production_capacity")
-  customizationServices Boolean          @default(false) @map("customization_services")
-  privateLabel          Boolean          @default(false) @map("private_label")
-  whiteLabel            Boolean          @default(false) @map("white_label")
-  samplesAvailable      Boolean          @default(false) @map("samples_available")
-  fulfilmentEn          String?          @map("fulfilment_en")
-  fulfilmentAr          String?          @map("fulfilment_ar")
+  id                       String           @id @default(uuid()) @db.Uuid
+  sellerWorkspaceId        String           @unique @map("seller_workspace_id") @db.Uuid
+  companyId                String           @map("company_id") @db.Uuid
+  status                   StorefrontStatus @default(DRAFT)
+  businessType             BusinessType?    @map("business_type")
+  descriptionEn            String?          @map("description_en")
+  descriptionAr            String?          @map("description_ar")
+  yearEstablished          Int?             @map("year_established")
+  city                     String?
+  specializationEn         String?          @map("specialization_en")
+  specializationAr         String?          @map("specialization_ar")
+  capabilitiesEn           String?          @map("capabilities_en")
+  capabilitiesAr           String?          @map("capabilities_ar")
+  productionCapacity       String?          @map("production_capacity")
+  customizationServices    Boolean          @default(false) @map("customization_services")
+  privateLabel             Boolean          @default(false) @map("private_label")
+  whiteLabel               Boolean          @default(false) @map("white_label")
+  samplesAvailable         Boolean          @default(false) @map("samples_available")
+  fulfilmentEn             String?          @map("fulfilment_en")
+  fulfilmentAr             String?          @map("fulfilment_ar")
   /// [{ name, issuer, valid_until? }] supplier-declared; shown as declared, not platform-verified.
-  certifications        Json             @default("[]")
+  certifications           Json             @default("[]")
   /// Phase 4 delivery terms (provisional P4-1): one flat fee per order and the emirates served.
-  deliveryFeeFils       BigInt?          @map("delivery_fee_fils")
-  deliveryEmirates      Emirate[]        @default([]) @map("delivery_emirates")
-  deliveryDays          Int?             @map("delivery_days")
+  deliveryFeeFils          BigInt?          @map("delivery_fee_fils")
+  deliveryEmirates         Emirate[]        @default([]) @map("delivery_emirates")
+  deliveryDays             Int?             @map("delivery_days")
+  /// C-10: [{ emirate, fee_fils, days }] per emirate served (replaces the flat fee above).
+  deliveryRates            Json             @default("[]") @map("delivery_rates")
+  /// FD-08: free buyer collection; instructions are shown to the buyer only after payment.
+  collectionEnabled        Boolean          @default(false) @map("collection_enabled")
+  collectionEmirate        Emirate?         @map("collection_emirate")
+  collectionInstructionsEn String?          @map("collection_instructions_en")
+  collectionInstructionsAr String?          @map("collection_instructions_ar")
+  collectionDays           Int?             @map("collection_days")
   /// Disclosed change-of-mind return policy (C-11), shown before payment and copied onto orders.
-  returnPolicyEn        String?          @map("return_policy_en")
-  returnPolicyAr        String?          @map("return_policy_ar")
-  publishedAt           DateTime?        @map("published_at") @db.Timestamptz(3)
-  adminHiddenAt         DateTime?        @map("admin_hidden_at") @db.Timestamptz(3)
-  adminHiddenReason     String?          @map("admin_hidden_reason")
-  version               Int              @default(1)
-  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  returnPolicyEn           String?          @map("return_policy_en")
+  returnPolicyAr           String?          @map("return_policy_ar")
+  publishedAt              DateTime?        @map("published_at") @db.Timestamptz(3)
+  adminHiddenAt            DateTime?        @map("admin_hidden_at") @db.Timestamptz(3)
+  adminHiddenReason        String?          @map("admin_hidden_reason")
+  version                  Int              @default(1)
+  createdAt                DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   workspace Workspace         @relation(fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
   media     StorefrontMedia[]
@@ -1473,6 +1481,8 @@ model Order {
   commissionBps           Int?            @map("commission_bps")
   commissionPolicyId      String?         @map("commission_policy_id") @db.Uuid
   /// Verified delivery (C-02): supplier delivery with proof, or buyer receipt, whichever is first.
+  /// C-10: DELIVERY (per-emirate fee), COLLECTION (buyer collects, free) or QUOTE_TERMS.
+  deliveryMethod          String          @default("DELIVERY") @map("delivery_method")
   deliveryVerifiedAt      DateTime?       @map("delivery_verified_at") @db.Timestamptz(3)
   /// PROOF_OF_DELIVERY or BUYER_CONFIRMED.
   deliveryVerification    String?         @map("delivery_verification")
@@ -1750,6 +1760,8 @@ model Shipment {
   deliveredById        String?       @map("delivered_by_id") @db.Uuid
   deliveryNote         String?       @map("delivery_note")
   proofFileId          String?       @map("proof_file_id") @db.Uuid
+  /// C-10: optional proof of dispatch (clean-scanned file).
+  dispatchProofFileId  String?       @map("dispatch_proof_file_id") @db.Uuid
   createdAt            DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
 

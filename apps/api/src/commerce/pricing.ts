@@ -1,5 +1,12 @@
 import { createHash } from 'node:crypto';
-import { bpsOf, priceForQuantity, type CartLine, type OrderTaxCode } from '@app/contracts';
+import {
+  bpsOf,
+  priceForQuantity,
+  type CartLine,
+  type DeliveryRate,
+  type OrderTaxCode,
+} from '@app/contracts';
+import { parseDeliveryRates } from '../catalog/mappers';
 import type { Address, Emirate, Tx } from '@app/db';
 import { addressSnapshot } from './address.service';
 import { supplierVat, taxRuleFor, type SupplierVat, type TaxSettings } from './tax';
@@ -14,7 +21,15 @@ export interface PricedLine extends CartLine {
 export interface SellerGroup {
   seller: { workspace_id: string; company_name: string; storefront_id: string | null };
   seller_company_id: string;
-  delivery: { fee_fils: string | null; emirates: Emirate[]; days: number | null };
+  /** C-10: per-emirate delivery rates; FD-08: free buyer collection. */
+  delivery: { rates: DeliveryRate[] };
+  collection: {
+    enabled: boolean;
+    emirate: Emirate | null;
+    days: number | null;
+    instructions_en: string | null;
+    instructions_ar: string | null;
+  };
   vat: SupplierVat;
   returnPolicy: { en: string | null; ar: string | null } | null;
   lines: PricedLine[];
@@ -68,10 +83,13 @@ export async function loadCart(tx: Tx, buyerWorkspaceId: string): Promise<Seller
           storefront_id: sf && sf.status === 'PUBLISHED' && !sf.adminHiddenAt ? sf.id : null,
         },
         seller_company_id: w.companyId,
-        delivery: {
-          fee_fils: sf?.deliveryFeeFils?.toString() ?? null,
-          emirates: sf?.deliveryEmirates ?? [],
-          days: sf?.deliveryDays ?? null,
+        delivery: { rates: parseDeliveryRates(sf?.deliveryRates) },
+        collection: {
+          enabled: !!sf?.collectionEnabled && !!sf.collectionEmirate,
+          emirate: sf?.collectionEmirate ?? null,
+          days: sf?.collectionDays ?? null,
+          instructions_en: sf?.collectionInstructionsEn ?? null,
+          instructions_ar: sf?.collectionInstructionsAr ?? null,
         },
         vat: supplierVat(w.company),
         returnPolicy:
@@ -142,36 +160,56 @@ export function publicLine(l: PricedLine): CartLine {
   return rest;
 }
 
+export type DeliveryChoice = 'DELIVERY' | 'COLLECTION';
+
 export interface PreviewGroup {
   group: SellerGroup;
+  method: DeliveryChoice;
+  /** The rate for the buyer's emirate, when the supplier delivers there. */
+  rate: DeliveryRate | null;
   shipping: bigint;
   tax: bigint;
   taxBps: number;
   taxCode: OrderTaxCode;
   provisional: boolean;
   total: bigint;
-  issue: 'no_delivery_terms' | 'emirate_not_served' | 'supplier_vat_unconfirmed' | null;
+  issue:
+    | 'no_delivery_terms'
+    | 'emirate_not_served'
+    | 'collection_unavailable'
+    | 'supplier_vat_unconfirmed'
+    | null;
 }
 
 /**
- * Checkout totals per seller (P4-1, P4-2, F05): flat seller delivery fee per order, VAT on
- * merchandise plus shipping at the supplier's rule (see tax.ts), half-up per order. The hash covers
- * every priced input, so checkout creation can refuse with 409 when anything changed after the
- * buyer reviewed it (T12).
+ * Checkout totals per seller (C-10, P4-2, F05): the supplier's delivery fee for the buyer's emirate,
+ * or nothing when the buyer collects (FD-08); VAT on merchandise plus delivery at the supplier's
+ * rule (see tax.ts), half-up per order. The hash covers every priced input and the chosen methods,
+ * so checkout creation can refuse with 409 when anything changed after the buyer reviewed it (T12).
  */
-export function buildPreview(groups: SellerGroup[], address: Address, settings: TaxSettings) {
+export function buildPreview(
+  groups: SellerGroup[],
+  address: Address,
+  settings: TaxSettings,
+  methods: Record<string, DeliveryChoice> = {},
+) {
   const out: PreviewGroup[] = groups.map((g) => {
+    const method = methods[g.seller.workspace_id] ?? 'DELIVERY';
+    const rate = g.delivery.rates.find((r) => r.emirate === address.emirate) ?? null;
     let issue: PreviewGroup['issue'] = null;
-    if (g.delivery.fee_fils === null || g.delivery.emirates.length === 0)
-      issue = 'no_delivery_terms';
-    else if (!g.delivery.emirates.includes(address.emirate)) issue = 'emirate_not_served';
+    if (method === 'COLLECTION') {
+      if (!g.collection.enabled) issue = 'collection_unavailable';
+    } else if (g.delivery.rates.length === 0) issue = 'no_delivery_terms';
+    else if (!rate) issue = 'emirate_not_served';
     const rule = taxRuleFor(settings, g.vat);
     if (!rule.ok && issue === null) issue = rule.reason;
     const taxBps = rule.ok ? rule.bps : 0;
-    const shipping = g.delivery.fee_fils === null ? 0n : BigInt(g.delivery.fee_fils);
+    const shipping = method === 'DELIVERY' && rate ? BigInt(rate.fee_fils) : 0n;
     const tax = bpsOf(g.merchandise + shipping, taxBps);
     return {
       group: g,
+      method,
+      rate,
       shipping,
       tax,
       taxBps,
@@ -193,6 +231,7 @@ export function buildPreview(groups: SellerGroup[], address: Address, settings: 
         g: out.map((p) => ({
           s: p.group.seller.workspace_id,
           x: [p.taxCode, p.taxBps, p.issue],
+          m: [p.method, p.rate?.days ?? null, p.group.collection.emirate],
           r: p.group.returnPolicy,
           f: p.shipping.toString(),
           l: p.group.lines.map((l) => [l.sku_id, l.quantity, l.unit_price_fils, l.issue]),

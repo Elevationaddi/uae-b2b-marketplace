@@ -114,19 +114,32 @@ function Cart({ ws, base }: { ws: Workspace; base: string }) {
                     )}
                   </h2>
                   <p className="muted small">
-                    {g.delivery.fee_fils !== null && g.delivery.emirates.length > 0 ? (
+                    {g.delivery.rates.length > 0 ? (
                       <>
-                        {t('cart.delivery_fee')} <Money fils={g.delivery.fee_fils} /> ·{' '}
-                        {g.delivery.emirates
-                          .map((e) => t(`emirate.${e}` as MessageKey))
+                        {t('cart.delivers_to')}{' '}
+                        {g.delivery.rates
+                          .map((r) => t(`emirate.${r.emirate}` as MessageKey))
                           .join(locale === 'ar' ? '، ' : ', ')}
-                        {g.delivery.days !== null
-                          ? ` · ${t('cart.delivery_days', { count: g.delivery.days })}`
-                          : ''}
+                        {' · '}
+                        {t('cart.fee_from')}{' '}
+                        <Money
+                          fils={g.delivery.rates
+                            .map((r) => BigInt(r.fee_fils))
+                            .reduce((a, b) => (b < a ? b : a))
+                            .toString()}
+                        />
                       </>
                     ) : (
                       t('checkout.issue.no_delivery_terms')
                     )}
+                    {g.delivery.collection.available && g.delivery.collection.emirate ? (
+                      <>
+                        {' · '}
+                        {t('cart.collection_available', {
+                          emirate: t(`emirate.${g.delivery.collection.emirate}` as MessageKey),
+                        })}
+                      </>
+                    ) : null}
                   </p>
                   <div className="table-wrap">
                     <table className="table" data-testid="cart-lines">

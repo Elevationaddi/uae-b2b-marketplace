@@ -76,6 +76,11 @@ export const fulfilmentEn = {
   'ful.deliver': 'Report delivery',
   'ful.deliver_title': 'Report delivery',
   'ful.proof_file': 'Proof of delivery (PDF, PNG or JPEG)',
+  'ful.dispatch_proof_file': 'Proof of dispatch, such as a waybill (PDF, PNG or JPEG)',
+  'ful.dispatch_proof': 'Proof of dispatch',
+  'ful.ready_for_collection_title': 'Hand over for collection',
+  'ful.collection_handover':
+    'The buyer collects this order from your premises. Record the handover when the goods are ready.',
   'ful.confirm_receipt': 'Confirm receipt',
   'ful.confirm_receipt_title': 'Confirm you received this order?',
   'ful.confirm_receipt_body':
@@ -321,6 +326,11 @@ export const fulfilmentAr: Record<keyof typeof fulfilmentEn, string> = {
   'ful.deliver': 'الإبلاغ عن التسليم',
   'ful.deliver_title': 'الإبلاغ عن التسليم',
   'ful.proof_file': 'إثبات التسليم (PDF أو PNG أو JPEG)',
+  'ful.dispatch_proof_file': 'إثبات الشحن، مثل بوليصة الشحن (PDF أو PNG أو JPEG)',
+  'ful.dispatch_proof': 'إثبات الشحن',
+  'ful.ready_for_collection_title': 'التسليم للاستلام',
+  'ful.collection_handover':
+    'يستلم المشتري هذا الطلب من مقرك. سجّل التسليم عندما تكون البضاعة جاهزة.',
   'ful.confirm_receipt': 'تأكيد الاستلام',
   'ful.confirm_receipt_title': 'هل تؤكد استلام هذا الطلب؟',
   'ful.confirm_receipt_body':

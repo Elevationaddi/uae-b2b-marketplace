@@ -28,7 +28,67 @@ import type { MessageKey } from '@/i18n/messages';
 import { api as call, type ApiError } from '@/lib/client';
 import { useMutation, useResource } from '@/lib/use-resource';
 
-function Preview({ p }: { p: CheckoutPreview }) {
+type Method = 'DELIVERY' | 'COLLECTION';
+
+function MethodChoice({
+  g,
+  onChange,
+}: {
+  g: CheckoutPreview['groups'][number];
+  onChange: (m: Method) => void;
+}) {
+  const t = useT();
+  const o = g.delivery_options;
+  if (!o.collection.available) return null;
+  const name = `method-${g.seller.workspace_id}`;
+  return (
+    <fieldset className="radio-group" data-testid="delivery-method">
+      <legend>{t('checkout.method')}</legend>
+      <label className="check">
+        <input
+          type="radio"
+          name={name}
+          value="DELIVERY"
+          checked={g.delivery_method === 'DELIVERY'}
+          disabled={!o.delivery.available}
+          onChange={() => onChange('DELIVERY')}
+        />
+        {t('checkout.method.delivery')}
+        {o.delivery.available && o.delivery.fee_fils !== null ? (
+          <>
+            {' · '}
+            <Money fils={o.delivery.fee_fils} />
+          </>
+        ) : (
+          <> · {t('checkout.issue.emirate_not_served')}</>
+        )}
+      </label>
+      <label className="check">
+        <input
+          type="radio"
+          name={name}
+          value="COLLECTION"
+          checked={g.delivery_method === 'COLLECTION'}
+          onChange={() => onChange('COLLECTION')}
+        />
+        {t('checkout.method.collection', {
+          emirate: o.collection.emirate ? t(`emirate.${o.collection.emirate}` as MessageKey) : '',
+        })}
+      </label>
+      {g.delivery_method === 'COLLECTION' ? (
+        <p className="muted small">{t('checkout.collection_note')}</p>
+      ) : null}
+    </fieldset>
+  );
+}
+
+function Preview({
+  p,
+  onMethod,
+}: {
+  p: CheckoutPreview;
+  onMethod: (seller: string, m: Method) => void;
+}) {
   const t = useT();
   const L = useLocalized();
   return (
@@ -44,6 +104,7 @@ function Preview({ p }: { p: CheckoutPreview }) {
           {g.issue ? (
             <Alert kind="warning">{t(`checkout.issue.${g.issue}` as MessageKey)}</Alert>
           ) : null}
+          <MethodChoice g={g} onChange={(m) => onMethod(g.seller.workspace_id, m)} />
           <ul className="plain-list">
             {g.lines.map((l) => (
               <li key={l.id}>
@@ -89,6 +150,7 @@ function Checkout({ ws, base }: { ws: Workspace; base: string }) {
   const api = buyerApi(ws);
   const addresses = useResource<AddressItem[]>(`${api}/addresses`);
   const [addressId, setAddressId] = useState('');
+  const [methods, setMethods] = useState<Record<string, Method>>({});
   const [preview, setPreview] = useState<CheckoutPreview | null>(null);
   const [previewError, setPreviewError] = useState<ApiError | null>(null);
   const [po, setPo] = useState('');
@@ -109,7 +171,7 @@ function Checkout({ ws, base }: { ws: Workspace; base: string }) {
     setPreviewError(null);
     void call<CheckoutPreview>(`${api}/checkout/preview`, {
       method: 'POST',
-      body: { address_id: addressId },
+      body: { address_id: addressId, methods },
     }).then((r) => {
       if (!live) return;
       if (r.ok) setPreview(r.data);
@@ -118,7 +180,7 @@ function Checkout({ ws, base }: { ws: Workspace; base: string }) {
     return () => {
       live = false;
     };
-  }, [addressId, api]);
+  }, [addressId, api, methods]);
 
   const place = async () => {
     if (!preview) return;
@@ -130,6 +192,7 @@ function Checkout({ ws, base }: { ws: Workspace; base: string }) {
       method: 'POST',
       body: {
         address_id: addressId,
+        methods,
         preview_hash: preview.preview_hash,
         po_reference: po || undefined,
         accept_terms: true,
@@ -171,7 +234,10 @@ function Checkout({ ws, base }: { ws: Workspace; base: string }) {
                       <p>{t('cart.empty')}</p>
                     </Empty>
                   ) : (
-                    <Preview p={preview} />
+                    <Preview
+                      p={preview}
+                      onMethod={(seller, m) => setMethods((cur) => ({ ...cur, [seller]: m }))}
+                    />
                   )
                 ) : !previewError ? (
                   <Skeleton lines={6} />

@@ -36,7 +36,14 @@ export class CartService {
     return {
       groups: groups.map((g) => ({
         seller: g.seller,
-        delivery: g.delivery,
+        delivery: {
+          rates: g.delivery.rates,
+          collection: {
+            available: g.collection.enabled,
+            emirate: g.collection.enabled ? g.collection.emirate : null,
+            days: g.collection.enabled ? g.collection.days : null,
+          },
+        },
         lines: g.lines.map(publicLine),
         merchandise_fils: g.merchandise.toString(),
       })),

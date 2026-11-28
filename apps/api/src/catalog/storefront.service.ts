@@ -35,9 +35,12 @@ const FIELD_MAP: Record<string, string> = {
   fulfilment_en: 'fulfilmentEn',
   fulfilment_ar: 'fulfilmentAr',
   certifications: 'certifications',
-  delivery_fee_fils: 'deliveryFeeFils',
-  delivery_emirates: 'deliveryEmirates',
-  delivery_days: 'deliveryDays',
+  delivery_rates: 'deliveryRates',
+  collection_enabled: 'collectionEnabled',
+  collection_emirate: 'collectionEmirate',
+  collection_instructions_en: 'collectionInstructionsEn',
+  collection_instructions_ar: 'collectionInstructionsAr',
+  collection_days: 'collectionDays',
   return_policy_en: 'returnPolicyEn',
   return_policy_ar: 'returnPolicyAr',
 };
@@ -109,9 +112,12 @@ export class StorefrontService {
         fulfilment_ar: null,
         certifications: [],
         media: [],
-        delivery_fee_fils: null,
-        delivery_emirates: [],
-        delivery_days: null,
+        delivery_rates: [],
+        collection_enabled: false,
+        collection_emirate: null,
+        collection_instructions_en: null,
+        collection_instructions_ar: null,
+        collection_days: null,
         return_policy_en: null,
         return_policy_ar: null,
         version: 0,
@@ -148,16 +154,23 @@ export class StorefrontService {
         const col = FIELD_MAP[k];
         if (!col) continue;
         data[col] =
-          k === 'certifications'
-            ? (v as Prisma.InputJsonValue)
-            : k === 'delivery_fee_fils'
-              ? v === null
-                ? null
-                : BigInt(v as string)
-              : k === 'delivery_emirates'
-                ? [...new Set(v as string[])]
-                : v;
+          k === 'certifications' || k === 'delivery_rates' ? (v as Prisma.InputJsonValue) : v;
         changed.push(k);
+      }
+      // FD-08: collection needs a place and instructions before it can be offered.
+      const enabled = (body.collection_enabled ?? s.collectionEnabled) === true;
+      if (enabled) {
+        const em =
+          body.collection_emirate !== undefined ? body.collection_emirate : s.collectionEmirate;
+        const ins =
+          body.collection_instructions_en !== undefined
+            ? body.collection_instructions_en
+            : s.collectionInstructionsEn;
+        const errors: Record<string, string> = {};
+        if (!em) errors.collection_emirate = 'required';
+        if (!ins) errors.collection_instructions_en = 'required';
+        if (Object.keys(errors).length)
+          throw new ApiError('VALIDATION_FAILED', 'common.validation', errors);
       }
       const r = await tx.storefront.updateMany({
         where: { id: s.id, version: s.version },

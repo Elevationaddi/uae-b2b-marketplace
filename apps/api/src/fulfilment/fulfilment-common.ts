@@ -104,6 +104,7 @@ export function buildFulfilment(
           delivered_at: s.deliveredAt?.toISOString() ?? null,
           delivery_note: s.deliveryNote,
           has_proof: !!s.proofFileId,
+          has_dispatch_proof: !!s.dispatchProofFileId,
           items: s.items.map((i) => ({ order_line_id: i.orderLineId, quantity: i.quantity })),
         }
       : null,

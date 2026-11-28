@@ -31111,29 +31111,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -31188,9 +31234,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -31656,30 +31705,78 @@
                     },
                     "maxItems": 20
                   },
-                  "delivery_fee_fils": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "pattern": "^\\d{1,15}$"
-                  },
-                  "delivery_emirates": {
+                  "delivery_rates": {
                     "type": "array",
                     "items": {
-                      "type": "string",
-                      "enum": [
-                        "ABU_DHABI",
-                        "DUBAI",
-                        "SHARJAH",
-                        "AJMAN",
-                        "UMM_AL_QUWAIN",
-                        "RAS_AL_KHAIMAH",
-                        "FUJAIRAH"
+                      "type": "object",
+                      "properties": {
+                        "emirate": {
+                          "type": "string",
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH"
+                          ]
+                        },
+                        "fee_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "days": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 0,
+                          "maximum": 90
+                        }
+                      },
+                      "required": [
+                        "emirate",
+                        "fee_fils",
+                        "days"
                       ]
                     },
                     "maxItems": 7
                   },
-                  "delivery_days": {
+                  "collection_enabled": {
+                    "type": "boolean"
+                  },
+                  "collection_emirate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "ABU_DHABI",
+                      "DUBAI",
+                      "SHARJAH",
+                      "AJMAN",
+                      "UMM_AL_QUWAIN",
+                      "RAS_AL_KHAIMAH",
+                      "FUJAIRAH",
+                      null
+                    ]
+                  },
+                  "collection_instructions_en": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  },
+                  "collection_instructions_ar": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  },
+                  "collection_days": {
                     "type": [
                       "integer",
                       "null"
@@ -31929,29 +32026,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -32006,9 +32149,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -32543,29 +32689,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -32620,9 +32812,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -33157,29 +33352,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -33234,9 +33475,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -33815,29 +34059,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -33892,9 +34182,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -34542,29 +34835,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -34619,9 +34958,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -71970,29 +72312,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -72047,9 +72435,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -72604,29 +72995,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -72681,9 +73118,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -73238,29 +73678,75 @@
                             ]
                           }
                         },
-                        "delivery_fee_fils": {
+                        "delivery_rates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "emirate": {
+                                "type": "string",
+                                "enum": [
+                                  "ABU_DHABI",
+                                  "DUBAI",
+                                  "SHARJAH",
+                                  "AJMAN",
+                                  "UMM_AL_QUWAIN",
+                                  "RAS_AL_KHAIMAH",
+                                  "FUJAIRAH"
+                                ]
+                              },
+                              "fee_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "days": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 90
+                              }
+                            },
+                            "required": [
+                              "emirate",
+                              "fee_fils",
+                              "days"
+                            ]
+                          }
+                        },
+                        "collection_enabled": {
+                          "type": "boolean"
+                        },
+                        "collection_emirate": {
                           "type": [
                             "string",
                             "null"
                           ],
-                          "pattern": "^\\d{1,15}$"
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH",
+                            null
+                          ]
                         },
-                        "delivery_emirates": {
-                          "type": "array",
-                          "items": {
-                            "type": "string",
-                            "enum": [
-                              "ABU_DHABI",
-                              "DUBAI",
-                              "SHARJAH",
-                              "AJMAN",
-                              "UMM_AL_QUWAIN",
-                              "RAS_AL_KHAIMAH",
-                              "FUJAIRAH"
-                            ]
-                          }
+                        "collection_instructions_en": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
-                        "delivery_days": {
+                        "collection_instructions_ar": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "collection_days": {
                           "type": [
                             "integer",
                             "null"
@@ -73315,9 +73801,12 @@
                         "fulfilment_ar",
                         "certifications",
                         "media",
-                        "delivery_fee_fils",
-                        "delivery_emirates",
-                        "delivery_days",
+                        "delivery_rates",
+                        "collection_enabled",
+                        "collection_emirate",
+                        "collection_instructions_en",
+                        "collection_instructions_ar",
+                        "collection_days",
                         "return_policy_en",
                         "return_policy_ar",
                         "version",
@@ -113395,39 +113884,82 @@
                               "delivery": {
                                 "type": "object",
                                 "properties": {
-                                  "fee_fils": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
-                                    "pattern": "^\\d{1,15}$"
-                                  },
-                                  "emirates": {
+                                  "rates": {
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "enum": [
-                                        "ABU_DHABI",
-                                        "DUBAI",
-                                        "SHARJAH",
-                                        "AJMAN",
-                                        "UMM_AL_QUWAIN",
-                                        "RAS_AL_KHAIMAH",
-                                        "FUJAIRAH"
+                                      "type": "object",
+                                      "properties": {
+                                        "emirate": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ABU_DHABI",
+                                            "DUBAI",
+                                            "SHARJAH",
+                                            "AJMAN",
+                                            "UMM_AL_QUWAIN",
+                                            "RAS_AL_KHAIMAH",
+                                            "FUJAIRAH"
+                                          ]
+                                        },
+                                        "fee_fils": {
+                                          "type": "string",
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "days": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 90
+                                        }
+                                      },
+                                      "required": [
+                                        "emirate",
+                                        "fee_fils",
+                                        "days"
                                       ]
                                     }
                                   },
-                                  "days": {
-                                    "type": [
-                                      "integer",
-                                      "null"
+                                  "collection": {
+                                    "type": "object",
+                                    "properties": {
+                                      "available": {
+                                        "type": "boolean"
+                                      },
+                                      "emirate": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "ABU_DHABI",
+                                          "DUBAI",
+                                          "SHARJAH",
+                                          "AJMAN",
+                                          "UMM_AL_QUWAIN",
+                                          "RAS_AL_KHAIMAH",
+                                          "FUJAIRAH",
+                                          null
+                                        ]
+                                      },
+                                      "days": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "available",
+                                      "emirate",
+                                      "days"
                                     ]
                                   }
                                 },
                                 "required": [
-                                  "fee_fils",
-                                  "emirates",
-                                  "days"
+                                  "rates",
+                                  "collection"
                                 ]
                               },
                               "lines": {
@@ -113954,39 +114486,82 @@
                               "delivery": {
                                 "type": "object",
                                 "properties": {
-                                  "fee_fils": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
-                                    "pattern": "^\\d{1,15}$"
-                                  },
-                                  "emirates": {
+                                  "rates": {
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "enum": [
-                                        "ABU_DHABI",
-                                        "DUBAI",
-                                        "SHARJAH",
-                                        "AJMAN",
-                                        "UMM_AL_QUWAIN",
-                                        "RAS_AL_KHAIMAH",
-                                        "FUJAIRAH"
+                                      "type": "object",
+                                      "properties": {
+                                        "emirate": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ABU_DHABI",
+                                            "DUBAI",
+                                            "SHARJAH",
+                                            "AJMAN",
+                                            "UMM_AL_QUWAIN",
+                                            "RAS_AL_KHAIMAH",
+                                            "FUJAIRAH"
+                                          ]
+                                        },
+                                        "fee_fils": {
+                                          "type": "string",
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "days": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 90
+                                        }
+                                      },
+                                      "required": [
+                                        "emirate",
+                                        "fee_fils",
+                                        "days"
                                       ]
                                     }
                                   },
-                                  "days": {
-                                    "type": [
-                                      "integer",
-                                      "null"
+                                  "collection": {
+                                    "type": "object",
+                                    "properties": {
+                                      "available": {
+                                        "type": "boolean"
+                                      },
+                                      "emirate": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "ABU_DHABI",
+                                          "DUBAI",
+                                          "SHARJAH",
+                                          "AJMAN",
+                                          "UMM_AL_QUWAIN",
+                                          "RAS_AL_KHAIMAH",
+                                          "FUJAIRAH",
+                                          null
+                                        ]
+                                      },
+                                      "days": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "available",
+                                      "emirate",
+                                      "days"
                                     ]
                                   }
                                 },
                                 "required": [
-                                  "fee_fils",
-                                  "emirates",
-                                  "days"
+                                  "rates",
+                                  "collection"
                                 ]
                               },
                               "lines": {
@@ -114517,39 +115092,82 @@
                               "delivery": {
                                 "type": "object",
                                 "properties": {
-                                  "fee_fils": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
-                                    "pattern": "^\\d{1,15}$"
-                                  },
-                                  "emirates": {
+                                  "rates": {
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "enum": [
-                                        "ABU_DHABI",
-                                        "DUBAI",
-                                        "SHARJAH",
-                                        "AJMAN",
-                                        "UMM_AL_QUWAIN",
-                                        "RAS_AL_KHAIMAH",
-                                        "FUJAIRAH"
+                                      "type": "object",
+                                      "properties": {
+                                        "emirate": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ABU_DHABI",
+                                            "DUBAI",
+                                            "SHARJAH",
+                                            "AJMAN",
+                                            "UMM_AL_QUWAIN",
+                                            "RAS_AL_KHAIMAH",
+                                            "FUJAIRAH"
+                                          ]
+                                        },
+                                        "fee_fils": {
+                                          "type": "string",
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "days": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 90
+                                        }
+                                      },
+                                      "required": [
+                                        "emirate",
+                                        "fee_fils",
+                                        "days"
                                       ]
                                     }
                                   },
-                                  "days": {
-                                    "type": [
-                                      "integer",
-                                      "null"
+                                  "collection": {
+                                    "type": "object",
+                                    "properties": {
+                                      "available": {
+                                        "type": "boolean"
+                                      },
+                                      "emirate": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "ABU_DHABI",
+                                          "DUBAI",
+                                          "SHARJAH",
+                                          "AJMAN",
+                                          "UMM_AL_QUWAIN",
+                                          "RAS_AL_KHAIMAH",
+                                          "FUJAIRAH",
+                                          null
+                                        ]
+                                      },
+                                      "days": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "available",
+                                      "emirate",
+                                      "days"
                                     ]
                                   }
                                 },
                                 "required": [
-                                  "fee_fils",
-                                  "emirates",
-                                  "days"
+                                  "rates",
+                                  "collection"
                                 ]
                               },
                               "lines": {
@@ -115058,39 +115676,82 @@
                               "delivery": {
                                 "type": "object",
                                 "properties": {
-                                  "fee_fils": {
-                                    "type": [
-                                      "string",
-                                      "null"
-                                    ],
-                                    "pattern": "^\\d{1,15}$"
-                                  },
-                                  "emirates": {
+                                  "rates": {
                                     "type": "array",
                                     "items": {
-                                      "type": "string",
-                                      "enum": [
-                                        "ABU_DHABI",
-                                        "DUBAI",
-                                        "SHARJAH",
-                                        "AJMAN",
-                                        "UMM_AL_QUWAIN",
-                                        "RAS_AL_KHAIMAH",
-                                        "FUJAIRAH"
+                                      "type": "object",
+                                      "properties": {
+                                        "emirate": {
+                                          "type": "string",
+                                          "enum": [
+                                            "ABU_DHABI",
+                                            "DUBAI",
+                                            "SHARJAH",
+                                            "AJMAN",
+                                            "UMM_AL_QUWAIN",
+                                            "RAS_AL_KHAIMAH",
+                                            "FUJAIRAH"
+                                          ]
+                                        },
+                                        "fee_fils": {
+                                          "type": "string",
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "days": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ],
+                                          "minimum": 0,
+                                          "maximum": 90
+                                        }
+                                      },
+                                      "required": [
+                                        "emirate",
+                                        "fee_fils",
+                                        "days"
                                       ]
                                     }
                                   },
-                                  "days": {
-                                    "type": [
-                                      "integer",
-                                      "null"
+                                  "collection": {
+                                    "type": "object",
+                                    "properties": {
+                                      "available": {
+                                        "type": "boolean"
+                                      },
+                                      "emirate": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "enum": [
+                                          "ABU_DHABI",
+                                          "DUBAI",
+                                          "SHARJAH",
+                                          "AJMAN",
+                                          "UMM_AL_QUWAIN",
+                                          "RAS_AL_KHAIMAH",
+                                          "FUJAIRAH",
+                                          null
+                                        ]
+                                      },
+                                      "days": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "available",
+                                      "emirate",
+                                      "days"
                                     ]
                                   }
                                 },
                                 "required": [
-                                  "fee_fils",
-                                  "emirates",
-                                  "days"
+                                  "rates",
+                                  "collection"
                                 ]
                               },
                               "lines": {
@@ -115559,6 +116220,16 @@
                   "address_id": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "methods": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "enum": [
+                        "DELIVERY",
+                        "COLLECTION"
+                      ]
+                    }
                   }
                 },
                 "required": [
@@ -115830,8 +116501,76 @@
                                 "enum": [
                                   "no_delivery_terms",
                                   "emirate_not_served",
+                                  "collection_unavailable",
                                   "supplier_vat_unconfirmed",
                                   null
+                                ]
+                              },
+                              "delivery_method": {
+                                "type": "string",
+                                "enum": [
+                                  "DELIVERY",
+                                  "COLLECTION"
+                                ]
+                              },
+                              "delivery_options": {
+                                "type": "object",
+                                "properties": {
+                                  "delivery": {
+                                    "type": "object",
+                                    "properties": {
+                                      "available": {
+                                        "type": "boolean"
+                                      },
+                                      "fee_fils": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ],
+                                        "pattern": "^\\d{1,15}$"
+                                      },
+                                      "days": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "available",
+                                      "fee_fils",
+                                      "days"
+                                    ]
+                                  },
+                                  "collection": {
+                                    "type": "object",
+                                    "properties": {
+                                      "available": {
+                                        "type": "boolean"
+                                      },
+                                      "emirate": {
+                                        "type": [
+                                          "string",
+                                          "null"
+                                        ]
+                                      },
+                                      "days": {
+                                        "type": [
+                                          "integer",
+                                          "null"
+                                        ]
+                                      }
+                                    },
+                                    "required": [
+                                      "available",
+                                      "emirate",
+                                      "days"
+                                    ]
+                                  }
+                                },
+                                "required": [
+                                  "delivery",
+                                  "collection"
                                 ]
                               }
                             },
@@ -115846,7 +116585,9 @@
                               "tax_bps",
                               "tax_code",
                               "return_policy",
-                              "issue"
+                              "issue",
+                              "delivery_method",
+                              "delivery_options"
                             ]
                           }
                         },
@@ -116227,6 +116968,16 @@
                   "address_id": {
                     "type": "string",
                     "format": "uuid"
+                  },
+                  "methods": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "enum": [
+                        "DELIVERY",
+                        "COLLECTION"
+                      ]
+                    }
                   },
                   "preview_hash": {
                     "type": "string",
@@ -119360,6 +120111,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -119562,6 +120359,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -119592,6 +120392,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -119777,6 +120578,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -121317,6 +122120,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -121519,6 +122368,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -121549,6 +122401,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -121734,6 +122587,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -124301,6 +125156,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -124503,6 +125404,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -124533,6 +125437,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -124718,6 +125623,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -126996,6 +127903,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -127198,6 +128151,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -127228,6 +128184,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -127413,6 +128370,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -127983,6 +128942,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -128185,6 +129190,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -128215,6 +129223,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -128400,6 +129409,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -128700,7 +129711,7 @@
     },
     "/api/v1/seller/workspaces/{ws}/orders/{id}/dispatch": {
       "post": {
-        "summary": "Record dispatch (paid orders only; full shipment)",
+        "summary": "Record dispatch or collection handover (paid orders only; full shipment; optional proof of dispatch)",
         "description": "Requires: seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted).",
         "tags": [
           "Seller fulfilment and disputes"
@@ -128734,13 +129745,12 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
                 "type": "object",
                 "properties": {
                   "carrier": {
                     "type": "string",
-                    "minLength": 1,
                     "maxLength": 80
                   },
                   "tracking_code": {
@@ -128750,11 +129760,12 @@
                   "expected_delivery_date": {
                     "type": "string",
                     "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
                   }
-                },
-                "required": [
-                  "carrier"
-                ]
+                }
               }
             }
           }
@@ -128998,6 +130009,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -129200,6 +130257,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -129230,6 +130290,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -129415,6 +130476,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -129660,6 +130723,110 @@
           },
           "422": {
             "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Dependency unavailable (e.g. file scanning disabled)",
             "content": {
               "application/json": {
                 "schema": {
@@ -130005,6 +131172,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -130207,6 +131420,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -130237,6 +131453,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -130422,6 +131639,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -130827,6 +132046,313 @@
     "/api/v1/seller/workspaces/{ws}/orders/{id}/proof": {
       "get": {
         "summary": "Download the delivery proof (audited)",
+        "description": "Requires: any seller workspace member.",
+        "tags": [
+          "Seller fulfilment and disputes"
+        ],
+        "security": [
+          {
+            "companySession": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "ws",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/seller/workspaces/{ws}/orders/{id}/dispatch-proof": {
+      "get": {
+        "summary": "Download the proof of dispatch (audited)",
         "description": "Requires: any seller workspace member.",
         "tags": [
           "Seller fulfilment and disputes"
@@ -134493,6 +136019,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -134695,6 +136267,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -134725,6 +136300,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -134910,6 +136486,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -135504,6 +137082,52 @@
                             "ar"
                           ]
                         },
+                        "delivery_method": {
+                          "type": "string",
+                          "enum": [
+                            "DELIVERY",
+                            "COLLECTION",
+                            "QUOTE_TERMS"
+                          ]
+                        },
+                        "collection": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "emirate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "days": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "instructions_en": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "instructions_ar": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "emirate",
+                            "days",
+                            "instructions_en",
+                            "instructions_ar"
+                          ]
+                        },
                         "seller_cancel": {
                           "type": [
                             "object",
@@ -135706,6 +137330,9 @@
                                 "has_proof": {
                                   "type": "boolean"
                                 },
+                                "has_dispatch_proof": {
+                                  "type": "boolean"
+                                },
                                 "items": {
                                   "type": "array",
                                   "items": {
@@ -135736,6 +137363,7 @@
                                 "delivered_at",
                                 "delivery_note",
                                 "has_proof",
+                                "has_dispatch_proof",
                                 "items"
                               ]
                             },
@@ -135921,6 +137549,8 @@
                         "tax_code",
                         "tax_provisional",
                         "return_policy",
+                        "delivery_method",
+                        "collection",
                         "seller_cancel",
                         "commission_fils",
                         "seller_payable_fils",
@@ -136222,6 +137852,313 @@
     "/api/v1/buyer/workspaces/{ws}/orders/{id}/proof": {
       "get": {
         "summary": "Download the delivery proof (audited)",
+        "description": "Requires: any buyer workspace member.",
+        "tags": [
+          "Buyer fulfilment and disputes"
+        ],
+        "security": [
+          {
+            "companySession": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "ws",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/buyer/workspaces/{ws}/orders/{id}/dispatch-proof": {
+      "get": {
+        "summary": "Download the proof of dispatch (audited)",
         "description": "Requires: any buyer workspace member.",
         "tags": [
           "Buyer fulfilment and disputes"
