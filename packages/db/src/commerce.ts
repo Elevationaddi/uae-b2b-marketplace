@@ -117,8 +117,15 @@ export interface PspAdapter {
  * The hosted page (web /sandbox-pay/:id) completes a session, which queues a signed webhook that
  * the worker posts to the API, so the real intake path is exercised end to end.
  */
-export function createSandboxPsp(prisma: PrismaClient, env: { NODE_ENV: string }): PspAdapter {
-  if (env.NODE_ENV === 'production')
+export function createSandboxPsp(
+  prisma: PrismaClient,
+  env: { NODE_ENV: string; appEnv?: string },
+): PspAdapter {
+  // Allowed in development, test and the protected staging profile (a production build that
+  // never moves real money); refused in production.
+  if (
+    (env.appEnv ?? (env.NODE_ENV === 'production' ? 'production' : 'development')) === 'production'
+  )
     throw new Error('The sandbox PSP is not allowed in production');
   return {
     provider: SANDBOX_PROVIDER,

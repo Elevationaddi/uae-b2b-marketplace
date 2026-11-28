@@ -10,9 +10,18 @@ import { z } from 'zod';
 
 export const NODE_ENVS = ['development', 'test', 'production'] as const;
 export type NodeEnv = (typeof NODE_ENVS)[number];
+/**
+ * Deployment profile, separate from NODE_ENV (Phase 8, C-20). `staging` runs production builds
+ * (NODE_ENV=production) on free services with fictional data only: sandbox payments, the mail
+ * catcher instead of sending, no public registration and a password in front of every page.
+ */
+export const APP_ENVS = ['development', 'test', 'staging', 'production'] as const;
+export type AppEnvName = (typeof APP_ENVS)[number];
+export const STORAGE_DRIVERS = ['s3', 'vercel-blob'] as const;
 
 export const PAYMENT_MODES = ['disabled', 'mock', 'live'] as const;
-export const EMAIL_PROVIDERS = ['disabled', 'smtp-dev', 'live'] as const;
+/** catcher: rendered emails are stored for 7 days and shown to admins, never sent (staging). */
+export const EMAIL_PROVIDERS = ['disabled', 'smtp-dev', 'catcher', 'live'] as const;
 export const LOG_LEVELS = ['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'] as const;
 export const LOCALES = ['en', 'ar'] as const;
 export const FILE_SCANNERS = ['disabled', 'sandbox-eicar', 'live'] as const;
@@ -36,6 +45,8 @@ const optionalString = z
 
 export const rawEnvSchema = z.object({
   NODE_ENV: z.enum(NODE_ENVS).default('development'),
+  /** Unset: production when NODE_ENV=production, otherwise development (or test). */
+  APP_ENV: z.enum(APP_ENVS).optional(),
   LOG_LEVEL: z.enum(LOG_LEVELS).default('info'),
   APP_LOCALE: z.enum(LOCALES).default('en'),
 
@@ -45,12 +56,25 @@ export const rawEnvSchema = z.object({
     .refine((v) => /^postgres(ql)?:\/\//.test(v), {
       message: 'must be a postgres:// or postgresql:// URL',
     }),
-  REDIS_URL: z
-    .string()
-    .url()
-    .refine((v) => /^rediss?:\/\//.test(v), {
-      message: 'must be a redis:// or rediss:// URL',
-    }),
+  /**
+   * Optional. Rate limits and one-time markers use Redis when set (for example Upstash), otherwise
+   * PostgreSQL. The worker never needs Redis (PostgreSQL scheduler, P8-12).
+   */
+  REDIS_URL: optionalString.pipe(
+    z
+      .string()
+      .url()
+      .refine((v) => /^rediss?:\/\//.test(v), { message: 'must be a redis:// or rediss:// URL' })
+      .optional(),
+  ),
+
+  /**
+   * Staging only (C-20): HTTP Basic password in front of every web and admin page, and the email
+   * domains allowed to register (fictional addresses, for example example.test). Both required.
+   */
+  STAGING_ACCESS_USER: z.string().trim().min(3).max(64).default('staging'),
+  STAGING_ACCESS_PASSWORD: optionalString,
+  STAGING_ALLOWED_EMAIL_DOMAINS: optionalString,
 
   /** Configurable working name until branding is approved (A06). */
   APP_NAME: z.string().trim().min(1).max(80).default('B2B Marketplace (working name)'),
@@ -74,6 +98,11 @@ export const rawEnvSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   WORKER_HEALTH_PORT: z.coerce.number().int().min(1).max(65535).default(4100),
 
+  /** s3: any S3-compatible store; vercel-blob: a private Vercel Blob store (C-21). */
+  STORAGE_DRIVER: z.enum(STORAGE_DRIVERS).default('s3'),
+  /** Vercel Blob read-write token (or use the project's OIDC token with BLOB_STORE_ID). */
+  BLOB_READ_WRITE_TOKEN: optionalString,
+  BLOB_STORE_ID: optionalString,
   STORAGE_ENDPOINT: optionalString,
   STORAGE_REGION: z.string().default('me-central-1'),
   STORAGE_BUCKET: optionalString,
@@ -172,7 +201,13 @@ export const rawEnvSchema = z.object({
 export type RawEnv = z.infer<typeof rawEnvSchema>;
 
 export interface AppEnv extends RawEnv {
+  /** Resolved deployment profile. */
+  appEnv: AppEnvName;
+  /** Production build hardening (NODE_ENV=production): secure cookies, no rate-limit scaling. */
   isProduction: boolean;
+  isStaging: boolean;
+  /** Lower-cased domains allowed to register in staging; empty elsewhere. */
+  stagingEmailDomains: string[];
   /** True when any explicitly labelled sandbox adapter is active. Shown in UI and logs. */
   sandbox: boolean;
 }
@@ -188,17 +223,79 @@ function isWeakSecret(value: string | undefined, minLength: number): boolean {
   return value === undefined || value.length < minLength || PLACEHOLDER_PATTERN.test(value);
 }
 
-/** Production-only rules. Each returns an issue string; empty array means compliant. */
-export function productionIssues(env: RawEnv): string[] {
+/** Object storage must be configured for deployed profiles (staging and production). */
+function storageIssues(env: RawEnv): string[] {
+  const issues: string[] = [];
+  if (env.STORAGE_DRIVER === 'vercel-blob') {
+    if (isWeakSecret(env.BLOB_READ_WRITE_TOKEN, 16) && !env.BLOB_STORE_ID)
+      issues.push('STORAGE_DRIVER=vercel-blob requires BLOB_READ_WRITE_TOKEN or BLOB_STORE_ID');
+    return issues;
+  }
+  for (const key of ['STORAGE_ENDPOINT', 'STORAGE_BUCKET'] as const) {
+    if (!env[key]) issues.push(`${key} is required`);
+  }
+  for (const key of ['STORAGE_ACCESS_KEY', 'STORAGE_SECRET_KEY'] as const) {
+    if (isWeakSecret(env[key], 8)) issues.push(`${key} is required and must not be a placeholder`);
+  }
+  return issues;
+}
+
+/** Secrets and origins shared by staging and production. */
+function deployedIssues(env: RawEnv): string[] {
   const issues: string[] = [];
   if (env.CRON_SECRET !== undefined && isWeakSecret(env.CRON_SECRET, 32)) {
-    issues.push('CRON_SECRET must be a random value of at least 32 characters in production');
+    issues.push('CRON_SECRET must be a random value of at least 32 characters');
   }
   if (isWeakSecret(env.SESSION_SECRET, 32)) {
-    issues.push(
-      'SESSION_SECRET must be at least 32 characters and not a placeholder in production',
-    );
+    issues.push('SESSION_SECRET must be at least 32 characters and not a placeholder');
   }
+  if (
+    env.MFA_ENCRYPTION_KEY === DEV_EXAMPLE_MFA_KEY ||
+    PLACEHOLDER_PATTERN.test(Buffer.from(env.MFA_ENCRYPTION_KEY, 'base64').toString('latin1'))
+  ) {
+    issues.push('MFA_ENCRYPTION_KEY must be a real random key');
+  }
+  try {
+    if (new URL(env.ADMIN_ORIGIN).host === new URL(env.WEB_ORIGIN).host) {
+      issues.push('ADMIN_ORIGIN must be a different host from WEB_ORIGIN (A03)');
+    }
+  } catch {
+    /* URL validity already checked by the schema */
+  }
+  for (const key of ['WEB_ORIGIN', 'ADMIN_ORIGIN', 'API_ORIGIN'] as const) {
+    if (!env[key].startsWith('https://')) issues.push(`${key} must use https`);
+  }
+  issues.push(...storageIssues(env));
+  return issues;
+}
+
+/**
+ * Staging rules (C-20, founder decisions of 28 Nov 2026): a production build that can never move
+ * real money, send email or accept real confidential documents, behind a password, with
+ * registration limited to fictional email domains.
+ */
+export function stagingIssues(env: RawEnv): string[] {
+  const issues = deployedIssues(env);
+  if (env.NODE_ENV !== 'production') issues.push('APP_ENV=staging requires NODE_ENV=production');
+  if (env.PAYMENT_MODE === 'live' || env.FEATURE_REAL_PAYMENTS)
+    issues.push('staging never uses live payments (PAYMENT_MODE must be mock or disabled)');
+  if (env.EMAIL_PROVIDER === 'live')
+    issues.push('staging never sends email: use EMAIL_PROVIDER=catcher or disabled');
+  if (env.EMAIL_PROVIDER === 'smtp-dev')
+    issues.push('EMAIL_PROVIDER=smtp-dev needs a local mail catcher; use catcher in staging');
+  if (isWeakSecret(env.STAGING_ACCESS_PASSWORD, 16))
+    issues.push('STAGING_ACCESS_PASSWORD (at least 16 characters) is required in staging');
+  if (!env.STAGING_ALLOWED_EMAIL_DOMAINS)
+    issues.push(
+      'STAGING_ALLOWED_EMAIL_DOMAINS is required in staging (fictional registration domains)',
+    );
+  if (!env.CRON_SECRET) issues.push('CRON_SECRET is required in staging (scheduled tasks)');
+  return issues;
+}
+
+/** Production-only rules. Each returns an issue string; empty array means compliant. */
+export function productionIssues(env: RawEnv): string[] {
+  const issues = deployedIssues(env).map((i) => `${i} (production)`);
   if (env.PAYMENT_MODE === 'mock') {
     issues.push('PAYMENT_MODE=mock is not allowed in production');
   }
@@ -216,20 +313,13 @@ export function productionIssues(env: RawEnv): string[] {
   if (env.TRADING_ENABLED && env.PAYMENT_MODE !== 'live') {
     issues.push('TRADING_ENABLED=true in production requires a live payment provider');
   }
-  if (env.EMAIL_PROVIDER === 'smtp-dev') {
-    issues.push('EMAIL_PROVIDER=smtp-dev (local mail catcher) is not allowed in production');
+  if (env.EMAIL_PROVIDER === 'smtp-dev' || env.EMAIL_PROVIDER === 'catcher') {
+    issues.push(`EMAIL_PROVIDER=${env.EMAIL_PROVIDER} (mail catcher) is not allowed in production`);
   }
   if (env.EMAIL_PROVIDER === 'live') {
     if (isWeakSecret(env.EMAIL_API_KEY, 8))
       issues.push('EMAIL_API_KEY is required for EMAIL_PROVIDER=live');
     if (!env.EMAIL_FROM) issues.push('EMAIL_FROM is required for EMAIL_PROVIDER=live');
-  }
-  for (const key of ['STORAGE_ENDPOINT', 'STORAGE_BUCKET'] as const) {
-    if (!env[key]) issues.push(`${key} is required in production`);
-  }
-  for (const key of ['STORAGE_ACCESS_KEY', 'STORAGE_SECRET_KEY'] as const) {
-    if (isWeakSecret(env[key], 8))
-      issues.push(`${key} is required and must not be a placeholder in production`);
   }
   if (env.EMAIL_PROVIDER !== 'live') {
     issues.push(
@@ -254,22 +344,6 @@ export function productionIssues(env: RawEnv): string[] {
   }
   if (env.FILE_SCANNER !== 'live') {
     issues.push('FILE_SCANNER=live is required in production (uploads must be malware scanned)');
-  }
-  if (
-    env.MFA_ENCRYPTION_KEY === DEV_EXAMPLE_MFA_KEY ||
-    PLACEHOLDER_PATTERN.test(Buffer.from(env.MFA_ENCRYPTION_KEY, 'base64').toString('latin1'))
-  ) {
-    issues.push('MFA_ENCRYPTION_KEY must be a real random key in production');
-  }
-  try {
-    if (new URL(env.ADMIN_ORIGIN).host === new URL(env.WEB_ORIGIN).host) {
-      issues.push('ADMIN_ORIGIN must be a different host from WEB_ORIGIN in production (A03)');
-    }
-  } catch {
-    /* URL validity already checked by the schema */
-  }
-  for (const key of ['WEB_ORIGIN', 'ADMIN_ORIGIN', 'API_ORIGIN'] as const) {
-    if (!env[key].startsWith('https://')) issues.push(`${key} must use https in production`);
   }
   return issues;
 }
@@ -308,17 +382,37 @@ export function parseEnv(source: Record<string, string | undefined>): AppEnv {
     );
   }
   const env = parsed.data;
-  const issues = [
-    ...commonIssues(env),
-    ...(env.NODE_ENV === 'production' ? productionIssues(env) : []),
-  ];
+  const appEnv: AppEnvName =
+    env.APP_ENV ??
+    (env.NODE_ENV === 'production'
+      ? 'production'
+      : env.NODE_ENV === 'test'
+        ? 'test'
+        : 'development');
+  const issues = [...commonIssues(env)];
+  if (appEnv === 'production') {
+    if (env.NODE_ENV !== 'production')
+      issues.push('APP_ENV=production requires NODE_ENV=production');
+    issues.push(...productionIssues(env));
+  } else if (appEnv === 'staging') issues.push(...stagingIssues(env));
   if (issues.length > 0) throw new EnvValidationError(issues);
   return {
     ...env,
+    appEnv,
     isProduction: env.NODE_ENV === 'production',
+    isStaging: appEnv === 'staging',
+    stagingEmailDomains:
+      appEnv === 'staging'
+        ? (env.STAGING_ALLOWED_EMAIL_DOMAINS ?? '')
+            .split(',')
+            .map((d) => d.trim().toLowerCase())
+            .filter(Boolean)
+        : [],
     sandbox:
+      appEnv === 'staging' ||
       env.PAYMENT_MODE === 'mock' ||
       env.EMAIL_PROVIDER === 'smtp-dev' ||
+      env.EMAIL_PROVIDER === 'catcher' ||
       env.FILE_SCANNER === 'sandbox-eicar',
   };
 }
@@ -337,8 +431,10 @@ export function describeEnv(env: AppEnv): Record<string, string | number | boole
   };
   return {
     NODE_ENV: env.NODE_ENV,
+    APP_ENV: env.appEnv,
+    STORAGE_DRIVER: env.STORAGE_DRIVER,
     DATABASE_URL: stripCredentials(env.DATABASE_URL),
-    REDIS_URL: stripCredentials(env.REDIS_URL),
+    REDIS_URL: env.REDIS_URL ? stripCredentials(env.REDIS_URL) : 'unset (PostgreSQL rate limits)',
     PAYMENT_MODE: env.PAYMENT_MODE,
     RESERVATION_MINUTES: env.RESERVATION_MINUTES,
     EMAIL_PROVIDER: env.EMAIL_PROVIDER,

@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
 import type { PrismaClient, Tx } from '@app/db';
-import Redis from 'ioredis';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { randomInt } from 'node:crypto';
 import { decryptSecret, encryptSecret, sha256 } from '../common/crypto';
-import { APP_ENV, PRISMA, REDIS } from '../infra/tokens';
+import { KvStore } from '../common/kv-store';
+import { APP_ENV, PRISMA } from '../infra/tokens';
 
 // RFC 6238 TOTP via otplib: SHA-1, 6 digits, 30 s step, +/-1 step tolerance for clock drift.
 authenticator.options = { window: 1 };
@@ -33,7 +33,7 @@ export class MfaService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(APP_ENV) private readonly env: AppEnv,
-    @Inject(REDIS) private readonly redis: Redis,
+    private readonly kv: KvStore,
   ) {}
 
   async startEnrolment(
@@ -59,8 +59,7 @@ export class MfaService {
     if (!secretEnc) return false;
     const secret = decryptSecret(secretEnc, this.env.MFA_ENCRYPTION_KEY);
     if (!authenticator.check(code, secret)) return false;
-    const fresh = await this.redis.set(`totp-used:${userId}:${code}`, '1', 'EX', 120, 'NX');
-    return fresh === 'OK';
+    return this.kv.setOnce(`totp-used:${userId}:${code}`, 120);
   }
 
   async issueRecoveryCodes(tx: Tx, userId: string): Promise<string[]> {

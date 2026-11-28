@@ -7,13 +7,22 @@ import {
 } from '@aws-sdk/client-s3';
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
-import type { Readable } from 'node:stream';
+import { get as blobGet, put as blobPut } from '@vercel/blob';
+import { Readable } from 'node:stream';
+import type { ReadableStream as WebReadableStream } from 'node:stream/web';
 import { APP_ENV } from '../infra/tokens';
 
 /** 'private' = verification documents; 'media' = marketplace images (separate bucket). */
 export type StorageArea = 'private' | 'media';
 
-/** Private S3-compatible object storage. Objects are never publicly addressable. */
+/**
+ * Private object storage. Objects are never publicly addressable: every download goes through an
+ * API route that checks permissions first.
+ *
+ * - `s3`: any S3-compatible store (local MinIO in development).
+ * - `vercel-blob` (C-21): a **private** Vercel Blob store. Reads need the store token, so blob URLs
+ *   are useless without the API. Areas become path prefixes (`private/`, `media/`) in one store.
+ */
 @Injectable()
 export class StorageService implements OnModuleInit {
   private readonly logger = new Logger('StorageService');
@@ -39,13 +48,27 @@ export class StorageService implements OnModuleInit {
         : null;
   }
 
+  private get blob(): boolean {
+    return this.env.STORAGE_DRIVER === 'vercel-blob';
+  }
+
+  private blobOptions() {
+    return {
+      access: 'private' as const,
+      ...(this.env.BLOB_READ_WRITE_TOKEN ? { token: this.env.BLOB_READ_WRITE_TOKEN } : {}),
+      ...(this.env.BLOB_STORE_ID ? { storeId: this.env.BLOB_STORE_ID } : {}),
+    };
+  }
+
   get configured(): boolean {
-    return this.client !== null;
+    return this.blob
+      ? !!(this.env.BLOB_READ_WRITE_TOKEN || this.env.BLOB_STORE_ID)
+      : this.client !== null;
   }
 
   async onModuleInit(): Promise<void> {
     // Local development convenience only; production buckets are provisioned with infrastructure.
-    if (!this.client || this.env.isProduction) return;
+    if (this.blob || !this.client || this.env.isProduction) return;
     for (const bucket of [this.bucket, this.mediaBucket]) {
       try {
         await this.client.send(new HeadBucketCommand({ Bucket: bucket }));
@@ -76,6 +99,16 @@ export class StorageService implements OnModuleInit {
     sha256: string,
     area: StorageArea = 'private',
   ): Promise<void> {
+    if (this.blob) {
+      await blobPut(`${area}/${key}`, body, {
+        ...this.blobOptions(),
+        contentType: mime,
+        // Keys are random and never reused; refuse to overwrite rather than replace silently.
+        addRandomSuffix: false,
+        allowOverwrite: false,
+      });
+      return;
+    }
     await this.require().send(
       new PutObjectCommand({
         Bucket: this.bucketFor(area),
@@ -88,6 +121,11 @@ export class StorageService implements OnModuleInit {
   }
 
   async get(key: string, area: StorageArea = 'private'): Promise<Readable> {
+    if (this.blob) {
+      const r = await blobGet(`${area}/${key}`, { ...this.blobOptions(), useCache: false });
+      if (!r || r.statusCode !== 200 || !r.stream) throw new Error('object not found');
+      return Readable.fromWeb(r.stream as unknown as WebReadableStream<Uint8Array>);
+    }
     const res = await this.require().send(
       new GetObjectCommand({ Bucket: this.bucketFor(area), Key: key }),
     );

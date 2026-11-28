@@ -1,11 +1,30 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { buildCsp, createNonce } from './lib/csp';
 import { hostOf, routeForHost } from './lib/hosts';
+import { stagingAuthorized, stagingExempt, stagingProtected } from './lib/staging-auth';
 
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? 'http://localhost:3000';
 const ADMIN_ORIGIN = process.env.ADMIN_ORIGIN ?? 'http://admin.localhost:3000';
 
 export function middleware(req: NextRequest) {
+  if (
+    stagingProtected(process.env) &&
+    !stagingExempt(req.nextUrl.pathname) &&
+    !stagingAuthorized(
+      req.headers.get('authorization'),
+      process.env.STAGING_ACCESS_USER ?? 'staging',
+      process.env.STAGING_ACCESS_PASSWORD,
+    )
+  ) {
+    return new NextResponse('Staging access requires a password.', {
+      status: 401,
+      headers: {
+        'content-type': 'text/plain',
+        'www-authenticate': 'Basic realm="Staging", charset="UTF-8"',
+        'cache-control': 'no-store',
+      },
+    });
+  }
   const host = req.headers.get('host') ?? '';
   const decision = routeForHost(
     host,

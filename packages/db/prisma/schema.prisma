@@ -6,7 +6,9 @@
 // RESTRICT on historical foreign keys.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  /// native for local and CI; rhel-openssl-3.0.x for Vercel Functions (Node.js on Amazon Linux 2023).
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -2094,4 +2096,28 @@ model BackgroundTask {
 
   @@index([nextRunAt])
   @@map("background_tasks")
+}
+
+/// Rate-limit counters and one-time markers when no Redis is configured (Phase 8, C-20).
+model RateLimitBucket {
+  key       String   @id
+  points    Int
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}
+
+/// Staging mail catcher (EMAIL_PROVIDER=catcher): rendered emails kept 7 days, never sent.
+model CaughtEmail {
+  id        String   @id @default(uuid()) @db.Uuid
+  toAddress String   @map("to_address")
+  subject   String
+  body      String
+  template  String
+  locale    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@map("caught_emails")
 }
