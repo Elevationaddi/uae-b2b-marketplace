@@ -1,8 +1,4 @@
 # Infrastructure
 
-Phase 0 provides local development services only (`docker-compose.yml` at the repo root):
-PostgreSQL 16, Redis 7, SeaweedFS (S3-compatible storage) and Mailpit (mail catcher).
-
-Production hosting region, managed services, backups, secret manager and deployment
-are undecided (docs/00-decisions.md D12) and belong to Phase 7. Nothing here is a
-production deployment.
+- `docker-compose.yml` (repo root): local development services only: PostgreSQL 16, Redis 7, SeaweedFS (S3-compatible storage) and Mailpit (mail catcher).
+- `infra/azure`: Terraform for Azure UAE North (Phase 8A, D12). **Written and validated only. Nothing has been provisioned.** See `infra/azure/README.md` and `docs/phase-8/`.

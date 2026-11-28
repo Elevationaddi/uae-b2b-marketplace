@@ -1,5 +1,5 @@
 # Decision register
-Status: proposed defaults are authorized only for local development; founder approval required for production commercial rules. No brand name has been assumed.
+Status: proposed defaults are authorized only for local development; founder approval required for production commercial rules. No brand name has been assumed. On 28 November 2026 the founder decided D03–D09, D11, D12 and D15 subject to the conditions recorded in "Founder decisions of 28 November 2026" at the end of this file; those decisions override the development baselines below.
 
 | ID | Topic | Development baseline | Production gate |
 |---|---|---|---|
@@ -48,7 +48,7 @@ Approved by the founder (CEO) on 28 November 2026 (27 November UTC), in the proj
 | A14 | Infrastructure: prioritise a UAE region for the production database, file storage and backups; stay provider-agnostic during development; keep the local sandbox email and malware-scanning adapters; enable no live external services. | Founder, 2026-11-28 | Data residency; avoid premature lock-in | 13-roadmap, 11-integrations | None in Phase 2 |
 | A15 | Branding and legal: the product name stays configurable (A06); legal agreements and production policies remain pending. | Founder, 2026-11-28 | Branding and legal review not complete | 05-ui, 00-decisions D15 | None |
 
-Not approved by these decisions (still open): live PSP, production email provider, tax/invoice issuer (D06), hosting region (D12), legal review (D15) and all other production gates.
+Not approved by these decisions (still open at the time): live PSP, production email provider, tax/invoice issuer (D06), hosting region (D12), legal review (D15) and all other production gates. Most of these were decided on 28 November 2026; see "Founder decisions of 28 November 2026" below.
 
 ## Phase 3 provisional decisions (pending founder confirmation)
 The founder's standing instruction (27 November 2026 UTC) is to continue every phase without per-phase approval. The rules below were needed to build Phase 3 (RFQs and quotes); none was approved by the founder. They are implemented as configuration or isolated rules so they can change without data loss. Status: PENDING FOUNDER.
@@ -100,3 +100,74 @@ Built under the founder's standing instruction to continue without per-phase app
 | P6-4 | Exports: CSV only, each with a reason and a fresh TOTP code (step-up). FINANCE and FINANCE_APPROVER may export orders, refunds, payouts and all disputes; SUPPORT may export only disputes and tickets assigned to them; nobody exports all support tickets; COMPLIANCE and SUPER_ADMIN cannot export. Denied attempts are audited (T41). Files are kept 24 hours, downloadable only by their creator, then the content is deleted and the audit record kept. Up to 366 days and 50,000 rows per export. Amounts are AED decimals derived from integer fils; times are UTC ISO-8601. | Exports are the main bulk data-exfiltration path; keep them narrow, attributable and short-lived | 04-admin, 08-finance, 10-security | `export_jobs`; `ExportService`; `export.cleanup` job |
 | P6-5 | Operations overview: queue counts for every admin; commerce figures (paid orders, gross value, refunds, net, platform fees, owed to sellers, paid out) only for finance roles, computed live from orders, refunds, payouts and the ledger, and labelled as sandbox data while `PAYMENT_MODE` is not `live`. Default period: last 30 Dubai days. | No hardcoded figures; finance data stays with finance | 04-admin, 08-finance | `GET /admin/operations/overview` |
 | P6-6 | Marketing email is opt-in (default off) and separate from activity emails; opting in records the time, opting out clears it. Order, payment, dispute, support and security notices always appear in-app and support notices are always emailed. | UAE PDPL-style consent; critical notices cannot be switched off (docs/11-integrations.md) | 02-buyer, 11-integrations | `notification_preferences.email_marketing`, `marketing_consent_at` |
+
+## Founder decisions of 28 November 2026 (production architecture and commercial model)
+**Source:** founder (CEO) in the project thread, 2026-11-28 07:52 UTC.
+
+**What was accepted:** Phases 0–7 are accepted as complete within the sandbox development scope.
+
+**What is authorised:** Phase 8 preparation and staging development only, starting with 8A.
+
+**What is not authorised without separate approval:**
+- activating paid services or incurring infrastructure charges;
+- connecting live payments or using production credentials;
+- public registration or public launch.
+
+The application stays in sandbox mode.
+
+Where a decision below needs provider, legal or tax confirmation, the production gate stays open until that confirmation is recorded. Conflicts with the current code are listed in `docs/phase-8/contradictions.md` (C-01 to C-24). None of them has been changed silently.
+
+| ID | Topic | Decision | Conditions / remaining gate | Affected docs | Implementation impact |
+|---|---|---|---|---|---|
+| F01 (D05) | Payment provider | **Stripe Connect preferred**; Mamo as alternative. Requirements: AED primary currency, cards, Apple Pay, corporate bank transfer where approved, provider-managed seller onboarding and payout account verification, automatic commission, weekly payouts after funds are eligible, eligibility after the 14-day dispute window, two finance approvers, no payout with an unresolved dispute, compliance restriction or insufficient available balance, full and partial refunds, chargebacks, reconciliation, signed webhooks, idempotent processing, auditable settlement records. Never call it escrow without provider and legal approval. Never hold or distribute customer funds through the corporate bank account. | Entity eligibility, settlement model, restrictions, payout timing, chargeback liability, onboarding, fees and funds flows confirmed in writing (`docs/phase-8/payment-providers.md`) | 08-finance, 11-integrations | 8C. C-01, C-04, C-23, C-24. |
+| F02 (D12) | Hosting | **Microsoft Azure UAE North** preferred. Evaluate Container Apps, PostgreSQL flexible server, Blob Storage, Key Vault and Azure Monitor. Infrastructure as code. Separate staging and production. Provider-independent application where practical. RPO 24 h / RTO 4 h proposed. Evaluate stronger objectives and continuous PITR for the financial database. Itemized monthly cost estimate before provisioning. | Regional availability, service health, compatibility and costs verified before provisioning. **Provisioning needs separate approval.** | 13-roadmap, 10-security | 8A delivered (`docs/phase-8`, `infra/azure`). Recommended: database RPO ≤ 15 min through PITR. C-20, C-21. |
+| F03 | Transactional email | **Resend** preferred. Bilingual (EN/AR) templates: registration and verification, password reset, company verification submission, approval and rejection, licence expiry, team invitations, RFQs, quotations and counteroffers, order confirmation, payment confirmation, shipping and delivery, disputes, refunds, payouts, support tickets, security alerts. SPF, DKIM and DMARC instructions. Sandbox email until the production domain and credentials are supplied. | Approval of Resend's data-processing arrangements | 11-integrations | 8D |
+| F04 (D03, D04) | Commercial model | At launch, these are all **free** with no mandatory subscriptions: buyer registration and access, supplier and manufacturer registration, standard storefronts and listings, and RFQ access. **Supplier commission is 10% of merchandise value, excluding VAT and delivery.** The rate is configurable through a restricted admin setting. The policy and rate are recorded against each order. Commission is reversed proportionately on applicable merchandise refunds. No subscription billing at launch. The architecture stays ready for premium memberships, sponsored listings, featured suppliers, enterprise accounts and advanced analytics. | Contract terms in the supplier agreement (legal) | 08-finance, 03-seller, 04-admin | 8E. C-05, C-06. `FEATURE_SUBSCRIPTIONS` stays false. |
+| F05 (D06) | Tax and invoices | Prepare to operate as a **disclosed marketplace intermediary**. Suppliers issue merchandise invoices to buyers. The platform invoices suppliers for commission and fees. VAT treatment depends on the supply and the registration status. The platform never charges VAT for an unregistered supplier as if it were registered. Required features: invoice downloads, credit notes, statements, tax and invoice snapshots, supplier TRNs. No single-VAT-treatment assumption. | **Professional UAE tax and legal approval before activation** (tax calculations, invoice responsibility, platform VAT registration, e-invoicing, record retention) | 08-finance | 8E. C-08, C-09. |
+| F06 (D07, D08) | Delivery and returns | Suppliers arrange fulfilment at launch. Supported: supplier delivery, third-party courier, buyer collection, custom manufacturing terms, order-specific delivery charges, tracking, proof of dispatch and proof of delivery. Delivery charges and estimated fulfilment periods are disclosed before payment. **Provisional returns:** incorrect, damaged and defective goods are eligible for dispute review. Change-of-mind returns follow the seller's disclosed policy. Customised and made-to-order goods are generally excluded, subject to law. Supplier cancellation of an unfulfilled order requires the appropriate refund. Partial refunds are supported. Refunds go to the original payment method where possible. | Legal approval of the policies before production | 09-workflows, 03-seller | 8E. C-07, C-10, C-11. |
+| F07 (D11) | Orders and disputes | 15-minute stock reservation **confirmed**. 72-hour quote payment deadline **confirmed**, subject to quote expiry and inventory. Dispute window **14 days after verified delivery**; buyer confirmation does not waive it. Orders auto-complete after the window if four conditions hold: delivery evidence exists, there are no open disputes, there are no fraud or compliance holds, and there are no pending refund or payment investigations. Disputed orders never become payout-eligible automatically. Payout eligibility is separate from completion. Payouts are weekly with dual finance approval and provider reconciliation. | none | 09-workflows, 08-finance | 8C/8E. C-01 to C-04. |
+| F08 | Reviews | Public reviews show an anonymised **"verified business buyer"** label. Authorised admins can see the reviewer for moderation and disputes. Only eligible buyers with a completed order may review. Prevent duplicates and manipulation. | none | 01-product, 04-admin | C-12 (label copy) |
+| F09 | RFQs and quotes | Default quote validity **7 days**, configurable by the supplier. Buyers choose public RFQs (visible to eligible verified suppliers in relevant categories) or private RFQs (invited suppliers only). Quotes stay confidential between the buyer and each supplier. Messaging, counteroffers, revisions and auditable acceptance are supported. | none | 02-buyer, 03-seller | C-13, C-14 |
+| F10 | Support and exports | Resolved tickets **auto-close after 7 days** without a customer response. Customers may reopen eligible tickets. At most **10 open tickets per company**, with admin exceptions. Urgent financial, security or compliance cases are never blocked. Export rights: finance exports financial and transactional records; support exports support records only; compliance exports verification and compliance records only. Every sensitive export needs a permission check, MFA step-up, scope validation and audit. Never export credentials, secrets, unnecessary identity documents or unrelated personal data. | none | 04-admin, 10-security | 8E. C-16 to C-18. |
+| F11 (D09, D15) | Data retention and legal | Draft for review by a qualified UAE lawyer and tax adviser: terms and conditions, privacy policy, buyer agreement, supplier and manufacturer agreement, commission and fee policy, payment and settlement policy, delivery and fulfilment policy, returns and refunds policy, dispute resolution policy, prohibited and restricted products policy, data retention and deletion policy, cookie policy. Retention stays configurable. No irreversible deletion before legal approval. Required workflows: account closure, data access requests, export requests, deletion requests and legal hold. | Lawyer and tax adviser review | 10-security, 11-integrations | 8E/8F. C-19. |
+| F12 | Production security | Before launch: nonce CSP, vitest upgrade, production malware scanning, secret management, HTTPS/TLS, private database and storage, production rate limiting, WAF, monitoring and alerting, payment webhook security, session review, cross-tenant review, admin access review, ledger reconciliation tests, backup and restore tests, dependency and container scanning, **independent penetration test on staging**, manual accessibility testing, native Arabic review, staff UAT. Automated testing or internal review is never presented as certification. | Independent verification where marked in `docs/phase-8/production-readiness-checklist.md` | 10-security, 12-testing | 8F |
+| F13 | Phase 8 sequence | 8A infrastructure, IaC and costs; 8B staging, monitoring, backups and DR; 8C payments with test credentials; 8D email and malware scanning; 8E tax, invoicing, commercial policy and admin configuration; 8F security remediation and testing; 8G pilot readiness; 8H launch, subject to explicit founder approval. **Start with 8A only.** | Each later workstream needs its own go-ahead where it incurs cost or uses credentials | 13-roadmap | `docs/phase-8/README.md` |
+
+### Status of the provisional rules after these decisions
+| Rule | Status |
+|---|---|
+| P3-1 (RFQ audience) | **Confirmed** by F09 |
+| P3-2 (limits) | Kept. Quote validity default becomes 7 days (F09, C-13); 90-day maximum kept. |
+| P3-3 (quote tax codes) | **Superseded** by F05 (supplier VAT status, C-08) once tax is approved |
+| P3-4 (deadline behaviour) | Kept (not addressed) |
+| P3-5 (award, A05 window) | **Confirmed** by F07 |
+| P3-6 (messaging) | Kept. Structured counteroffers to add (F09, C-14). |
+| P3-7 (admin oversight, quote confidentiality) | **Confirmed** by F09 |
+| P4-1 (flat delivery fee) | **Superseded** by F06 (order-specific charges, collection, courier, C-10) |
+| P4-2 (catalogue tax) | **Superseded** by F05 (C-08) |
+| P4-3 (commission 10% on merchandise) | **Confirmed** rate and base (F04). Must move to an admin setting with policy snapshot (C-05). |
+| P4-4 (15-minute reservation, 72 h quote window) | **Confirmed** by F07 |
+| P4-5 (one payment, one order per seller) | Kept, subject to provider support (C-24) |
+| P4-6, P4-7 | Kept (not addressed) |
+| P5-1 (one shipment, optional proof) | **Superseded** by F06 (proof of dispatch and delivery, C-10) |
+| P5-2 (completion only on buyer confirmation) | **Superseded** by F07 (auto-completion with holds, C-03) |
+| P5-3 (dispute window from confirmation) | **Superseded** by F07 (14 days from verified delivery, C-02) |
+| P5-4 (refunds, dual control) | Dual control **confirmed**. Commission reversal changes to merchandise-only (F04, C-06). |
+| P5-5 (manual payouts) | **Superseded** by F01/F07 (weekly, eligibility after the window, balance check, C-01, C-04) |
+| P5-6 (reviews) | **Confirmed**, with the label changed to "verified business buyer" (F08, C-12) |
+| P5-7 (seller finance view) | Kept |
+| P6-1 (20 tickets per workspace) | **Superseded** by F10 (10 per company, exceptions, urgent bypass, C-17) |
+| P6-2 (no auto-close) | **Superseded** by F10 (7-day auto-close, C-16) |
+| P6-3 (limited order data for support) | Kept |
+| P6-4 (export rights) | **Superseded** in part by F10 (compliance exports, C-18). Step-up, audit and 24 h retention kept. |
+| P6-5 (operations overview) | Kept |
+| P6-6 (marketing opt-in) | Kept |
+
+### Still open
+- D01 (mobile launch scope).
+- D02 category-specific documentation rules.
+- D10 (procurement policy and spend limits).
+- D13 (milestone payments).
+- D14 final restricted-product policy.
+- Every confirmation listed in the "Conditions" column above.
+- **Founder approval to provision staging** (cost) and, later, production.
