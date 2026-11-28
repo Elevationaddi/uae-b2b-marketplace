@@ -127,6 +127,9 @@ enum FilePurpose {
   PRODUCT_IMAGE
   STOREFRONT_IMAGE
   CATEGORY_IMAGE
+  RFQ_ATTACHMENT
+  QUOTE_ATTACHMENT
+  MESSAGE_ATTACHMENT
 }
 
 enum CategoryRestriction {
@@ -357,11 +360,16 @@ model Workspace {
   createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime        @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Restrict)
-  memberships Membership[]
-  invitations Invitation[]
-  storefront  Storefront?
-  products    Product[]
+  company             Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  memberships         Membership[]
+  invitations         Invitation[]
+  storefront          Storefront?
+  products            Product[]
+  rfqs                Rfq[]          @relation("RfqBuyer")
+  rfqInvites          RfqInvite[]    @relation("RfqInviteSeller")
+  quotes              Quote[]        @relation("QuoteSeller")
+  buyerConversations  Conversation[] @relation("ConversationBuyer")
+  sellerConversations Conversation[] @relation("ConversationSeller")
 
   @@unique([companyId, kind])
   @@map("workspaces")
@@ -459,6 +467,9 @@ model File {
 
   ownerCompany          Company?               @relation(fields: [ownerCompanyId], references: [id], onDelete: Restrict)
   verificationDocuments VerificationDocument[]
+  rfqFiles              RfqFile[]              @relation("RfqFileFile")
+  quoteFiles            QuoteFile[]            @relation("QuoteFileFile")
+  message               Message?               @relation("MessageFile")
 
   @@index([ownerCompanyId])
   @@map("files")
@@ -564,6 +575,7 @@ model Category {
   children   Category[]          @relation("CategoryTree")
   attributes CategoryAttribute[]
   versions   ProductVersion[]
+  rfqs       Rfq[]
 
   @@index([parentId, position])
   @@map("categories")
@@ -931,4 +943,310 @@ model FeaturedListing {
 
   @@index([kind, removedAt, position])
   @@map("featured_listings")
+}
+
+// ---------------------------------------------------------------------------------------------
+// Phase 3: RFQs, versioned quotes and award, scoped conversations, notifications,
+// idempotency keys (docs/06-data.md, docs/09-workflows.md). Money: BigInt fils (AED).
+// ---------------------------------------------------------------------------------------------
+
+enum RfqState {
+  DRAFT
+  OPEN
+  AWARDED
+  CANCELLED
+  EXPIRED
+}
+
+enum RfqVisibility {
+  /// Every eligible seller in the RFQ's category may see and quote.
+  POOL
+  /// Only the invited sellers may see and quote.
+  INVITE
+}
+
+enum QuoteState {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum QuoteVersionState {
+  DRAFT
+  SUBMITTED
+  SUPERSEDED
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+  EXPIRED
+}
+
+/// Development tax codes (D06 open): rates come from configuration, not a tax determination.
+enum TaxCode {
+  STANDARD
+  ZERO_RATED
+  EXEMPT
+}
+
+model Rfq {
+  id                     String        @id @default(uuid()) @db.Uuid
+  /// Human reference, e.g. RFQ-000123 (sequence-backed).
+  number                 String        @unique
+  buyerWorkspaceId       String        @map("buyer_workspace_id") @db.Uuid
+  buyerCompanyId         String        @map("buyer_company_id") @db.Uuid
+  createdById            String        @map("created_by_id") @db.Uuid
+  title                  String
+  categoryId             String        @map("category_id") @db.Uuid
+  specs                  String
+  quantity               Int
+  unit                   QuantityUnit
+  targetDate             DateTime      @map("target_date") @db.Date
+  emirate                Emirate
+  budgetFils             BigInt?       @map("budget_fils")
+  /// Quote submission deadline.
+  deadline               DateTime      @db.Timestamptz(3)
+  visibility             RfqVisibility @default(POOL)
+  state                  RfqState      @default(DRAFT)
+  version                Int           @default(1)
+  publishedAt            DateTime?     @map("published_at") @db.Timestamptz(3)
+  closedAt               DateTime?     @map("closed_at") @db.Timestamptz(3)
+  cancelReason           String?       @map("cancel_reason")
+  /// Award guard (docs/06-data.md): at most one accepted quote version per RFQ, and per version.
+  acceptedQuoteVersionId String?       @unique @map("accepted_quote_version_id") @db.Uuid
+  awardedAt              DateTime?     @map("awarded_at") @db.Timestamptz(3)
+  /// Payment window after acceptance (A05, QUOTE_PAYMENT_WINDOW_HOURS). Orders: Phase 4.
+  paymentDueAt           DateTime?     @map("payment_due_at") @db.Timestamptz(3)
+  adminHiddenAt          DateTime?     @map("admin_hidden_at") @db.Timestamptz(3)
+  adminHiddenReason      String?       @map("admin_hidden_reason")
+  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  buyerWorkspace       Workspace      @relation("RfqBuyer", fields: [buyerWorkspaceId], references: [id], onDelete: Restrict)
+  category             Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  acceptedQuoteVersion QuoteVersion?  @relation("RfqAward", fields: [acceptedQuoteVersionId], references: [id], onDelete: Restrict)
+  invites              RfqInvite[]
+  files                RfqFile[]
+  quotes               Quote[]
+  events               RfqEvent[]
+  conversations        Conversation[]
+
+  @@index([buyerWorkspaceId, state])
+  @@index([categoryId, state, deadline])
+  @@index([state, deadline])
+  @@map("rfqs")
+}
+
+model RfqInvite {
+  id                String   @id @default(uuid()) @db.Uuid
+  rfqId             String   @map("rfq_id") @db.Uuid
+  sellerWorkspaceId String   @map("seller_workspace_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  rfq             Rfq       @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  sellerWorkspace Workspace @relation("RfqInviteSeller", fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+
+  @@unique([rfqId, sellerWorkspaceId])
+  @@index([sellerWorkspaceId])
+  @@map("rfq_invites")
+}
+
+model RfqFile {
+  id        String   @id @default(uuid()) @db.Uuid
+  rfqId     String   @map("rfq_id") @db.Uuid
+  fileId    String   @unique @map("file_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  rfq  Rfq  @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  file File @relation("RfqFileFile", fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@index([rfqId])
+  @@map("rfq_files")
+}
+
+model Quote {
+  id                String     @id @default(uuid()) @db.Uuid
+  rfqId             String     @map("rfq_id") @db.Uuid
+  sellerWorkspaceId String     @map("seller_workspace_id") @db.Uuid
+  sellerCompanyId   String     @map("seller_company_id") @db.Uuid
+  state             QuoteState @default(DRAFT)
+  /// Latest version (draft or submitted); older submitted versions are SUPERSEDED.
+  currentVersionId  String?    @unique @map("current_version_id") @db.Uuid
+  version           Int        @default(1)
+  createdById       String     @map("created_by_id") @db.Uuid
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  rfq             Rfq            @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  sellerWorkspace Workspace      @relation("QuoteSeller", fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+  currentVersion  QuoteVersion?  @relation("QuoteCurrent", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  versions        QuoteVersion[] @relation("QuoteVersions")
+  events          RfqEvent[]
+
+  @@unique([rfqId, sellerWorkspaceId])
+  @@index([sellerWorkspaceId, state])
+  @@map("quotes")
+}
+
+/// Immutable once SUBMITTED (enforced by trigger): only state transitions may change.
+model QuoteVersion {
+  id            String            @id @default(uuid()) @db.Uuid
+  quoteId       String            @map("quote_id") @db.Uuid
+  version       Int
+  quantity      Int
+  unit          QuantityUnit
+  unitPriceFils BigInt            @map("unit_price_fils")
+  subtotalFils  BigInt            @map("subtotal_fils")
+  shippingFils  BigInt            @map("shipping_fils")
+  taxCode       TaxCode           @map("tax_code")
+  /// Rate in basis points captured at submission from configuration.
+  taxBps        Int               @map("tax_bps")
+  taxFils       BigInt            @map("tax_fils")
+  totalFils     BigInt            @map("total_fils")
+  specs         String
+  /// Explicitly flagged deviations from the RFQ requirements.
+  deviations    String?
+  leadDays      Int               @map("lead_days")
+  deliveryDate  DateTime          @map("delivery_date") @db.Date
+  validUntil    DateTime          @map("valid_until") @db.Timestamptz(3)
+  terms         String?
+  state         QuoteVersionState @default(DRAFT)
+  submittedAt   DateTime?         @map("submitted_at") @db.Timestamptz(3)
+  createdById   String            @map("created_by_id") @db.Uuid
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  quote     Quote       @relation("QuoteVersions", fields: [quoteId], references: [id], onDelete: Restrict)
+  currentOf Quote?      @relation("QuoteCurrent")
+  awardOf   Rfq?        @relation("RfqAward")
+  files     QuoteFile[]
+
+  @@unique([quoteId, version])
+  @@map("quote_versions")
+}
+
+model QuoteFile {
+  id             String   @id @default(uuid()) @db.Uuid
+  quoteVersionId String   @map("quote_version_id") @db.Uuid
+  fileId         String   @map("file_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  quoteVersion QuoteVersion @relation(fields: [quoteVersionId], references: [id], onDelete: Restrict)
+  file         File         @relation("QuoteFileFile", fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@unique([quoteVersionId, fileId])
+  @@index([fileId])
+  @@map("quote_files")
+}
+
+/// Append-only RFQ/quote timeline. Seller-side readers only see their own quote's events.
+model RfqEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  rfqId          String   @map("rfq_id") @db.Uuid
+  quoteId        String?  @map("quote_id") @db.Uuid
+  quoteVersionId String?  @map("quote_version_id") @db.Uuid
+  kind           String
+  /// BUYER, SELLER, SYSTEM or ADMIN.
+  actorSide      String   @map("actor_side")
+  actorId        String?  @map("actor_id") @db.Uuid
+  reason         String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  rfq   Rfq    @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  quote Quote? @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+
+  @@index([rfqId, createdAt])
+  @@index([quoteId, createdAt])
+  @@map("rfq_events")
+}
+
+/// Buyer workspace <-> seller workspace, optionally about one RFQ (orders added in Phase 4).
+model Conversation {
+  id                String   @id @default(uuid()) @db.Uuid
+  buyerWorkspaceId  String   @map("buyer_workspace_id") @db.Uuid
+  sellerWorkspaceId String   @map("seller_workspace_id") @db.Uuid
+  rfqId             String?  @map("rfq_id") @db.Uuid
+  lastMessageAt     DateTime @default(now()) @map("last_message_at") @db.Timestamptz(3)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  buyerWorkspace  Workspace     @relation("ConversationBuyer", fields: [buyerWorkspaceId], references: [id], onDelete: Restrict)
+  sellerWorkspace Workspace     @relation("ConversationSeller", fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+  rfq             Rfq?          @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  messages        Message[]
+  receipts        ReadReceipt[]
+
+  @@index([buyerWorkspaceId, lastMessageAt])
+  @@index([sellerWorkspaceId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id                String   @id @default(uuid()) @db.Uuid
+  conversationId    String   @map("conversation_id") @db.Uuid
+  senderId          String   @map("sender_id") @db.Uuid
+  senderWorkspaceId String   @map("sender_workspace_id") @db.Uuid
+  body              String?
+  fileId            String?  @unique @map("file_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Restrict)
+  file         File?        @relation("MessageFile", fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model ReadReceipt {
+  id                String    @id @default(uuid()) @db.Uuid
+  conversationId    String    @map("conversation_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  lastReadMessageId String?   @map("last_read_message_id") @db.Uuid
+  lastReadAt        DateTime? @map("last_read_at") @db.Timestamptz(3)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("read_receipts")
+}
+
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  type      String
+  /// Display data only (ids, titles, references); never private documents or prices of others.
+  payload   Json
+  readAt    DateTime? @map("read_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+/// Email opt-ins per user. In-app notifications and critical notices cannot be turned off.
+model NotificationPreference {
+  userId        String   @id @map("user_id") @db.Uuid
+  emailRfqs     Boolean  @default(true) @map("email_rfqs")
+  emailQuotes   Boolean  @default(true) @map("email_quotes")
+  emailMessages Boolean  @default(false) @map("email_messages")
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("notification_preferences")
+}
+
+/// Idempotency-Key replay store for award/order/monetary POSTs (docs/07-api.md).
+model IdempotencyKey {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  key         String
+  route       String
+  requestHash String   @map("request_hash")
+  statusCode  Int      @map("status_code")
+  response    Json
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@unique([userId, key])
+  @@index([createdAt])
+  @@map("idempotency_keys")
 }

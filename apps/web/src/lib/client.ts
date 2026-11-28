@@ -60,6 +60,8 @@ export type RequestOptions = {
   form?: FormData;
   query?: Record<string, string | number | undefined | null>;
   signal?: AbortSignal;
+  /** Extra request headers (e.g. Idempotency-Key for award and payment calls). */
+  headers?: Record<string, string>;
 };
 
 function withQuery(path: string, query: RequestOptions['query']): string {
@@ -77,7 +79,7 @@ async function send<T>(
   retried: boolean,
 ): Promise<ApiResult<T>> {
   const method = opts.method ?? 'GET';
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = { Accept: 'application/json', ...(opts.headers ?? {}) };
   if (method !== 'GET') {
     const token = await csrfToken(retried);
     if (token) headers['X-CSRF-Token'] = token;

@@ -16,6 +16,7 @@ import * as companies from './companies';
 import { errorBodySchema, metaSchema } from './envelope';
 import { livenessSchema, readinessSchema } from './health';
 import { CATALOG_ROUTES } from './openapi-catalog';
+import { RFQ_ROUTES } from './openapi-rfq';
 import * as team from './team';
 
 extendZodWithOpenApi(z);
@@ -606,6 +607,7 @@ const ROUTES: Route[] = [
     errors: [404, 409, 422],
   },
   ...CATALOG_ROUTES,
+  ...RFQ_ROUTES,
 ];
 
 export const API_ROUTES = ROUTES.map((r) => ({ method: r.method, path: r.path }));
@@ -707,9 +709,9 @@ export function buildOpenApiDocument(): Record<string, unknown> {
     openapi: '3.1.0',
     info: {
       title: 'UAE B2B Marketplace API',
-      version: '1.0.0-phase2',
+      version: '1.0.0-phase3',
       description:
-        'Phases 1-2: identity, sessions, companies, verification, team, admin, marketplace, buyer lists, seller catalog, storefronts, inventory and catalog moderation. Money is integer fils (AED); timestamps are UTC ISO-8601. Successful responses use { data, meta }; errors use { error: { code, message_key, field_errors?, request_id } }. Cross-tenant resources return 404.',
+        'Phases 1-3: identity, sessions, companies, verification, team, admin, marketplace, buyer lists, seller catalog, storefronts, inventory, catalog moderation, RFQs, versioned quotes and award, messages and notifications. Money is integer fils (AED); timestamps are UTC ISO-8601. Successful responses use { data, meta }; errors use { error: { code, message_key, field_errors?, request_id } }. Cross-tenant resources return 404.',
     },
     servers: [{ url: '/' }],
   });

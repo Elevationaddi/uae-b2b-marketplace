@@ -1,5 +1,5 @@
 'use client';
-import type { MeResponse } from '@app/contracts';
+import type { MeResponse, UnreadCounts } from '@app/contracts';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -147,13 +147,22 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
   const ws = session?.workspace ?? null;
   const verified = session?.me.user.email_verified ?? false;
 
-  const nav = [
+  const unread = useUnread(!!session && verified);
+  const nav: {
+    href: string;
+    label: string;
+    icon: string;
+    show: boolean;
+    desktopOnly?: boolean;
+    badge?: number;
+  }[] = [
     { href: `/${locale}/app`, label: t('nav.home'), icon: '⌂', show: true },
     {
       href: ws ? `/${locale}/app/company/${ws.company.id}` : '',
       label: t('nav.company'),
       icon: '▣',
       show: !!ws && verified,
+      desktopOnly: true,
     },
     {
       href: ws ? `/${locale}/app/team/${ws.id}` : '',
@@ -162,10 +171,30 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
       show: !!ws && verified,
     },
     {
+      href: ws ? `/${locale}/app/buyer/${ws.id}/rfqs` : '',
+      label: t('buyer.nav.rfqs'),
+      icon: '✎',
+      show: !!ws && verified && ws.kind === 'BUYER',
+    },
+    {
       href: ws ? `/${locale}/app/seller/${ws.id}` : '',
       label: t('seller.title'),
       icon: '▤',
       show: !!ws && verified && ws.kind === 'SELLER',
+    },
+    {
+      href: ws ? `/${locale}/app/messages/${ws.id}` : '',
+      label: t('nav.messages'),
+      icon: '✉',
+      show: !!ws && verified && ws.role !== 'VIEWER',
+      badge: unread?.messages,
+    },
+    {
+      href: `/${locale}/app/notifications`,
+      label: t('nav.notifications'),
+      icon: '◉',
+      show: !!session && verified,
+      badge: unread?.notifications,
     },
     { href: `/${locale}`, label: t('mkt.title_short'), icon: '⌕', show: !!session },
     { href: `/${locale}/app/settings`, label: t('nav.settings'), icon: '⚙', show: !!session },
@@ -195,6 +224,7 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
             {nav.map((n) => (
               <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? 'page' : undefined}>
                 {n.label}
+                <Badge n={n.badge} />
               </Link>
             ))}
           </nav>
@@ -243,14 +273,40 @@ function Frame({ session, children }: { session?: SessionValue; children: ReactN
       </main>
       {session ? (
         <nav className="bottom-nav" aria-label={t('nav.main')}>
-          {nav.map((n) => (
-            <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? 'page' : undefined}>
-              <span aria-hidden="true">{n.icon}</span>
-              <span>{n.label}</span>
-            </Link>
-          ))}
+          {nav
+            .filter((n) => !n.desktopOnly)
+            .map((n) => (
+              <Link key={n.href} href={n.href} aria-current={isActive(n.href) ? 'page' : undefined}>
+                <span aria-hidden="true">{n.icon}</span>
+                <span>
+                  {n.label}
+                  <Badge n={n.badge} />
+                </span>
+              </Link>
+            ))}
         </nav>
       ) : null}
     </>
+  );
+}
+
+/** Unread notification and message counts for the header, refreshed every minute. */
+function useUnread(enabled: boolean): UnreadCounts | null {
+  const { state, reload } = useResource<UnreadCounts>(enabled ? '/notifications/unread' : null);
+  useEffect(() => {
+    if (!enabled) return;
+    const id = window.setInterval(reload, 60_000);
+    return () => window.clearInterval(id);
+  }, [enabled, reload]);
+  return state.status === 'ready' ? state.data : null;
+}
+
+function Badge({ n }: { n?: number }) {
+  const t = useT();
+  if (!n) return null;
+  return (
+    <span className="nav-badge" aria-label={t('nav.unread', { count: n })}>
+      {n > 99 ? '99+' : n}
+    </span>
   );
 }

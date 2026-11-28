@@ -3,7 +3,13 @@ import type { AppEnv } from '@app/config';
 import { createPrismaClient, pingDatabase, type PrismaClient } from '@app/db';
 import { Queue, Worker, type ConnectionOptions } from 'bullmq';
 import pino, { type Logger } from 'pino';
-import { createMailer, dispatchOutbox, runLicenceExpiry, runRetentionReport } from './jobs';
+import {
+  createMailer,
+  dispatchOutbox,
+  runLicenceExpiry,
+  runRetentionReport,
+  runRfqExpiry,
+} from './jobs';
 
 /**
  * Redis-backed background worker (docs/11-integrations.md).
@@ -14,6 +20,7 @@ import { createMailer, dispatchOutbox, runLicenceExpiry, runRetentionReport } fr
  * - licence.expiry: licence reminders and expiry restriction (hourly; idempotent).
  * - retention.report: daily report-only count of documents past the provisional retention
  *   schedule (A13); writes an audit event, deletes nothing.
+ * - rfq.expiry: expires lapsed quotes and RFQs past their deadline (every minute).
  * Reservation/RFQ expiry and reconciliation jobs arrive with their phases.
  */
 export const SYSTEM_QUEUE = 'system';
@@ -21,6 +28,7 @@ export const HEARTBEAT_JOB = 'system.heartbeat';
 export const OUTBOX_JOB = 'outbox.dispatch';
 export const LICENCE_JOB = 'licence.expiry';
 export const RETENTION_JOB = 'retention.report';
+export const RFQ_EXPIRY_JOB = 'rfq.expiry';
 const HEARTBEAT_EVERY_MS = 60_000;
 const HEARTBEAT_STALE_MS = 3 * HEARTBEAT_EVERY_MS;
 
@@ -85,6 +93,11 @@ export async function startWorker(
           log.info(res, 'retention report (no deletion)');
           return res;
         }
+        case RFQ_EXPIRY_JOB: {
+          const res = await runRfqExpiry(prisma);
+          if (res.quotes_expired || res.rfqs_expired) log.info(res, 'rfq expiry run');
+          return res;
+        }
         default:
           throw new Error(`No handler for job ${job.name}`);
       }
@@ -107,6 +120,11 @@ export async function startWorker(
     'retention-report',
     { every: 24 * 3600_000 },
     { name: RETENTION_JOB, opts: oneShot },
+  );
+  await queue.upsertJobScheduler(
+    'rfq-expiry',
+    { every: 60_000 },
+    { name: RFQ_EXPIRY_JOB, opts: oneShot },
   );
   // Run the licence check once at startup too, so a restart never delays restriction by an hour.
   await queue.add(LICENCE_JOB, {}, oneShot);

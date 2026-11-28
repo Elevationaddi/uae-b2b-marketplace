@@ -189,4 +189,14 @@ export const TEMPLATES: Record<EmailTemplate, { en: Render; ar: Render }> = {
       };
     },
   },
+  activity: {
+    en: (v, app) => ({
+      subject: `${app}: ${v.summary}`,
+      text: `${v.summary}\n\nSign in to see the details:\n${v.url}\n\nYou can change email notifications in your account settings.`,
+    }),
+    ar: (v, app) => ({
+      subject: `${app}: ${v.summary}`,
+      text: `${v.summary}\n\nسجّل الدخول للاطلاع على التفاصيل:\n${v.url}\n\nيمكنك تغيير إشعارات البريد الإلكتروني من إعدادات حسابك.`,
+    }),
+  },
 };

@@ -1617,3 +1617,158 @@ textarea {
 .row-child td:first-child {
   padding-inline-start: var(--space-6);
 }
+
+/* ------------------------------------------------------------ Phase 3: RFQs, quotes, messages */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.field-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: start;
+}
+.two-col {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  align-items: start;
+}
+.two-col > .card {
+  margin-block-start: var(--space-4);
+}
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+.row-actions .btn {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+}
+.file-list,
+.check-list,
+.conv-list,
+.notif-list,
+.chat-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-2) 0;
+}
+.file-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+}
+.check-list {
+  max-block-size: 260px;
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding-inline: var(--space-3);
+}
+.compare-quotes td,
+.compare-quotes th[scope='row'] {
+  white-space: nowrap;
+}
+.compare-quotes th[scope='row'] {
+  font-size: 1rem;
+  color: var(--color-text);
+  background: transparent;
+}
+.quote-detail {
+  border-inline-start: 4px solid var(--color-teal);
+}
+.nav-badge {
+  display: inline-block;
+  min-inline-size: 20px;
+  margin-inline-start: var(--space-1);
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-error);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
+.conv-list li,
+.notif-list li {
+  border-block-end: 1px solid var(--color-border);
+}
+.conv-list a {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3);
+  text-decoration: none;
+  color: var(--color-text);
+}
+.conv-list a:hover,
+.conv-list a:focus-visible {
+  background: var(--color-neutral-bg);
+}
+.conv-list li.unread a,
+.notif-list li.unread {
+  background: var(--color-info-bg);
+}
+.conv-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.conv-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.notif-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3);
+}
+.notif-list li > a,
+.notif-list li > span:not(.sr-only) {
+  flex: 1 1 260px;
+}
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.chat-msg {
+  max-inline-size: min(560px, 85%);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-neutral-bg);
+  align-self: flex-start;
+}
+.chat-msg.mine {
+  background: var(--color-info-bg);
+  align-self: flex-end;
+}
+.chat-msg p {
+  margin: 0;
+}
+.chat-meta {
+  margin-block-end: 2px;
+}
+/* The phone bottom bar scrolls sideways when a workspace has more destinations than fit. */
+@media (max-width: 720px) {
+  .bottom-nav {
+    grid-auto-columns: minmax(76px, 1fr);
+    overflow-x: auto;
+  }
+  .bottom-nav a > span:last-child {
+    white-space: nowrap;
+  }
+  .bottom-nav .nav-badge {
+    margin-inline-start: 2px;
+  }
+}

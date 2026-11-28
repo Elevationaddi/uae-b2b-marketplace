@@ -100,6 +100,12 @@ export const rawEnvSchema = z.object({
     .max(24 * 30)
     .default(72),
 
+  /**
+   * Rate for the STANDARD quote tax code, in basis points (D06 open: no assumed VAT treatment).
+   * Unset outside production uses the 500 bps sandbox fixture; production requires a value.
+   */
+  TAX_STANDARD_BPS: z.coerce.number().int().min(0).max(10000).optional(),
+
   PAYMENT_MODE: z.enum(PAYMENT_MODES).default('disabled'),
   PSP_API_KEY: optionalString,
   PSP_WEBHOOK_SECRET: optionalString,
@@ -183,6 +189,9 @@ export function productionIssues(env: RawEnv): string[] {
     issues.push(
       'EMAIL_PROVIDER=live is required in production (email verification is mandatory, A07)',
     );
+  }
+  if (env.TAX_STANDARD_BPS === undefined) {
+    issues.push('TAX_STANDARD_BPS must be set explicitly in production (tax rules, D06)');
   }
   if (env.FILE_SCANNER !== 'live') {
     issues.push('FILE_SCANNER=live is required in production (uploads must be malware scanned)');

@@ -59,6 +59,22 @@ function Supplier({ id }: { id: string }) {
               </div>
               <div className="sf-actions">
                 {s.viewer.tier === 'verified' ? (
+                  <>
+                    <Link
+                      className="btn btn-primary"
+                      href={`/${locale}/app/rfqs/new?${new URLSearchParams({ invite: s.id })}`}
+                    >
+                      {t('pd.request_quote')}
+                    </Link>
+                    <Link
+                      className="btn btn-secondary"
+                      href={`/${locale}/app/messages/new?${new URLSearchParams({ storefront: s.id })}`}
+                    >
+                      {t('messages.message_supplier')}
+                    </Link>
+                  </>
+                ) : null}
+                {s.viewer.tier === 'verified' ? (
                   <Button
                     type="button"
                     variant="secondary"

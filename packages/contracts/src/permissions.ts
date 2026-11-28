@@ -151,6 +151,8 @@ export const ADMIN_CAPABILITIES = [
   'admin.categories.manage',
   'admin.restricted.manage',
   'admin.featured.manage',
+  'admin.rfqs.read',
+  'admin.rfqs.moderate',
 ] as const;
 export type AdminCapability = (typeof ADMIN_CAPABILITIES)[number];
 
@@ -168,8 +170,10 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.categories.manage',
     'admin.restricted.manage',
     'admin.featured.manage',
+    'admin.rfqs.read',
+    'admin.rfqs.moderate',
   ],
-  SUPPORT: ['admin.companies.read', 'admin.users.read', 'admin.catalog.read'],
+  SUPPORT: ['admin.companies.read', 'admin.users.read', 'admin.catalog.read', 'admin.rfqs.read'],
   FINANCE: ['admin.companies.read'],
   FINANCE_APPROVER: ['admin.companies.read'],
   // Super-admin manages roles/config/system; no implicit compliance or financial approval.
@@ -182,6 +186,7 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.catalog.read',
     'admin.categories.manage',
     'admin.featured.manage',
+    'admin.rfqs.read',
   ],
 };
 

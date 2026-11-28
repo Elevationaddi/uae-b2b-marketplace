@@ -6,6 +6,7 @@ import {
   toIsoDate,
   writeAudit,
   type EmailPayload,
+  type Prisma,
   type PrismaClient,
 } from '@app/db';
 import nodemailer, { type Transporter } from 'nodemailer';
@@ -272,4 +273,148 @@ export async function runRetentionReport(
     details: report,
   });
   return report;
+}
+
+export type RfqExpiryResult = {
+  quotes_expired: number;
+  rfqs_expired: number;
+  idempotency_purged: number;
+};
+
+async function actingUsers(
+  tx: Prisma.TransactionClient,
+  workspaceId: string,
+  roles: ('OWNER' | 'PROCUREMENT' | 'SALES')[],
+): Promise<string[]> {
+  const rows = await tx.membership.findMany({
+    where: { workspaceId, status: 'ACTIVE', role: { in: roles }, user: { status: 'ACTIVE' } },
+    select: { userId: true },
+  });
+  return [...new Set(rows.map((r) => r.userId))];
+}
+
+/**
+ * RFQ and quote expiry (docs/09-workflows.md, docs/11-integrations.md; every minute):
+ * - a submitted quote whose validity has passed becomes EXPIRED (version too);
+ * - an OPEN RFQ past its deadline with no submitted, still-valid quote becomes EXPIRED. An RFQ
+ *   with valid quotes stays open for award until the last of them expires.
+ * Each item is handled in its own transaction under the RFQ row lock, so it never races an award.
+ * Also purges Idempotency-Key records older than 24 hours.
+ */
+export async function runRfqExpiry(
+  prisma: PrismaClient,
+  now = new Date(),
+): Promise<RfqExpiryResult> {
+  let quotesExpired = 0;
+  let rfqsExpired = 0;
+  const dueQuotes = await prisma.quote.findMany({
+    where: { state: 'SUBMITTED', currentVersion: { validUntil: { lte: now } } },
+    select: { id: true },
+    take: 500,
+  });
+  for (const { id } of dueQuotes) {
+    const done = await prisma.$transaction(async (tx) => {
+      const q = await tx.quote.findUniqueOrThrow({
+        where: { id },
+        include: { rfq: true, currentVersion: true },
+      });
+      await tx.$queryRaw`SELECT id FROM rfqs WHERE id = ${q.rfqId}::uuid FOR UPDATE`;
+      const cur = await tx.quote.findUniqueOrThrow({
+        where: { id },
+        include: { currentVersion: true },
+      });
+      if (cur.state !== 'SUBMITTED' || !cur.currentVersion || cur.currentVersion.validUntil > now)
+        return false;
+      await tx.quote.update({
+        where: { id },
+        data: { state: 'EXPIRED', version: { increment: 1 } },
+      });
+      await tx.quoteVersion.update({
+        where: { id: cur.currentVersion.id },
+        data: { state: 'EXPIRED' },
+      });
+      await tx.rfqEvent.create({
+        data: {
+          rfqId: q.rfqId,
+          quoteId: id,
+          quoteVersionId: cur.currentVersion.id,
+          kind: 'quote.expired',
+          actorSide: 'SYSTEM',
+        },
+      });
+      const payload = { rfq_id: q.rfqId, rfq_number: q.rfq.number, quote_id: id };
+      // Each side gets a link to its own view of the RFQ.
+      const sides: [string[], string][] = [
+        [
+          await actingUsers(tx, q.rfq.buyerWorkspaceId, ['OWNER', 'PROCUREMENT']),
+          `/app/buyer/${q.rfq.buyerWorkspaceId}/rfqs/${q.rfqId}`,
+        ],
+        [
+          await actingUsers(tx, q.sellerWorkspaceId, ['OWNER', 'SALES']),
+          `/app/seller/${q.sellerWorkspaceId}/rfqs/${q.rfqId}`,
+        ],
+      ];
+      for (const [users, path] of sides)
+        if (users.length)
+          await tx.notification.createMany({
+            data: users.map((userId) => ({
+              userId,
+              type: 'quote.expired',
+              payload: { ...payload, path },
+            })),
+          });
+      return true;
+    });
+    if (done) quotesExpired++;
+  }
+
+  const dueRfqs = await prisma.rfq.findMany({
+    where: {
+      state: 'OPEN',
+      deadline: { lte: now },
+      quotes: { none: { state: 'SUBMITTED', currentVersion: { validUntil: { gt: now } } } },
+    },
+    select: { id: true },
+    take: 500,
+  });
+  for (const { id } of dueRfqs) {
+    const done = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM rfqs WHERE id = ${id}::uuid FOR UPDATE`;
+      const r = await tx.rfq.findUniqueOrThrow({ where: { id } });
+      const live = await tx.quote.count({
+        where: { rfqId: id, state: 'SUBMITTED', currentVersion: { validUntil: { gt: now } } },
+      });
+      if (r.state !== 'OPEN' || r.deadline > now || live > 0) return false;
+      await tx.rfq.update({
+        where: { id },
+        data: { state: 'EXPIRED', closedAt: now, version: { increment: 1 } },
+      });
+      await tx.rfqEvent.create({ data: { rfqId: id, kind: 'rfq.expired', actorSide: 'SYSTEM' } });
+      const users = await actingUsers(tx, r.buyerWorkspaceId, ['OWNER', 'PROCUREMENT']);
+      if (users.length)
+        await tx.notification.createMany({
+          data: users.map((userId) => ({
+            userId,
+            type: 'rfq.expired',
+            payload: {
+              rfq_id: id,
+              rfq_number: r.number,
+              title: r.title,
+              path: `/app/buyer/${r.buyerWorkspaceId}/rfqs/${id}`,
+            },
+          })),
+        });
+      return true;
+    });
+    if (done) rfqsExpired++;
+  }
+
+  const purged = await prisma.idempotencyKey.deleteMany({
+    where: { createdAt: { lt: new Date(now.getTime() - 24 * 3600_000) } },
+  });
+  return {
+    quotes_expired: quotesExpired,
+    rfqs_expired: rfqsExpired,
+    idempotency_purged: purged.count,
+  };
 }

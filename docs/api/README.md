@@ -219,6 +219,79 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | `DELETE` | `/api/v1/admin/featured/{id}` | Remove featured placement | admin | yes | admin.featured.manage | 403, 404, 409, 422 |
 | `GET` | `/api/v1/admin/media/{id}` | Any marketplace image (review) | admin | no | admin.catalog.read | 403, 404, 409, 422 |
 
+## Phase 3 conventions
+- Buyer RFQ routes are scoped by the buyer workspace and seller routes by the seller workspace; a workspace the caller does not belong to, an RFQ the seller cannot see (not invited, not in the matching pool) and another supplier's quote all return 404, including attachments (T19, T20).
+- Creating, editing, publishing, cancelling and awarding RFQs need `buyer.purchase` (OWNER, PROCUREMENT) in an approved trading workspace; drafting and submitting quotes need `seller.catalog.edit` (OWNER, SALES) in an approved seller workspace. A refused trading action returns 403 with the specific reason (for example `trading.licence_expired`).
+- Optimistic concurrency: RFQ and quote writes carry `expected_version`; stale writes return 409 `common.stale`.
+- Award: `POST …/quotes/{quoteId}/accept` needs an `Idempotency-Key` header (8–100 characters). Replaying the same key returns the stored result; reusing it for a different body returns 409. Accepting a superseded or expired version returns 409 and creates nothing (T21); concurrent accepts produce exactly one award (T22).
+- Totals are always computed by the server from quantity, unit price, shipping and tax code; a submitted quote version is immutable at the database level (T23).
+- Quote counts and other suppliers' quotes are never shown to sellers; admins see metadata and quote states, never prices or documents.
+
+## Buyer RFQs (Phase 3)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/buyer/workspaces/{ws}/rfqs` | List the workspace RFQs (offset cursor) | company | no | member of the buyer workspace | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/rfqs` | Create an RFQ draft (validated category, dates, invitees) | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/invite-candidates` | Public, trading-eligible suppliers the buyer may invite | company | no | member of the buyer workspace | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}` | RFQ detail with every quote, timeline and attachments | company | no | member of the buyer workspace | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}` | Edit a draft (expected_version) | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}/publish` | Publish a draft; notifies invitees and eligible pool sellers | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}/cancel` | Cancel a draft or open RFQ without an award | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}/files` | Attach a file to a draft (PDF/PNG/JPEG; scanned; private) | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422, 429, 503 |
+| `DELETE` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}/files/{fileId}` | Remove a draft attachment | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/rfqs/{id}/files/{fileId}` | Download an RFQ attachment or a submitted quote attachment (audited) | company | no | member of the buyer workspace | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/quotes/{quoteId}/request-revision` | Ask the seller to revise the current version | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/quotes/{quoteId}/decline` | Decline the current quote version | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/quotes/{quoteId}/accept` | Award: accept the exact current version (header Idempotency-Key required). 409 quote.superseded, quote.expired, rfq.already_awarded. Orders are created in Phase 4. | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+
+## Seller RFQs and quotes (Phase 3)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/seller/workspaces/{ws}/rfqs` | Eligible pool and invitations (never another seller's quote) | company | no | member of the seller workspace | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/rfqs/{id}` | RFQ detail with only the caller's own quote (404 when not visible) | company | no | member of the seller workspace | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/rfqs/{id}/files/{fileId}` | Download an RFQ attachment or an own quote attachment (audited) | company | no | member of the seller workspace | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/rfqs/{id}/quote` | Create a quote draft (one per seller per RFQ) | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/quotes` | Own quotes | company | no | member of the seller workspace | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/seller/workspaces/{ws}/quotes/{id}` | Edit the draft version (server recomputes totals) | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/quotes/{id}/submit` | Submit the draft; the version becomes immutable | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/quotes/{id}/revise` | Submit a new version; the previous one is superseded | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/quotes/{id}/withdraw` | Withdraw a submitted quote before acceptance | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/quotes/{id}/files` | Attach a file to the draft version (scanned; private) | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422, 429, 503 |
+| `DELETE` | `/api/v1/seller/workspaces/{ws}/quotes/{id}/files/{fileId}` | Remove a draft attachment | company | yes | seller.catalog.edit (OWNER, SALES; trading-gated) | 403, 404, 409, 422 |
+
+## Messages (Phase 3)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/workspaces/{ws}/conversations` | Conversations of the workspace with unread counts | company | no | messaging role (OWNER, PROCUREMENT, SALES); sending is trading-gated (A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/workspaces/{ws}/conversations` | Start (or continue) a conversation: buyer from a storefront, seller from a visible RFQ | company | yes | messaging role (OWNER, PROCUREMENT, SALES); sending is trading-gated (A12) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/workspaces/{ws}/conversations/{id}` | Conversation detail | company | no | messaging role (OWNER, PROCUREMENT, SALES); sending is trading-gated (A12) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/workspaces/{ws}/conversations/{id}/messages` | Messages, newest first | company | no | messaging role (OWNER, PROCUREMENT, SALES); sending is trading-gated (A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/workspaces/{ws}/conversations/{id}/messages` | Send a message | company | yes | messaging role (OWNER, PROCUREMENT, SALES); sending is trading-gated (A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/workspaces/{ws}/conversations/{id}/read` | Move the read marker forward | company | yes | messaging role (OWNER, PROCUREMENT, SALES); sending is trading-gated (A12) | 403, 404, 409, 422 |
+
+## Notifications (Phase 3)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/notifications` | Own notifications, newest first | company | no |  | 404, 422 |
+| `GET` | `/api/v1/notifications/unread` | Unread notification and message counts | company | no |  | 404, 422 |
+| `GET` | `/api/v1/notifications/preferences` | Email notification preferences | company | no |  | 404, 422 |
+| `PATCH` | `/api/v1/notifications/preferences` | Update email notification preferences | company | yes |  | 404, 422 |
+| `POST` | `/api/v1/notifications/read-all` | Mark all notifications read | company | yes |  | 404, 422 |
+| `POST` | `/api/v1/notifications/{id}/read` | Mark one notification read | company | yes |  | 404, 422 |
+
+## Admin RFQs (Phase 3)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/admin/rfqs` | RFQs (metadata only) | admin | no | admin.rfqs.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/rfqs/{id}` | RFQ metadata and quote states (no quote contents) | admin | no | admin.rfqs.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/rfqs/{id}/hide` | Hide an abusive RFQ (sellers lose access; audited) | admin | yes | admin.rfqs.moderate | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/rfqs/{id}/unhide` | Restore a hidden RFQ (audited) | admin | yes | admin.rfqs.moderate | 403, 404, 409, 422 |
+
 ## Rate limits (per policy; `RATE_LIMIT_SCALE` multiplies them outside production only)
 
 | Policy | Limit |
@@ -234,3 +307,4 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | uploads per user | 60 per hour |
 | marketplace reads per IP | 600 per minute |
 | buyer list changes per user | 300 per minute |
+| messages sent per user (Phase 3) | 60 per minute |

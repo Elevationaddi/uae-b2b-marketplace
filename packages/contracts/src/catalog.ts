@@ -848,6 +848,8 @@ export const viewerInfo = z.object({
   trading: z.object({
     available: z.boolean(),
     reason: z.enum(['sign_in', 'requires_approved_buyer', 'phase_unavailable', 'quote_only']),
+    /** Phase 3: an approved trading buyer may request a quotation for this product. */
+    rfq: z.boolean(),
   }),
 });
 

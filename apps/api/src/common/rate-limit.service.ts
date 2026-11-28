@@ -21,6 +21,7 @@ const POLICIES = {
   upload_user: { points: 60, duration: 60 * 60 },
   search_ip: { points: 600, duration: 60 },
   lists_user: { points: 300, duration: 60 },
+  message_user: { points: 60, duration: 60 },
 } as const;
 export type RateLimitPolicy = keyof typeof POLICIES;
 
