@@ -20,7 +20,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "build:packages": "pnpm --filter './packages/*' run build",
-    "dev:totp": "pnpm --silent --filter @app/api run dev:totp"
+    "dev:totp": "pnpm --silent --filter @app/api run dev:totp",
+    "check:production-refusal": "node scripts/production-refusal-check.mjs",
+    "db:restore-check": "node scripts/backup-restore-check.mjs",
+    "perf:check": "node scripts/perf-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

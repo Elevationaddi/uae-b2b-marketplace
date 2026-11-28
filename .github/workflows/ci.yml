@@ -88,6 +88,8 @@ jobs:
         run: pnpm build
         env:
           NODE_ENV: production
+      - name: Production refuses to start without live integrations (T38)
+        run: pnpm check:production-refusal
       - name: Seed fictional development data
         run: pnpm db:seed
       - name: Install Playwright browsers (Chromium and WebKit)

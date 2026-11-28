@@ -101,6 +101,7 @@ available but not yet adopted).
 | BullMQ / ioredis | 5.61.2 / 5.11.1 |
 | zod | 4.6.7 |
 | Vitest / Playwright | 3.2.7 / 1.63.0 |
+| @axe-core/playwright (E2E accessibility) | 4.10.2 |
 | ESLint / typescript-eslint / Prettier | 9.39.5 / 8.74.0 / 3.6.2 |
 | Local storage / mail images | chrislusf/seaweedfs:3.97 / axllent/mailpit:v1.27 |
 | argon2 / otplib / rate-limiter-flexible | 0.45.2 / 12.0.1 / 11.4.1 |
@@ -110,3 +111,10 @@ available but not yet adopted).
 Security overrides in `pnpm-workspace.yaml` pin patched transitive versions of multer, postcss, effect and
 deepmerge-ts; nodemailer was upgraded to 10.4.1 for four high advisories. `pnpm audit --prod --audit-level high`
 reports no known vulnerabilities (2026-11-27).
+
+## Operational checks (Phase 7)
+| Command | What it does |
+|---|---|
+| `pnpm check:production-refusal` | After `pnpm build`: starts the built API and worker with `NODE_ENV=production` and unsafe settings (sandbox payments, mail catcher, trading without a live provider, live payments without keys, no live email) and expects each to refuse to start (T38). Runs in CI. |
+| `pnpm db:restore-check` | Restore drill (T37): `pg_dump` of `DATABASE_URL`, restore into a temporary database on the same server, compare schema and row counts and check migrations, balanced ledger journals, refund caps, order totals and payout allocations; drops the temporary database. Refuses `NODE_ENV=production` unless `ALLOW_RESTORE_CHECK=yes`. Needs `pg_dump`/`pg_restore`/`psql` matching the server major version. |
+| `pnpm perf:check` | Read-path load check against a running API (`API_URL`, default `http://localhost:4000`): 50 concurrent anonymous clients for 20 s over marketplace reads; passes when p95 < 500 ms with no errors. Run with `RATE_LIMIT_SCALE` raised locally so the search limit does not trip. |
