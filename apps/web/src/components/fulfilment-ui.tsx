@@ -86,6 +86,16 @@ export function FulfilmentCard({
               ],
             ] as Row[])
           : []),
+        ...(s.has_dispatch_proof && orderApi
+          ? ([
+              [
+                t('ful.dispatch_proof'),
+                <a key="dp" href={`/api/v1${orderApi}/dispatch-proof`}>
+                  {t('ful.download_proof')}
+                </a>,
+              ],
+            ] as Row[])
+          : []),
       ]
     : [];
   if (f.completed_at) rows.push([t('ful.completed_at'), formatDubaiTime(f.completed_at, locale)]);
@@ -142,7 +152,11 @@ export function FulfilmentCard({
         <div className="stack">
           {a.can_process ? <ProcessButton path={`${orderApi}/process`} onDone={onUpdated} /> : null}
           {a.can_dispatch ? (
-            <DispatchForm path={`${orderApi}/dispatch`} onDone={onUpdated} />
+            <DispatchForm
+              path={`${orderApi}/dispatch`}
+              collection={o.delivery_method === 'COLLECTION'}
+              onDone={onUpdated}
+            />
           ) : null}
           {a.can_deliver ? <DeliverForm path={`${orderApi}/deliver`} onDone={onUpdated} /> : null}
           {a.can_confirm_receipt ? (
@@ -265,33 +279,44 @@ function ProcessButton({ path, onDone }: { path: string; onDone: (o: OrderDetail
   );
 }
 
-function DispatchForm({ path, onDone }: { path: string; onDone: (o: OrderDetail) => void }) {
+function DispatchForm({
+  path,
+  collection,
+  onDone,
+}: {
+  path: string;
+  collection: boolean;
+  onDone: (o: OrderDetail) => void;
+}) {
   const t = useT();
   const m = useMutation();
   const fe = useFieldError(m.error);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const r = await m.run<OrderDetail>(path, {
-      method: 'POST',
-      body: {
-        carrier: String(fd.get('carrier') ?? ''),
-        tracking_code: String(fd.get('tracking_code') ?? ''),
-        ...(fd.get('expected_delivery_date')
-          ? { expected_delivery_date: String(fd.get('expected_delivery_date')) }
-          : {}),
-      },
-    });
+    // Multipart so an optional proof of dispatch (C-10) can travel with the form; empty fields
+    // are dropped so optional values stay absent.
+    for (const k of ['carrier', 'tracking_code', 'expected_delivery_date']) {
+      if (!String(fd.get(k) ?? '').trim()) fd.delete(k);
+    }
+    const file = fd.get('file');
+    if (file instanceof File && file.size === 0) fd.delete('file');
+    const r = await m.run<OrderDetail>(path, { method: 'POST', form: fd });
     if (r.ok) onDone(r.data);
   }
   return (
     <form className="subcard" onSubmit={submit} data-testid="dispatch-form" noValidate>
-      <h3 className="h4">{t('ful.dispatch_title')}</h3>
-      <p className="muted small">{t('ful.full_shipment')}</p>
+      <h3 className="h4">
+        {collection ? t('ful.ready_for_collection_title') : t('ful.dispatch_title')}
+      </h3>
+      <p className="muted small">
+        {collection ? t('ful.collection_handover') : t('ful.full_shipment')}
+      </p>
       <Field
         label={t('ful.carrier')}
         name="carrier"
-        required
+        required={!collection}
+        optional={collection}
         maxLength={80}
         error={fe('carrier')}
       />
@@ -308,6 +333,14 @@ function DispatchForm({ path, onDone }: { path: string; onDone: (o: OrderDetail)
         type="date"
         optional
         error={fe('expected_delivery_date')}
+      />
+      <Field
+        label={t('ful.dispatch_proof_file')}
+        name="file"
+        type="file"
+        accept="application/pdf,image/png,image/jpeg"
+        optional
+        error={fe('file')}
       />
       {m.error && Object.keys(m.error.fieldErrors).length === 0 ? (
         <ApiErrorAlert error={m.error} />

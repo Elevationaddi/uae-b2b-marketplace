@@ -80,8 +80,9 @@ const positiveFils = z
 
 // ------------------------------------------------------------------ seller fulfilment
 
+/** Multipart (optional `file`: proof of dispatch) or JSON. Carrier is optional for collection. */
 export const shipmentDispatchRequest = z.object({
-  carrier: text(80),
+  carrier: optionalText(80),
   tracking_code: optionalText(80),
   expected_delivery_date: z
     .string()
@@ -103,6 +104,8 @@ export const shipmentView = z.object({
   delivered_at: isoDateTime.nullable(),
   delivery_note: z.string().nullable(),
   has_proof: z.boolean(),
+  /** C-10: the supplier attached a proof of dispatch (waybill or handover note). */
+  has_dispatch_proof: z.boolean(),
   items: z.array(z.object({ order_line_id: uuid, quantity: z.number().int() })),
 });
 

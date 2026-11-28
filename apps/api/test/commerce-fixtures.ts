@@ -93,7 +93,14 @@ export function commerceFixtures(ctx: CommerceCtx) {
         business_type: 'MANUFACTURER',
         description_en: 'We make fictional test products for checkout integration tests.',
         city: 'Dubai',
-        ...(delivery ? { delivery_fee_fils: '5000', delivery_emirates: ['DUBAI', 'SHARJAH'] } : {}),
+        ...(delivery
+          ? {
+              delivery_rates: [
+                { emirate: 'DUBAI', fee_fils: '5000', days: 2 },
+                { emirate: 'SHARJAH', fee_fils: '5000', days: 3 },
+              ],
+            }
+          : {}),
       })
       .expect(200);
     await client.post(`/seller/workspaces/${ws}/storefront/publish`).expect(200);
