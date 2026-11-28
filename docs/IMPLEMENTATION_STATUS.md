@@ -1,5 +1,5 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is merged as 4575a7f (PR #7), sandbox provider adapter only. Phase 6 (support, operations overview, scoped exports, accessibility) is built (PR #8). Phase 7 covers only the sandbox-safe part (restore drill, production refusal, performance check, security review); live integrations and deployment stay blocked on the production decisions. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7, P5-1 to P5-7 and P6-1 to P6-6 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is merged as 4575a7f (PR #7), sandbox provider adapter only. Phase 6 (support, operations overview, scoped exports, accessibility) is merged as 2154837 (PR #8). Phase 7 covers only the sandbox-safe part (restore drill, production refusal, performance check, security review); live integrations and deployment stay blocked on the production decisions. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7, P5-1 to P5-7 and P6-1 to P6-6 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
@@ -9,7 +9,7 @@ Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is mer
 | 3 | DONE | Merged to `main` as 8517725 (PR #5); CI run 46087385321 green (E2E 120 passed, 4 skipped) | Provisional decisions P3-1…P3-7 need confirmation |
 | 4 | DONE (sandbox only) | Merged to `main` as 5f543bb (PR #6); CI green | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
-| 6 | DONE | Branch `phase-6-operations`; see Phase 6 section | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
+| 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | PARTIAL (sandbox-safe part only) | Branch `phase-7-hardening`; see Phase 7 section | Live provider integration and deployment blocked on D01–D15; penetration test not done |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
@@ -94,7 +94,7 @@ PASS (p95 < 500 ms, no errors)
 Founder decisions on D01–D15 and the provisional P3–P6 rules; then a staging environment for live-provider sandbox testing.
 
 ## Phase 6: support, operations overview, scoped exports, accessibility
-**Date:** 2026-11-28 (UTC). **Branch:** `phase-6-operations`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T33–T36, T41; role-specific UAT.
+**Date:** 2026-11-28 (UTC). **Merged:** 2154837 (PR #8). **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T33–T36, T41; role-specific UAT.
 
 ### Delivered
 - **Customer support:** buyer and seller workspaces open tickets (topic, subject, message, optional link to one of their own orders, for example from an order page), follow the conversation, reply, reopen a resolved ticket and close it. Viewers read only. Tickets are workspace-wide; other companies get 404.
