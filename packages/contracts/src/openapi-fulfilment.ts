@@ -12,9 +12,9 @@ const file = { file: z.string().meta({ format: 'binary' }) };
 const B = '/buyer/workspaces/{ws}';
 const S = '/seller/workspaces/{ws}';
 const ship =
-  'seller.inventory.ship (OWNER, OPERATIONS; role only, works while trading is restricted)';
+  'seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted)';
 const buyerAct = 'buyer.orders.act (OWNER, PROCUREMENT)';
-const sellerDispute = 'seller.inventory.ship or seller.catalog.edit';
+const sellerDispute = 'seller.inventory.ship or seller.catalog.edit (OWNER, SALES, WAREHOUSE)';
 const memberB = 'any buyer workspace member';
 const memberS = 'any seller workspace member';
 

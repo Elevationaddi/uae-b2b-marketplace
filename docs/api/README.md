@@ -351,6 +351,73 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | `GET` | `/api/v1/admin/finance/payments` | Payment attempts | admin | no | admin.finance.read | 403, 404, 409, 422 |
 | `GET` | `/api/v1/admin/finance/reconciliation` | Reconciliation cases | admin | no | admin.finance.read | 403, 404, 409, 422 |
 
+## Phase 5 conventions
+- Seller fulfilment and dispute routes are scoped by the seller workspace; buyer receipt, review and dispute routes by the buyer workspace. Another workspace's order, dispute, proof or evidence file returns 404.
+- Shipping actions check the role only (`seller.inventory.ship`), so a restricted company can still deliver paid orders; buyer receipt, review and disputes need `buyer.orders.act`.
+- Refunds and payouts use dual control: the requester can never approve (403 `refund.self_approval` / `payout.self_approval`, also a database CHECK). Approved items are sent to the provider adapter by the worker with an idempotency key; the ledger and the paid/refunded state change only on the provider's signed webhook. Duplicate and out-of-order events are ignored.
+- Only the labelled sandbox adapter exists; `/admin/sandbox/operations/{ref}/complete` stands in for the provider and returns 404 unless `PAYMENT_MODE=mock`.
+- Public storefront reviews never include the buyer company name.
+
+## Seller fulfilment and disputes (Phase 5)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `POST` | `/api/v1/seller/workspaces/{ws}/orders/{id}/process` | Start processing a confirmed order | company | yes | seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/orders/{id}/dispatch` | Record dispatch (paid orders only; full shipment) | company | yes | seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/orders/{id}/deliver` | Report delivery with optional proof (PDF/PNG/JPEG; scanned) | company | yes | seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted) | 403, 404, 409, 422, 429, 503 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/orders/{id}/proof` | Download the delivery proof (audited) | company | no | any seller workspace member | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/orders/{id}/disputes` | Open a dispute on the order | company | yes | seller.inventory.ship or seller.catalog.edit (OWNER, SALES, WAREHOUSE) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/disputes` | Disputes on this workspace's orders | company | no | any seller workspace member | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/disputes/{id}` | Dispute detail with messages and evidence | company | no | any seller workspace member | 403, 404, 409, 422 |
+| `POST` | `/api/v1/seller/workspaces/{ws}/disputes/{id}/messages` | Add a message, optionally with evidence | company | yes | seller.inventory.ship or seller.catalog.edit (OWNER, SALES, WAREHOUSE) | 403, 404, 409, 422, 429, 503 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/disputes/{id}/files/{fileId}` | Download dispute evidence (audited) | company | no | any seller workspace member | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/finance` | Seller settlement summary: eligible, held, in payout, paid out | company | no | seller.finance (OWNER, FINANCE) | 403, 404, 409, 422 |
+
+## Buyer fulfilment and disputes (Phase 5)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `POST` | `/api/v1/buyer/workspaces/{ws}/orders/{id}/confirm-receipt` | Confirm receipt; completes the order | company | yes | buyer.orders.act (OWNER, PROCUREMENT) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/orders/{id}/review` | Rate the supplier once the order is completed | company | yes | buyer.orders.act (OWNER, PROCUREMENT) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/orders/{id}/proof` | Download the delivery proof (audited) | company | no | any buyer workspace member | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/orders/{id}/disputes` | Open a dispute (within 14 days of completion) | company | yes | buyer.orders.act (OWNER, PROCUREMENT) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/disputes` | Disputes on this workspace's orders | company | no | any buyer workspace member | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/disputes/{id}` | Dispute detail with messages and evidence | company | no | any buyer workspace member | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/disputes/{id}/messages` | Add a message, optionally with evidence | company | yes | buyer.orders.act (OWNER, PROCUREMENT) | 403, 404, 409, 422, 429, 503 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/disputes/{id}/files/{fileId}` | Download dispute evidence (audited) | company | no | any buyer workspace member | 403, 404, 409, 422 |
+
+## Marketplace (Phase 5)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/marketplace/suppliers/{id}/reviews` | Published reviews of a public storefront (buyers anonymised) | none | no | public | 404, 429 |
+
+## Admin disputes, refunds, payouts, reviews (Phase 5)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/admin/disputes` | Dispute queue | admin | no | admin.disputes.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/disputes/{id}` | Dispute detail | admin | no | admin.disputes.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/disputes/{id}/assign` | Assign the dispute to yourself | admin | yes | admin.disputes.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/disputes/{id}/request-evidence` | Ask both parties for evidence | admin | yes | admin.disputes.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/disputes/{id}/propose` | Propose a resolution (refund proposals go to finance) | admin | yes | admin.disputes.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/disputes/{id}/close` | Close without financial action | admin | yes | admin.disputes.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/disputes/{id}/messages` | Message both parties | admin | yes | admin.disputes.manage | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/disputes/{id}/files/{fileId}` | Download dispute evidence (audited) | admin | no | admin.disputes.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/refunds` | Refunds | admin | no | admin.finance.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/refunds` | Request a refund (up to the remaining refundable amount) | admin | yes | admin.refunds.request | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/refunds/{id}/approve` | Approve a refund (a different finance user; dual control) | admin | yes | admin.refunds.approve | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/refunds/{id}/reject` | Reject a refund request | admin | yes | admin.refunds.approve | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/payouts/eligible` | Sellers with eligible, undisputed completed orders | admin | no | admin.finance.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/payouts` | Payouts | admin | no | admin.finance.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/payouts` | Request a payout of all eligible orders for one seller | admin | yes | admin.payouts.request | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/payouts/{id}/approve` | Approve a payout (a different finance user; dual control) | admin | yes | admin.payouts.approve | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/payouts/{id}/reject` | Reject a payout request | admin | yes | admin.payouts.approve | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/sandbox/operations/{ref}/complete` | SANDBOX ONLY: simulate the provider finishing a refund or payout | admin | yes | admin.finance.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/reviews` | Reviews for moderation | admin | no | admin.reviews.moderate | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/reviews/{id}/hide` | Hide a review (reason recorded) | admin | yes | admin.reviews.moderate | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/reviews/{id}/unhide` | Publish a hidden review again | admin | yes | admin.reviews.moderate | 403, 404, 409, 422 |
+
 ## Rate limits (per policy; `RATE_LIMIT_SCALE` multiplies them outside production only)
 
 | Policy | Limit |

@@ -1,5 +1,5 @@
 'use client';
-import type { SupplierDetail } from '@app/contracts';
+import type { StorefrontReviews, SupplierDetail } from '@app/contracts';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -11,12 +11,56 @@ import {
   useLocalized,
   VerifiedBadge,
 } from '@/components/catalog-ui';
+import { Stars } from '@/components/fulfilment-ui';
 import { MarketShell } from '@/components/market-shell';
 import { Resource } from '@/components/resource';
 import { SearchResults } from '@/components/search-results';
 import { ApiErrorAlert, Button, DefinitionList, Skeleton } from '@/components/ui';
 import { formatDate, type MessageKey } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
+
+/** Published buyer reviews; buyers are shown as "Verified buyer" (no company names). */
+function SupplierReviews({ id }: { id: string }) {
+  const t = useT();
+  const { locale } = useApp();
+  const res = useResource<StorefrontReviews>(`/marketplace/suppliers/${id}/reviews`);
+  return (
+    <Section id="sf-rev" title={t('review.section')}>
+      <Resource state={res.state} reload={res.reload} lines={3}>
+        {(r) =>
+          r.count === 0 ? (
+            <p className="muted">{t('review.none')}</p>
+          ) : (
+            <div data-testid="supplier-reviews">
+              <p>
+                <strong>
+                  {t('review.average', {
+                    avg: (r.average ?? 0).toLocaleString(locale === 'ar' ? 'ar-AE' : 'en-AE'),
+                    count: r.count,
+                  })}
+                </strong>
+              </p>
+              <ul className="plain review-list">
+                {r.items.map((it) => (
+                  <li key={it.id}>
+                    <p>
+                      <Stars rating={it.rating} />{' '}
+                      <span className="muted small">
+                        {t('review.verified_buyer')} ·{' '}
+                        {formatDate(it.created_at.slice(0, 10), locale)}
+                      </span>
+                    </p>
+                    {it.comment ? <p>{it.comment}</p> : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+      </Resource>
+    </Section>
+  );
+}
 
 function Supplier({ id }: { id: string }) {
   const { locale } = useApp();
@@ -184,6 +228,7 @@ function Supplier({ id }: { id: string }) {
                 </ul>
               </Section>
             ) : null}
+            <SupplierReviews id={s.id} />
             <Section id="sf-cat" title={t('sup.catalogue')}>
               <Suspense fallback={<Skeleton lines={6} />}>
                 <SearchResults fixed={{ storefront_id: s.id }} />

@@ -27,9 +27,10 @@ function SellerFrame({ children }: { children: (ws: Workspace, base: string) => 
     [`${base}/rfqs`, 'seller.nav.rfqs'],
     [`${base}/quotes`, 'seller.nav.quotes'],
     [`${base}/orders`, 'seller.nav.orders'],
+    [`${base}/disputes`, 'seller.nav.disputes'],
+    [`${base}/finance`, 'seller.nav.finance'],
     [`/${locale}/app/messages/${ws.id}`, 'seller.nav.messages'],
   ];
-  const later: MessageKey[] = ['seller.nav.finance'];
   const active = (href: string) =>
     href === base || href === `${base}/products`
       ? pathname === href
@@ -49,16 +50,6 @@ function SellerFrame({ children }: { children: (ws: Workspace, base: string) => 
           <li>
             <Link href={`/${locale}/app/company/${ws.company.id}`}>{t('seller.nav.company')}</Link>
           </li>
-        </ul>
-        <ul className="seller-nav-later" aria-label={t('seller.later_phase')}>
-          {later.map((k) => (
-            <li key={k}>
-              <span aria-disabled="true" className="disabled-link">
-                {t(k)}
-                <span className="muted small"> · {t('seller.later_phase')}</span>
-              </span>
-            </li>
-          ))}
         </ul>
       </nav>
       <div className="seller-main">{children(ws, base)}</div>

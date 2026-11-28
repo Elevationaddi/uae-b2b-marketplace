@@ -155,13 +155,12 @@ export const commerceEn = {
   'order.empty_seller': 'No orders yet.',
   'order.empty_admin': 'No orders match.',
   'order.seller_intro':
-    'Orders appear when a buyer checks out or accepts your quotation. Fulfilment steps arrive in the next phase.',
+    'Orders appear when a buyer checks out or accepts your quotation. Open a paid order to record dispatch and delivery.',
   'order.awaiting_payment_seller':
     'The buyer has not paid yet. Do not dispatch until the order is confirmed.',
-  'order.confirmed_next_seller':
-    'Payment is confirmed. Fulfilment and shipping updates are added in the next phase.',
+  'order.confirmed_next_seller': 'Payment is confirmed. Prepare the goods and record dispatch.',
   'order.confirmed_next_buyer':
-    'Payment is confirmed. The supplier will prepare the order; shipping updates are added in the next phase.',
+    'Payment is confirmed. The supplier will prepare and dispatch the order; you confirm receipt when it arrives.',
   'order.source.CART': 'Catalogue order',
   'order.source.QUOTE': 'From quotation',
   'order.state.AWAITING_PAYMENT': 'Awaiting payment',
@@ -389,11 +388,11 @@ export const commerceAr: Record<keyof typeof commerceEn, string> = {
   'order.empty_seller': 'لا توجد طلبات بعد.',
   'order.empty_admin': 'لا توجد طلبات مطابقة.',
   'order.seller_intro':
-    'تظهر الطلبات عندما يتم المشتري الشراء أو يقبل عرض السعر الخاص بك. تُضاف خطوات التنفيذ في المرحلة التالية.',
+    'تظهر الطلبات عندما يتم المشتري الشراء أو يقبل عرض السعر الخاص بك. افتح طلباً مدفوعاً لتسجيل الشحن والتسليم.',
   'order.awaiting_payment_seller': 'لم يدفع المشتري بعد. لا تقم بالشحن حتى يتم تأكيد الطلب.',
-  'order.confirmed_next_seller': 'تم تأكيد الدفع. تُضاف تحديثات التنفيذ والشحن في المرحلة التالية.',
+  'order.confirmed_next_seller': 'تم تأكيد الدفع. جهّز البضائع وسجّل الشحن.',
   'order.confirmed_next_buyer':
-    'تم تأكيد الدفع. سيجهز المورد الطلب، وتُضاف تحديثات الشحن في المرحلة التالية.',
+    'تم تأكيد الدفع. سيجهز المورد الطلب ويشحنه، وتؤكد أنت الاستلام عند وصوله.',
   'order.source.CART': 'طلب من الكتالوج',
   'order.source.QUOTE': 'من عرض سعر',
   'order.state.AWAITING_PAYMENT': 'بانتظار الدفع',

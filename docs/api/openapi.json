@@ -122243,7 +122243,7 @@
     "/api/v1/seller/workspaces/{ws}/orders/{id}/process": {
       "post": {
         "summary": "Start processing a confirmed order",
-        "description": "Requires: seller.inventory.ship (OWNER, OPERATIONS; role only, works while trading is restricted).",
+        "description": "Requires: seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted).",
         "tags": [
           "Seller fulfilment and disputes"
         ],
@@ -123138,7 +123138,7 @@
     "/api/v1/seller/workspaces/{ws}/orders/{id}/dispatch": {
       "post": {
         "summary": "Record dispatch (paid orders only; full shipment)",
-        "description": "Requires: seller.inventory.ship (OWNER, OPERATIONS; role only, works while trading is restricted).",
+        "description": "Requires: seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted).",
         "tags": [
           "Seller fulfilment and disputes"
         ],
@@ -124061,7 +124061,7 @@
     "/api/v1/seller/workspaces/{ws}/orders/{id}/deliver": {
       "post": {
         "summary": "Report delivery with optional proof (PDF/PNG/JPEG; scanned)",
-        "description": "Requires: seller.inventory.ship (OWNER, OPERATIONS; role only, works while trading is restricted).",
+        "description": "Requires: seller.inventory.ship (OWNER, WAREHOUSE; role only, works while trading is restricted).",
         "tags": [
           "Seller fulfilment and disputes"
         ],
@@ -125387,7 +125387,7 @@
     "/api/v1/seller/workspaces/{ws}/orders/{id}/disputes": {
       "post": {
         "summary": "Open a dispute on the order",
-        "description": "Requires: seller.inventory.ship or seller.catalog.edit.",
+        "description": "Requires: seller.inventory.ship or seller.catalog.edit (OWNER, SALES, WAREHOUSE).",
         "tags": [
           "Seller fulfilment and disputes"
         ],
@@ -126990,7 +126990,7 @@
     "/api/v1/seller/workspaces/{ws}/disputes/{id}/messages": {
       "post": {
         "summary": "Add a message, optionally with evidence",
-        "description": "Requires: seller.inventory.ship or seller.catalog.edit.",
+        "description": "Requires: seller.inventory.ship or seller.catalog.edit (OWNER, SALES, WAREHOUSE).",
         "tags": [
           "Seller fulfilment and disputes"
         ],
