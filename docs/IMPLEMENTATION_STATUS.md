@@ -1,5 +1,5 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is merged as 4575a7f (PR #7), sandbox provider adapter only. Phase 6 (support, operations overview, scoped exports, accessibility) is merged as 2154837 (PR #8). Phase 7 covers only the sandbox-safe part (restore drill, production refusal, performance check, security review); live integrations and deployment stay blocked on the production decisions. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7, P5-1 to P5-7 and P6-1 to P6-6 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as complete within the sandbox development scope. Phase 3 is 8517725 (PR #5); Phase 4 5f543bb (PR #6); Phase 5 4575a7f (PR #7); Phase 6 2154837 (PR #8); Phase 7 (sandbox-safe hardening) 2ccd947 (PR #9). On 2026-11-28 the founder decided the production architecture and commercial model (F01–F13 in `docs/00-decisions.md`) and authorised Phase 8 preparation and staging development only, starting with 8A. Paid services, infrastructure charges, live payments, production credentials and public launch are not authorised; the application stays in sandbox mode. Conflicts between those decisions and the current code are listed in `docs/phase-8/contradictions.md` and have not been changed silently.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
@@ -10,13 +10,77 @@ Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is mer
 | 4 | DONE (sandbox only) | Merged to `main` as 5f543bb (PR #6); CI green | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
-| 7 | PARTIAL (sandbox-safe part only) | Branch `phase-7-hardening`; see Phase 7 section | Live provider integration and deployment blocked on D01–D15; penetration test not done |
-| 8 | OUT_OF_SCOPE | None | Separate approval |
+| 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
+| 8 | IN PROGRESS: 8A only (preparation, nothing provisioned) | Branch `phase-8a-infrastructure`; see Phase 8A section | Provisioning approval (cost), provider eligibility, tax/legal approvals; 8B–8H not started |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8A: infrastructure architecture, IaC and cost estimates
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8a-infrastructure`.
+
+**Authority:** founder decision of 2026-11-28 (F13): start with 8A only.
+
+**Nothing was provisioned:**
+- No Azure subscription, credentials, domain or third-party account was used or created.
+- No paid service was activated.
+- No application behaviour changed.
+
+**Delivered** (`docs/phase-8/`):
+- Architecture and diagram: Azure UAE North, Container Apps, PostgreSQL flexible server with zone-redundant HA, Redis, Blob ZRS, Key Vault, Application Gateway WAF v2, Log Analytics, private networking.
+- Region availability check.
+- Itemized AED cost estimate:
+
+  | Option | Production | Staging | Total |
+  |---|---:|---:|---:|
+  | Recommended | AED 6,071/month | AED 1,443/month | AED 7,514/month |
+  | Lower-cost alternative | AED 2,656/month | AED 1,443/month | AED 4,099/month |
+
+  The figures are list prices, exclude VAT and include 15% contingency. PostgreSQL and Log Analytics unit prices are unverified for UAE North.
+- Payment provider comparison and eligibility checklist (Stripe Connect, Mamo).
+- Domains, DNS and integration requirements.
+- Environment variable inventory (no secret values).
+- Contradictions C-01 to C-24.
+- Risk register R-01 to R-25.
+- Production readiness checklist.
+- Decision register F01–F13, with the status of every provisional rule.
+
+**Infrastructure as code** (`infra/azure`, Terraform, azurerm 4.x):
+- Bootstrap: state storage and certificates vaults.
+- A platform module.
+- Staging and production roots.
+- Example variable and backend files (real ones are git-ignored).
+
+**Key findings:**
+1. **Stripe for UAE platforms:**
+   - It supports only Custom connected accounts, with destination charges or separate charges and transfers.
+   - It lists no corporate bank transfer method for the UAE.
+   - One payment for a multi-seller cart needs written confirmation.
+2. **PostgreSQL in UAE North:** a recent community report shows `SkuNotAvailable` that a quota increase did not fix. A subscription-level check and a possible region access request are needed before approval.
+3. **Paired region:** UAE Central is access-restricted, so geo-redundant backup needs a Microsoft access request.
+4. **Recovery objectives:** recommended RPO ≤ 15 minutes for the financial database, using built-in PITR, instead of 24 hours. RTO stays 4 hours.
+5. **Code changes needed before staging can run** (8B):
+   - an `APP_ENV=staging` profile (C-20), because production mode refuses sandbox adapters;
+   - an Azure Blob storage adapter (C-21), because Blob is not S3-compatible.
+6. **Financial logic conflicts:**
+   - payout eligibility starts at completion, not after the dispute window (C-01, C-02);
+   - commission is reversed pro rata of the order total, not merchandise (C-06);
+   - catalogue VAT is always STANDARD (C-08).
+   These are recorded, not changed.
+
+**Commands and checks:**
+- `python3 infra/azure/cost-model.py` reproduces the cost tables.
+- CI job `infrastructure` runs `terraform fmt -check -recursive` and `terraform validate` (no backend, no credentials) for bootstrap, staging and production. The result is recorded on the PR.
+- Terraform was **not** run locally: downloading the binary was blocked in this environment.
+- Application tests were not re-run, because no application code changed. The CI `verify` job runs them on the PR.
+
+**Next gate:**
+1. Founder approval of the monthly amount and billing route to provision staging (8B).
+2. Stripe eligibility answers (8C).
+3. Resend data-processing approval (8D).
+4. Tax adviser and lawyer engagement (8E, F11).
+
 ## Phase 7: production readiness (sandbox-safe part only)
-**Date:** 2026-11-28 (UTC). **Branch:** `phase-7-hardening`. **Exit gate (docs/13-roadmap.md):** T37–T38 plus all regressions; D01–D15 production gates approved. Only the parts that need no live service or production decision were built; the gate itself is **not met** because D01–D15 are open and no production environment exists.
+**Date:** 2026-11-28 (UTC). **Merged:** 2ccd947 (PR #9). **Exit gate (docs/13-roadmap.md):** T37–T38 plus all regressions; D01–D15 production gates approved. Only the parts that need no live service or production decision were built; the gate itself is **not met** because D01–D15 are open and no production environment exists.
 
 ### Delivered
 - **T37 restore drill:** `pnpm db:restore-check` dumps the database, restores it into a temporary database and checks schema, migrations, row counts and transaction consistency (balanced journals, refund caps, order totals, payout allocations), then removes the copy.

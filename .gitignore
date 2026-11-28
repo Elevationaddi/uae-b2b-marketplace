@@ -13,3 +13,12 @@ test-results/
 *.log
 .DS_Store
 screenshots-out/
+
+# Terraform (infra/azure): local state, plans, real variable and backend files
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+infra/azure/**/terraform.tfvars
+infra/azure/**/backend.hcl

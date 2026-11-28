@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (git-ignored). No secrets belong here.
+subscription_id                 = "00000000-0000-0000-0000-000000000000"
+image_tag                       = "<git-sha>"
+public_hostnames                = { web = "staging.example.ae", admin = "admin-staging.example.ae" }
+tls_certificate_secret_id       = "https://kv-uaeb2b-cert-stg.vault.azure.net/secrets/public-hosts"
+allowed_ip_ranges               = ["203.0.113.0/24"]
+container_registry_id           = "/subscriptions/<prod-sub>/resourceGroups/rg-uaeb2b-prd/providers/Microsoft.ContainerRegistry/registries/acruaeb2bprd"
+container_registry_login_server = "acruaeb2bprd.azurecr.io"
+alert_emails                    = ["oncall@example.ae"]
+monthly_budget_usd              = 395
+budget_start_date               = "2027-01-01T00:00:00Z"
+certificate_key_vault_id = "/subscriptions/<sub>/resourceGroups/rg-uaeb2b-tfstate/providers/Microsoft.KeyVault/vaults/kv-uaeb2b-cert-stg"
