@@ -15,10 +15,16 @@ export async function createApp(
   env: AppEnv,
   opts: { bufferLogs?: boolean } = {},
 ): Promise<INestApplication> {
+  if (env.PAYMENT_MODE === 'live')
+    throw new Error(
+      'PAYMENT_MODE=live: no live payment adapter is implemented or approved (Phase 8 gate)',
+    );
   const app = await NestFactory.create<NestExpressApplication>(AppModule.forRoot(env), {
     bufferLogs: opts.bufferLogs ?? true,
     ...(env.LOG_LEVEL === 'silent' ? { logger: false as const } : {}),
     bodyParser: false,
+    // Keeps req.rawBody for webhook signature verification.
+    rawBody: true,
   });
   app.useLogger(app.get(Logger));
   app.disable('x-powered-by');

@@ -215,6 +215,9 @@ enum StockMovementKind {
   MARK_UNAVAILABLE
   RELEASE_UNAVAILABLE
   SET_ON_HAND
+  RESERVE
+  RELEASE_RESERVATION
+  SALE
 }
 
 enum RestrictedAction {
@@ -629,6 +632,10 @@ model Storefront {
   fulfilmentAr          String?          @map("fulfilment_ar")
   /// [{ name, issuer, valid_until? }] supplier-declared; shown as declared, not platform-verified.
   certifications        Json             @default("[]")
+  /// Phase 4 delivery terms (provisional P4-1): one flat fee per order and the emirates served.
+  deliveryFeeFils       BigInt?          @map("delivery_fee_fils")
+  deliveryEmirates      Emirate[]        @default([]) @map("delivery_emirates")
+  deliveryDays          Int?             @map("delivery_days")
   publishedAt           DateTime?        @map("published_at") @db.Timestamptz(3)
   adminHiddenAt         DateTime?        @map("admin_hidden_at") @db.Timestamptz(3)
   adminHiddenReason     String?          @map("admin_hidden_reason")
@@ -1249,4 +1256,339 @@ model IdempotencyKey {
   @@unique([userId, key])
   @@index([createdAt])
   @@map("idempotency_keys")
+}
+
+// ---------------------------------------------------------------- Phase 4: cart, checkout, orders, sandbox payments, ledger
+// Workspace, company, SKU and user references are plain columns with foreign keys added in the
+// migration SQL (no back-relations on Phase 0–2 models).
+
+enum CheckoutState {
+  PENDING_PAYMENT
+  PAID
+  EXPIRED
+  CANCELLED
+  RECONCILIATION_REQUIRED
+}
+
+enum CheckoutSource {
+  CART
+  QUOTE
+}
+
+enum OrderState {
+  AWAITING_PAYMENT
+  CONFIRMED
+  PROCESSING
+  DISPATCHED
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReservationState {
+  HELD
+  CONSUMED
+  RELEASED
+}
+
+enum PaymentState {
+  CREATED
+  PENDING
+  CAPTURED
+  FAILED
+  CANCELLED
+}
+
+enum PaymentEventStatus {
+  RECEIVED
+  PROCESSED
+  IGNORED
+  QUARANTINED
+}
+
+enum ReconciliationKind {
+  LATE_CAPTURE
+  AMOUNT_MISMATCH
+  UNKNOWN_REFERENCE
+  INVALID_SIGNATURE
+}
+
+enum ReconciliationState {
+  OPEN
+  RESOLVED
+}
+
+enum MockPspSessionState {
+  OPEN
+  CAPTURED
+  FAILED
+  CANCELLED
+}
+
+/// Buyer delivery/billing addresses (UAE only). Orders keep a snapshot; archived, never deleted when used.
+model Address {
+  id               String    @id @default(uuid()) @db.Uuid
+  buyerWorkspaceId String    @map("buyer_workspace_id") @db.Uuid
+  label            String
+  recipient        String
+  phone            String
+  line1            String
+  line2            String?
+  city             String
+  emirate          Emirate
+  isDefault        Boolean   @default(false) @map("is_default")
+  archivedAt       DateTime? @map("archived_at") @db.Timestamptz(3)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([buyerWorkspaceId, archivedAt])
+  @@map("addresses")
+}
+
+model CartItem {
+  id               String   @id @default(uuid()) @db.Uuid
+  buyerWorkspaceId String   @map("buyer_workspace_id") @db.Uuid
+  skuId            String   @map("sku_id") @db.Uuid
+  quantity         Int
+  addedById        String   @map("added_by_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@unique([buyerWorkspaceId, skuId])
+  @@map("cart_items")
+}
+
+model Checkout {
+  id                   String         @id @default(uuid()) @db.Uuid
+  number               String         @unique
+  buyerWorkspaceId     String         @map("buyer_workspace_id") @db.Uuid
+  buyerCompanyId       String         @map("buyer_company_id") @db.Uuid
+  createdById          String         @map("created_by_id") @db.Uuid
+  source               CheckoutSource
+  state                CheckoutState  @default(PENDING_PAYMENT)
+  rfqId                String?        @unique @map("rfq_id") @db.Uuid
+  quoteVersionId       String?        @unique @map("quote_version_id") @db.Uuid
+  addressSnapshot      Json?          @map("address_snapshot")
+  poReference          String?        @map("po_reference")
+  merchandiseFils      BigInt         @map("merchandise_fils")
+  shippingFils         BigInt         @map("shipping_fils")
+  taxFils              BigInt         @map("tax_fils")
+  totalFils            BigInt         @map("total_fils")
+  currency             String         @default("AED")
+  /// Rule versions in force when the totals were computed (docs/08-finance.md snapshots).
+  taxRule              Json           @map("tax_rule")
+  commissionBps        Int            @map("commission_bps")
+  /// Stock hold for cart checkouts (D11); null for quote checkouts (no stock).
+  reservationExpiresAt DateTime?      @map("reservation_expires_at") @db.Timestamptz(3)
+  /// Last moment the buyer may pay (cart: reservation expiry; quote: A05 payment window).
+  payBy                DateTime       @map("pay_by") @db.Timestamptz(3)
+  paidAt               DateTime?      @map("paid_at") @db.Timestamptz(3)
+  closedAt             DateTime?      @map("closed_at") @db.Timestamptz(3)
+  version              Int            @default(1)
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  orders       Order[]
+  reservations Reservation[]
+  payments     Payment[]
+
+  @@index([buyerWorkspaceId, state])
+  @@index([state, payBy])
+  @@map("checkouts")
+}
+
+model Order {
+  id                String     @id @default(uuid()) @db.Uuid
+  number            String     @unique
+  checkoutId        String     @map("checkout_id") @db.Uuid
+  buyerWorkspaceId  String     @map("buyer_workspace_id") @db.Uuid
+  buyerCompanyId    String     @map("buyer_company_id") @db.Uuid
+  sellerWorkspaceId String     @map("seller_workspace_id") @db.Uuid
+  sellerCompanyId   String     @map("seller_company_id") @db.Uuid
+  state             OrderState @default(AWAITING_PAYMENT)
+  merchandiseFils   BigInt     @map("merchandise_fils")
+  shippingFils      BigInt     @map("shipping_fils")
+  taxFils           BigInt     @map("tax_fils")
+  totalFils         BigInt     @map("total_fils")
+  commissionFils    BigInt     @map("commission_fils")
+  sellerPayableFils BigInt     @map("seller_payable_fils")
+  /// Buyer, seller and delivery terms as agreed at checkout (never re-read from live data).
+  snapshot          Json
+  confirmedAt       DateTime?  @map("confirmed_at") @db.Timestamptz(3)
+  cancelledAt       DateTime?  @map("cancelled_at") @db.Timestamptz(3)
+  cancelReason      String?    @map("cancel_reason")
+  version           Int        @default(1)
+  createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  checkout Checkout     @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  lines    OrderLine[]
+  events   OrderEvent[]
+
+  @@index([buyerWorkspaceId, state, createdAt])
+  @@index([sellerWorkspaceId, state, createdAt])
+  @@index([checkoutId])
+  @@map("orders")
+}
+
+model OrderLine {
+  id             String       @id @default(uuid()) @db.Uuid
+  orderId        String       @map("order_id") @db.Uuid
+  position       Int
+  skuId          String?      @map("sku_id") @db.Uuid
+  productId      String?      @map("product_id") @db.Uuid
+  quoteVersionId String?      @map("quote_version_id") @db.Uuid
+  title          String
+  skuCode        String?      @map("sku_code")
+  variant        Json         @default("{}")
+  unit           QuantityUnit
+  quantity       Int
+  unitPriceFils  BigInt       @map("unit_price_fils")
+  lineTotalFils  BigInt       @map("line_total_fils")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([orderId, position])
+  @@map("order_lines")
+}
+
+/// Append-only order timeline.
+model OrderEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @map("order_id") @db.Uuid
+  kind      String
+  actorSide String   @map("actor_side")
+  actorId   String?  @map("actor_id") @db.Uuid
+  reason    String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([orderId, createdAt])
+  @@map("order_events")
+}
+
+model Reservation {
+  id         String           @id @default(uuid()) @db.Uuid
+  checkoutId String           @map("checkout_id") @db.Uuid
+  skuId      String           @map("sku_id") @db.Uuid
+  quantity   Int
+  state      ReservationState @default(HELD)
+  expiresAt  DateTime         @map("expires_at") @db.Timestamptz(3)
+  closedAt   DateTime?        @map("closed_at") @db.Timestamptz(3)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+
+  @@unique([checkoutId, skuId])
+  @@index([state, expiresAt])
+  @@map("reservations")
+}
+
+model Payment {
+  id             String       @id @default(uuid()) @db.Uuid
+  checkoutId     String       @map("checkout_id") @db.Uuid
+  provider       String
+  providerRef    String       @unique @map("provider_ref")
+  idempotencyKey String       @unique @map("idempotency_key")
+  state          PaymentState @default(CREATED)
+  amountFils     BigInt       @map("amount_fils")
+  currency       String       @default("AED")
+  sandbox        Boolean
+  capturedAt     DateTime?    @map("captured_at") @db.Timestamptz(3)
+  failureCode    String?      @map("failure_code")
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  checkout Checkout @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+
+  @@index([checkoutId])
+  @@map("payments")
+}
+
+/// Durable webhook inbox: every provider event is stored before processing (docs/08-finance.md).
+model PaymentEvent {
+  id             String             @id @default(uuid()) @db.Uuid
+  provider       String
+  eventId        String             @map("event_id")
+  type           String
+  providerRef    String?            @map("provider_ref")
+  amountFils     BigInt?            @map("amount_fils")
+  currency       String?
+  signatureValid Boolean            @map("signature_valid")
+  payload        Json
+  status         PaymentEventStatus @default(RECEIVED)
+  error          String?
+  receivedAt     DateTime           @default(now()) @map("received_at") @db.Timestamptz(3)
+  processedAt    DateTime?          @map("processed_at") @db.Timestamptz(3)
+
+  @@unique([provider, eventId])
+  @@index([status, receivedAt])
+  @@map("payment_events")
+}
+
+/// Operational ledger (not statutory accounting). Journals balance; entries are append-only.
+model LedgerJournal {
+  id         String   @id @default(uuid()) @db.Uuid
+  kind       String
+  checkoutId String?  @map("checkout_id") @db.Uuid
+  paymentId  String?  @map("payment_id") @db.Uuid
+  /// One journal per business event (e.g. capture:<paymentId>), so replays cannot double-post.
+  dedupeKey  String   @unique @map("dedupe_key")
+  memo       String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  entries LedgerEntry[]
+
+  @@map("ledger_journals")
+}
+
+model LedgerEntry {
+  id                String  @id @default(uuid()) @db.Uuid
+  journalId         String  @map("journal_id") @db.Uuid
+  account           String
+  debitFils         BigInt  @default(0) @map("debit_fils")
+  creditFils        BigInt  @default(0) @map("credit_fils")
+  orderId           String? @map("order_id") @db.Uuid
+  sellerWorkspaceId String? @map("seller_workspace_id") @db.Uuid
+
+  journal LedgerJournal @relation(fields: [journalId], references: [id], onDelete: Restrict)
+
+  @@index([journalId])
+  @@index([account])
+  @@map("ledger_entries")
+}
+
+model ReconciliationCase {
+  id             String              @id @default(uuid()) @db.Uuid
+  kind           ReconciliationKind
+  state          ReconciliationState @default(OPEN)
+  checkoutId     String?             @map("checkout_id") @db.Uuid
+  paymentId      String?             @map("payment_id") @db.Uuid
+  paymentEventId String?             @map("payment_event_id") @db.Uuid
+  details        Json
+  resolution     String?
+  resolvedById   String?             @map("resolved_by_id") @db.Uuid
+  resolvedAt     DateTime?           @map("resolved_at") @db.Timestamptz(3)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([state, createdAt])
+  @@map("reconciliation_cases")
+}
+
+/// Sandbox-only stand-in for a hosted PSP checkout (PAYMENT_MODE=mock). Never used in production.
+model MockPspSession {
+  id             String              @id
+  amountFils     BigInt              @map("amount_fils")
+  currency       String
+  reference      String
+  idempotencyKey String              @unique @map("idempotency_key")
+  returnUrl      String              @map("return_url")
+  state          MockPspSessionState @default(OPEN)
+  /// Pending webhook deliveries (JSON array of events not yet posted to the API).
+  outbox         Json                @default("[]")
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("mock_psp_sessions")
 }

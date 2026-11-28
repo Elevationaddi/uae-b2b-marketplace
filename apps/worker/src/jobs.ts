@@ -2,6 +2,11 @@ import type { AppEnv } from '@app/config';
 import {
   EMAIL_TEMPLATES,
   enqueueEmail,
+  SANDBOX_PROVIDER,
+  signWebhook,
+  WEBHOOK_SIGNATURE_HEADER,
+  webhookSecret,
+  type PspEvent,
   todayUtc,
   toIsoDate,
   writeAudit,
@@ -417,4 +422,54 @@ export async function runRfqExpiry(
     rfqs_expired: rfqsExpired,
     idempotency_purged: purged.count,
   };
+}
+
+/**
+ * Sandbox only (PAYMENT_MODE=mock): post queued sandbox PSP events to the API webhook endpoint,
+ * signed exactly like a provider would, so the real intake path is exercised. Delivery is
+ * at-least-once; the API's unique event id makes repeats harmless (T15).
+ */
+export async function deliverSandboxWebhooks(
+  prisma: PrismaClient,
+  env: AppEnv,
+  log: Logger,
+): Promise<number> {
+  if (env.PAYMENT_MODE !== 'mock' || env.isProduction) return 0;
+  const sessions = await prisma.mockPspSession.findMany({
+    where: { NOT: { outbox: { equals: [] } } },
+    take: 20,
+    orderBy: { updatedAt: 'asc' },
+  });
+  const secret = webhookSecret(env);
+  let delivered = 0;
+  for (const s of sessions) {
+    const events = (Array.isArray(s.outbox) ? s.outbox : []) as unknown as PspEvent[];
+    const remaining: PspEvent[] = [];
+    for (const e of events) {
+      const body = JSON.stringify(e);
+      try {
+        const res = await fetch(`${env.API_ORIGIN}/api/v1/payments/webhooks/${SANDBOX_PROVIDER}`, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            [WEBHOOK_SIGNATURE_HEADER]: signWebhook(secret, body),
+          },
+          body,
+        });
+        if (res.ok) delivered++;
+        else {
+          log.warn({ status: res.status, event: e.id }, 'sandbox webhook rejected');
+          remaining.push(e);
+        }
+      } catch (err) {
+        log.warn({ err: (err as Error).message, event: e.id }, 'sandbox webhook delivery failed');
+        remaining.push(e);
+      }
+    }
+    await prisma.mockPspSession.update({
+      where: { id: s.id },
+      data: { outbox: remaining as unknown as Prisma.InputJsonValue },
+    });
+  }
+  return delivered;
 }

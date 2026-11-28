@@ -25,6 +25,8 @@ import {
   type WorkspaceContext,
 } from './access';
 import { AttachmentService, type Upload } from './attachments';
+import { CommerceConfig } from '../commerce/commerce-common';
+import { createQuoteCheckout } from '../commerce/checkout.service';
 import { notify, workspaceRecipients } from './notify';
 import {
   QUOTE_INCLUDE,
@@ -59,6 +61,7 @@ export class RfqService {
     @Inject(PRISMA) private readonly prisma: PrismaClient,
     @Inject(APP_ENV) private readonly env: AppEnv,
     private readonly attachments: AttachmentService,
+    private readonly commerce: CommerceConfig,
   ) {}
 
   private ctx(user: User, ws: string) {
@@ -169,7 +172,20 @@ export class RfqService {
       }),
     ]);
     const purchase = can(ctx, 'buyer.purchase');
+    const checkout = await this.prisma.checkout.findUnique({
+      where: { rfqId: r.id },
+      include: { orders: { select: { id: true, state: true } } },
+    });
     return {
+      award_order:
+        checkout && checkout.orders[0]
+          ? {
+              checkout_id: checkout.id,
+              order_id: checkout.orders[0].id,
+              checkout_state: checkout.state,
+              order_state: checkout.orders[0].state,
+            }
+          : null,
       ...mapSummary(r, quotes.length),
       version: r.version,
       specs: r.specs,
@@ -753,6 +769,29 @@ export class RfqService {
             version: { increment: 1 },
           },
         });
+        // Phase 4: the award creates the unpaid order and its checkout (only while checkout is
+        // enabled; otherwise the award is recorded and no order is pretended).
+        if (this.commerce.checkoutEnabled) {
+          const seller = await tx.company.findUniqueOrThrow({ where: { id: cur.sellerCompanyId } });
+          await createQuoteCheckout(tx, {
+            rfq: updated,
+            version: v,
+            buyer: {
+              workspaceId: ctx.workspace.id,
+              companyId: ctx.company.id,
+              companyName: ctx.company.displayName,
+            },
+            seller: {
+              workspaceId: cur.sellerWorkspaceId,
+              companyId: seller.id,
+              companyName: seller.displayName,
+            },
+            userId: user.id,
+            payBy: paymentDueAt,
+            poReference: b.po_reference ?? null,
+            commissionBps: this.commerce.commissionBps,
+          });
+        }
         const others = await tx.quote.findMany({
           where: { rfqId: rfq.id, id: { not: cur.id }, state: 'SUBMITTED' },
           select: { id: true, currentVersionId: true, sellerWorkspaceId: true },
@@ -829,6 +868,10 @@ export class RfqService {
       { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 15_000 },
     );
     const v = await this.prisma.quoteVersion.findUniqueOrThrow({ where: { id: result.versionId } });
+    const checkout = await this.prisma.checkout.findUnique({
+      where: { rfqId: result.rfq.id },
+      include: { orders: { select: { id: true } } },
+    });
     return {
       rfq_id: result.rfq.id,
       quote_id: v.quoteId,
@@ -837,7 +880,8 @@ export class RfqService {
       total_fils: v.totalFils.toString(),
       awarded_at: result.rfq.awardedAt!.toISOString(),
       payment_due_at: result.rfq.paymentDueAt!.toISOString(),
-      order_id: null,
+      order_id: checkout?.orders[0]?.id ?? null,
+      checkout_id: checkout?.id ?? null,
     };
   }
 }

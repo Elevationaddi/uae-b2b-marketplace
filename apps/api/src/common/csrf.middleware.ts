@@ -28,6 +28,8 @@ export class CsrfMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: NextFunction): void {
     if (SAFE_METHODS.has(req.method)) return next();
     const path = req.originalUrl.split('?')[0] ?? '';
+    // Provider webhooks are server-to-server and authenticated by their signature instead.
+    if (/^\/api\/v1\/payments\/webhooks\/[a-z0-9-]+$/.test(path)) return next();
     const expected = /^\/api\/v1\/admin(\/|$)/.test(path) ? this.adminOrigin : this.webOrigin;
 
     let origin = req.headers.origin;

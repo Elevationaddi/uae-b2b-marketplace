@@ -106,6 +106,14 @@ export const rawEnvSchema = z.object({
    */
   TAX_STANDARD_BPS: z.coerce.number().int().min(0).max(10000).optional(),
 
+  /**
+   * Platform commission on merchandise, in basis points (D05 open). Unset outside production uses
+   * the 1000 bps fixture from docs/08-finance.md; production requires an explicit value.
+   */
+  COMMISSION_BPS: z.coerce.number().int().min(0).max(5000).optional(),
+  /** Minutes a checkout holds stock while payment is pending (D11: 15). */
+  RESERVATION_MINUTES: z.coerce.number().int().min(5).max(120).default(15),
+
   PAYMENT_MODE: z.enum(PAYMENT_MODES).default('disabled'),
   PSP_API_KEY: optionalString,
   PSP_WEBHOOK_SECRET: optionalString,
@@ -192,6 +200,9 @@ export function productionIssues(env: RawEnv): string[] {
   }
   if (env.TAX_STANDARD_BPS === undefined) {
     issues.push('TAX_STANDARD_BPS must be set explicitly in production (tax rules, D06)');
+  }
+  if (env.COMMISSION_BPS === undefined) {
+    issues.push('COMMISSION_BPS must be set explicitly in production (commission policy, D05)');
   }
   if (env.FILE_SCANNER !== 'live') {
     issues.push('FILE_SCANNER=live is required in production (uploads must be malware scanned)');
@@ -281,6 +292,7 @@ export function describeEnv(env: AppEnv): Record<string, string | number | boole
     DATABASE_URL: stripCredentials(env.DATABASE_URL),
     REDIS_URL: stripCredentials(env.REDIS_URL),
     PAYMENT_MODE: env.PAYMENT_MODE,
+    RESERVATION_MINUTES: env.RESERVATION_MINUTES,
     EMAIL_PROVIDER: env.EMAIL_PROVIDER,
     FILE_SCANNER: env.FILE_SCANNER,
     APP_NAME: env.APP_NAME,

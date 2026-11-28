@@ -1,10 +1,18 @@
 import { createServer, type Server } from 'node:http';
 import type { AppEnv } from '@app/config';
-import { createPrismaClient, pingDatabase, type PrismaClient } from '@app/db';
+import {
+  createPrismaClient,
+  createSandboxPsp,
+  expireCheckouts,
+  pingDatabase,
+  processPendingPaymentEvents,
+  type PrismaClient,
+} from '@app/db';
 import { Queue, Worker, type ConnectionOptions } from 'bullmq';
 import pino, { type Logger } from 'pino';
 import {
   createMailer,
+  deliverSandboxWebhooks,
   dispatchOutbox,
   runLicenceExpiry,
   runRetentionReport,
@@ -21,7 +29,10 @@ import {
  * - retention.report: daily report-only count of documents past the provisional retention
  *   schedule (A13); writes an audit event, deletes nothing.
  * - rfq.expiry: expires lapsed quotes and RFQs past their deadline (every minute).
- * Reservation/RFQ expiry and reconciliation jobs arrive with their phases.
+ * - payments.process: processes stored, verified PSP webhook events exactly once (every 2 s).
+ * - checkout.expiry: asks the provider, then releases stock of unpaid checkouts past pay_by
+ *   (every 30 s; T17).
+ * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
  */
 export const SYSTEM_QUEUE = 'system';
 export const HEARTBEAT_JOB = 'system.heartbeat';
@@ -29,6 +40,9 @@ export const OUTBOX_JOB = 'outbox.dispatch';
 export const LICENCE_JOB = 'licence.expiry';
 export const RETENTION_JOB = 'retention.report';
 export const RFQ_EXPIRY_JOB = 'rfq.expiry';
+export const PAYMENTS_JOB = 'payments.process';
+export const CHECKOUT_EXPIRY_JOB = 'checkout.expiry';
+export const SANDBOX_WEBHOOK_JOB = 'sandbox.webhooks';
 const HEARTBEAT_EVERY_MS = 60_000;
 const HEARTBEAT_STALE_MS = 3 * HEARTBEAT_EVERY_MS;
 
@@ -70,6 +84,9 @@ export async function startWorker(
   const prisma: PrismaClient = createPrismaClient(env.DATABASE_URL);
   const queue = new Queue(SYSTEM_QUEUE, { connection });
   const mailer = createMailer(env);
+  if (env.PAYMENT_MODE === 'live')
+    throw new Error('PAYMENT_MODE=live: no live payment adapter is implemented (Phase 8 gate)');
+  const psp = env.PAYMENT_MODE === 'mock' ? createSandboxPsp(prisma, env) : null;
   let lastHeartbeat: Date | null = null;
   const startedAt = Date.now();
 
@@ -98,6 +115,18 @@ export async function startWorker(
           if (res.quotes_expired || res.rfqs_expired) log.info(res, 'rfq expiry run');
           return res;
         }
+        case PAYMENTS_JOB: {
+          const res = await processPendingPaymentEvents(prisma);
+          if (Object.keys(res).length) log.info(res, 'payment events processed');
+          return res;
+        }
+        case CHECKOUT_EXPIRY_JOB: {
+          const res = await expireCheckouts(prisma, psp);
+          if (res.expired || res.awaitingProvider) log.info(res, 'checkout expiry run');
+          return res;
+        }
+        case SANDBOX_WEBHOOK_JOB:
+          return { delivered: await deliverSandboxWebhooks(prisma, env, log) };
         default:
           throw new Error(`No handler for job ${job.name}`);
       }
@@ -126,6 +155,23 @@ export async function startWorker(
     { every: 60_000 },
     { name: RFQ_EXPIRY_JOB, opts: oneShot },
   );
+  await queue.upsertJobScheduler(
+    'payments',
+    { every: opts.outboxEveryMs ?? 2_000 },
+    { name: PAYMENTS_JOB, opts: oneShot },
+  );
+  await queue.upsertJobScheduler(
+    'checkout-expiry',
+    { every: 30_000 },
+    { name: CHECKOUT_EXPIRY_JOB, opts: oneShot },
+  );
+  if (psp)
+    await queue.upsertJobScheduler(
+      'sandbox-webhooks',
+      { every: opts.outboxEveryMs ?? 2_000 },
+      { name: SANDBOX_WEBHOOK_JOB, opts: oneShot },
+    );
+  else await queue.removeJobScheduler('sandbox-webhooks');
   // Run the licence check once at startup too, so a restart never delays restriction by an hour.
   await queue.add(LICENCE_JOB, {}, oneShot);
   worker.on('error', (err) => log.error({ err: err.message }, 'worker error'));

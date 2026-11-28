@@ -57,6 +57,19 @@ import {
   SellerRfqController,
 } from './rfq/rfq.controller';
 import { RfqService } from './rfq/rfq.service';
+import { AddressService } from './commerce/address.service';
+import { CartService } from './commerce/cart.service';
+import { CheckoutService } from './commerce/checkout.service';
+import { CommerceConfig } from './commerce/commerce-common';
+import {
+  AdminCommerceController,
+  BuyerCommerceController,
+  PaymentWebhookController,
+  SandboxPspController,
+  SellerOrderController,
+} from './commerce/commerce.controller';
+import { OrderService } from './commerce/order.service';
+import { PaymentWebhookService } from './commerce/payment-webhook.service';
 
 /** Paths redacted from every log line (docs/10-security.md: no credentials or tokens in logs). */
 export const LOG_REDACT_PATHS = [
@@ -118,6 +131,11 @@ export class AppModule implements NestModule {
         ConversationController,
         NotificationController,
         AdminRfqController,
+        BuyerCommerceController,
+        SellerOrderController,
+        PaymentWebhookController,
+        SandboxPspController,
+        AdminCommerceController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
@@ -149,6 +167,12 @@ export class AppModule implements NestModule {
         ConversationService,
         NotificationService,
         AdminRfqService,
+        CommerceConfig,
+        AddressService,
+        CartService,
+        CheckoutService,
+        OrderService,
+        PaymentWebhookService,
       ],
     };
   }

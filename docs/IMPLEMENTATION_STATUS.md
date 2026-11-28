@@ -1,12 +1,12 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is implemented on `phase-3-rfq-quotes` and merged once CI is green, under the founder's standing instruction to continue without per-phase approval. Phase 3 business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green), under the founder's standing instruction to continue without per-phase approval. Phase 3 business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
 | 0 | DONE | Merged to `main` as 08a127e (PR #1), CI run 46055408891 green | None |
 | 1 | DONE | Approved by the founder 2026-11-28; merged to `main` as 7cddb66 (PR #2); GitHub Actions green including WebKit | None |
 | 2 | DONE | Merged to `main` as a0f0126; CI run 46081580836 green (110 passed, 2 skipped incl. WebKit) | None |
-| 3 | DONE (pending CI on the PR) | Branch `phase-3-rfq-quotes`; unit/integration and E2E counts below | Provisional decisions P3-1…P3-7 need confirmation |
+| 3 | DONE | Merged to `main` as 8517725 (PR #5); CI run 46087385321 green (E2E 120 passed, 4 skipped) | Provisional decisions P3-1…P3-7 need confirmation |
 | 4–7 | NOT_STARTED | None | Decisions listed under Phase 3 |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 

@@ -9,3 +9,4 @@ export * from './admin';
 export * from './money';
 export * from './catalog';
 export * from './rfq';
+export * from './commerce';

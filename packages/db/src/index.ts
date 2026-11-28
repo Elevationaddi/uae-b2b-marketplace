@@ -4,6 +4,7 @@ export { PrismaClient, Prisma } from '@prisma/client';
 export * from '@prisma/client';
 export * from './audit';
 export * from './outbox';
+export * from './commerce';
 
 /** Create a client. Callers own its lifecycle and must call $disconnect on shutdown. */
 export function createPrismaClient(databaseUrl: string): PrismaClient {
