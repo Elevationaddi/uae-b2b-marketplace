@@ -1,3 +1,5 @@
+// Must stay first: configures zod before any schema is created (strict CSP, SR-2).
+export * from './runtime';
 export * from './envelope';
 export * from './health';
 export * from './common';

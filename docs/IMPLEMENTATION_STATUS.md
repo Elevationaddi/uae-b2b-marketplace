@@ -15,6 +15,18 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: security fixes (SR-1, SR-2)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-security`.
+
+**Delivered**
+- Nonce-based Content Security Policy: a fresh nonce per response in `apps/web/src/middleware.ts`, `script-src 'self' 'nonce-…' 'strict-dynamic'`, no `'unsafe-inline'` or `'unsafe-eval'` for scripts in production. Next.js applies the nonce to its own scripts (pages already render per request). Zod is configured to validate without `Function` in the browser (`packages/contracts/src/runtime.ts`), which removed the only eval attempt.
+- Vitest 3.2.7 to 4.1.12 in all five packages; no configuration changes were needed.
+
+**Commands actually run (2026-11-28)**
+- Production build (`NODE_ENV=production next build`, `next start`), Playwright on `/en/login`, `/ar/register`, `/en`: CSP header present, nonce on every script, no CSP violations, pages hydrate.
+- `pnpm audit` (all dependencies): no known vulnerabilities.
+- Vitest 4: API 154 passed, worker 10, web 12 (2 new CSP tests), contracts 62, config 23.
+
 ## Phase 8: support limits, ticket auto-close, quote validity and review label (C-12, C-13, C-16, C-17)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-support-quote-review`.
 
@@ -171,7 +183,7 @@ For each completed phase record date, commit, implemented routes, migrations, te
 | `pnpm check:production-refusal` (local .env base, and again with the CI environment and no .env) | pass: 8 of 8 refusals (API and worker × 4 cases) |
 | `pnpm perf:check` (local production build, single machine) | pass (output below) |
 | `pnpm audit --prod` | no known vulnerabilities |
-| `pnpm audit` (incl. dev) | 2 critical, 3 moderate in the vitest test-runner chain (SR-1, dev only) |
+| `pnpm audit` (incl. dev) | 2 critical, 3 moderate in the vitest test-runner chain (SR-1, dev only); fixed in Phase 8 with vitest 4.1.12, now no known vulnerabilities |
 | Secret scan (`git ls-files`, key patterns) | no secrets tracked; only fictional seeded dev credentials |
 | `pnpm lint`, `pnpm format:check`, `pnpm typecheck` | pass |
 | `pnpm test` (worker stopped) | pass: 219 tests, 0 failed (config 21, contracts 62, api 122 incl. new T38 test, web 10, worker 4) |
@@ -772,7 +784,7 @@ E2E also covers: full registration-to-approval journey, password reset single us
 - T01 verified at capability level only until purchase endpoints exist (Phase 3).
 - Document downloads are streamed through the API rather than presigned URLs (simpler to authorize; revisit for large files).
 - Production cannot start yet by design: there is no live email adapter or malware scanner (sandbox adapters only, clearly labelled).
-- CSP still needs `'unsafe-inline'` for scripts (Next.js inline bootstrap); nonces can be added later.
+- ~~CSP still needs `'unsafe-inline'` for scripts~~ Fixed in Phase 8: nonce-based CSP (SR-2).
 - A pending invitation token is kept per browser tab (sessionStorage); opening the link in another tab after sign-up requires clicking it again.
 - Notifications are email only; no in-app notifications or compliance queue alerts yet (Phase 6).
 - Seeded admin TOTP secrets are fixed for development; the seed refuses production.

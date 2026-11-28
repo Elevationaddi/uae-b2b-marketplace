@@ -100,7 +100,7 @@ available but not yet adopted).
 | PostgreSQL / Redis images | postgres:16.10-alpine / redis:7.4.6-alpine |
 | ioredis (API rate limiting) | 5.11.1 |
 | zod | 4.6.7 |
-| Vitest / Playwright | 3.2.7 / 1.63.0 |
+| Vitest / Playwright | 4.1.12 / 1.63.0 |
 | @axe-core/playwright (E2E accessibility) | 4.10.2 |
 | ESLint / typescript-eslint / Prettier | 9.39.5 / 8.74.0 / 3.6.2 |
 | Local storage / mail images | chrislusf/seaweedfs:3.97 / axllent/mailpit:v1.27 |
