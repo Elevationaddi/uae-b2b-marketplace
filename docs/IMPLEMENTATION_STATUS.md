@@ -15,6 +15,21 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: Vercel-first architecture at zero added cost (founder message 2026-11-28 09:28 UTC)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-vercel-docs`. Documentation only; nothing provisioned, connected or subscribed.
+
+**Delivered**
+- `docs/phase-8/vercel-architecture.md`:
+  - architecture and diagram;
+  - every service in the founder's four categories, with commercial-use, card, limit, overage and region columns;
+  - usage-charge risks and spend protection;
+  - worker, database, storage, malware-scanning and residency plans;
+  - documented limits with alternatives, and questions for the founder.
+- Vercel facts were checked against Vercel's documentation. Values the docs did not show are marked **confirm**, to be read from the provider or the founder's account before choosing.
+- Azure proposal archived: `docs/phase-8/archive/azure` and `infra/archive/azure` (never applied). The Terraform job was removed from CI. Decision F02 is marked rejected and replaced.
+- Risk register: R-04, R-05, R-21 and R-23 closed; R-26 to R-30 added (usage charges, residency, free-tier limits, cron frequency, RPO proof).
+- Readiness checklist: revised 8A section, plus a launch-blocker list that includes the restore drill for RPO 15 minutes.
+
 ## Phase 8: support limits, ticket auto-close, quote validity and review label (C-12, C-13, C-16, C-17)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-support-quote-review`.
 

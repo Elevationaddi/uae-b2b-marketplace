@@ -6,7 +6,8 @@
 - Phase 8 is **not complete** until every launch gate below is ticked, independently verified where marked **(independent)**, and approved by the founder.
 - The application stays in sandbox mode until further notice.
 
-## 8A Infrastructure architecture, IaC and cost (this PR)
+## 8A Infrastructure architecture, IaC and cost
+**Azure proposal rejected on 2026-11-28 and archived; the items below are kept as history.**
 - [x] Production architecture and diagram (`architecture.md`)
 - [x] Recommended services and lower-cost alternative (`architecture.md`, `cost-estimate.md`)
 - [x] Itemized monthly cost estimate in AED for staging and production (`cost-estimate.md`). Some unit prices are unverified.
@@ -16,9 +17,22 @@
 - [x] Payment provider comparison and eligibility checklist (`payment-providers.md`)
 - [x] Decisions compared with the implementation (`contradictions.md`)
 - [x] Updated risk register and decision register
-- [ ] UAE North subscription-level SKU and quota check (needs a subscription: read-only)
-- [ ] Every UNVERIFIED price replaced by a calculator quote
-- [ ] **Founder approval to provision staging** (amount and billing route)
+- [x] ~~UAE North SKU check, calculator quotes, approval to provision Azure~~ (no longer needed: Azure rejected)
+
+## 8A (revised) Vercel-first at zero added cost
+- [x] Vercel-first architecture, four-category services table, spend protection, residency and limits (`vercel-architecture.md`)
+- [x] Azure documents and Terraform archived; Terraform job removed from CI
+- [ ] Founder answers to the questions in `vercel-architecture.md` (plan, region, budget with pause, free-tier sign-ups)
+- [ ] Every **confirm** value checked on the provider's pricing page on the day it is chosen
+
+## Launch blockers (must be cleared before any real customer data or money)
+- [ ] **Restore drill proving RPO 15 minutes** on the production database (approved RPO; until proven it blocks launch)
+- [ ] Production database plan with point-in-time recovery approved (free tiers are not acceptable for production money)
+- [ ] Data residency confirmed acceptable by legal review, or a UAE-hosted database approved (R-27)
+- [ ] Malware scanner in place (production refuses to start without one)
+- [ ] Live email adapter and sending domain (production refuses to start without one)
+- [ ] Payment provider live approval (separate founder approval)
+- [ ] Tax rules approved by a tax professional (`TAX_APPROVAL_REFERENCE`)
 
 ## 8B Staging deployment, monitoring, backups, DR
 - [ ] Code: `APP_ENV=staging` profile (C-20), Azure Blob adapter (C-21), Dockerfiles for web, api, worker and ops images

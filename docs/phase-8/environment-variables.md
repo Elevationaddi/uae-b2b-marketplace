@@ -1,5 +1,7 @@
 # Environment variable inventory (no secret values)
 
+> **Partly superseded on 2026-11-28.** References to Azure (Key Vault, Application Gateway, Container Apps, Terraform, Azure Monitor) belong to the rejected Azure proposal. The current plan is [vercel-architecture.md](vercel-architecture.md). Domain purchases are not authorised: staging uses the `*.vercel.app` address.
+
 **Source of truth:** `packages/config/src/env.ts`. Production refusal rules are in `productionIssues()`.
 
 This file lists every variable the deployed services read: where its value comes from in Azure, and what staging and production use. **No secret value appears here or anywhere in git.**

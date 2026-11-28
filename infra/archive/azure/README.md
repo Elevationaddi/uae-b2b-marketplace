@@ -1,3 +1,5 @@
+> **Archived on 2026-11-28.** The founder rejected the Azure proposal and its costs (message of 2026-11-28 09:28 UTC). This Terraform was never applied, and no subscription, credentials or state exist. Paths inside this folder still say `infra/azure` and `docs/phase-8/*.md`: those moved to `infra/archive/azure` and `docs/phase-8/archive/azure`. The current plan is in `docs/phase-8/vercel-architecture.md`.
+
 # Azure infrastructure (Terraform)
 
 **Status (Phase 8A, 2026-11-28):** code only. **Not applied.** No subscription, credentials or state exist yet. Provisioning needs separate founder approval of the monthly amount (`docs/phase-8/cost-estimate.md`). CI runs `terraform fmt -check` and `terraform validate` without a backend or credentials.
