@@ -30,6 +30,7 @@ import {
   quoteReviseRequest,
   quoteUpdateRequest,
   quoteVersionActionRequest,
+  quoteRevisionRequest,
   readRequest,
   reasonRequest,
   rfqCancelRequest,
@@ -203,7 +204,7 @@ export class BuyerRfqController {
         a.user,
         ws,
         quoteId,
-        parse(quoteVersionActionRequest, b),
+        parse(quoteRevisionRequest, b),
         requestMeta(req),
       ),
     );

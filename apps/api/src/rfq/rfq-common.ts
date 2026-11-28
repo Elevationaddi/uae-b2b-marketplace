@@ -1,3 +1,4 @@
+import { NEGOTIATION_MAX_ROUNDS } from '@app/contracts';
 import { Prisma, toIsoDate, type PrismaClient, type Tx } from '@app/db';
 import { ApiError } from '../common/api-error';
 import type { WorkspaceContext } from './access';
@@ -9,6 +10,7 @@ export const VERSION_INCLUDE = {
 export const QUOTE_INCLUDE = {
   versions: { include: VERSION_INCLUDE, orderBy: { version: 'desc' as const } },
   sellerWorkspace: { include: { company: true, storefront: true } },
+  counteroffers: { orderBy: { round: 'asc' as const } },
 } satisfies Prisma.QuoteInclude;
 
 export const RFQ_INCLUDE = {
@@ -98,6 +100,28 @@ export function revisionRequested(
   );
 }
 
+/** C-14: field-level differences between two submitted versions, for side-by-side review. */
+export function versionChanges(cur: VersionFull | undefined, prev: VersionFull | undefined) {
+  if (!cur || !prev) return [];
+  const fields: [string, (v: VersionFull) => string | null][] = [
+    ['quantity', (v) => String(v.quantity)],
+    ['unit', (v) => v.unit],
+    ['unit_price_fils', (v) => v.unitPriceFils.toString()],
+    ['shipping_fils', (v) => v.shippingFils.toString()],
+    ['tax_code', (v) => v.taxCode],
+    ['total_fils', (v) => v.totalFils.toString()],
+    ['lead_days', (v) => String(v.leadDays)],
+    ['delivery_date', (v) => toIsoDate(v.deliveryDate)],
+    ['valid_until', (v) => v.validUntil.toISOString()],
+    ['specs', (v) => v.specs],
+    ['deviations', (v) => v.deviations],
+    ['terms', (v) => v.terms],
+  ];
+  return fields
+    .map(([field, get]) => ({ field, from: get(prev), to: get(cur) }))
+    .filter((c) => c.from !== c.to);
+}
+
 export function mapQuote(
   q: QuoteFull,
   events: { quoteId: string | null; kind: string; createdAt: Date }[],
@@ -114,6 +138,31 @@ export function mapQuote(
       .filter((v) => v.id !== q.currentVersionId && v.state !== 'DRAFT')
       .map(mapVersion),
     revision_requested: revisionRequested(q, events),
+    negotiation: {
+      rounds_used: q.counteroffers.length,
+      rounds_max: NEGOTIATION_MAX_ROUNDS,
+      counteroffers: q.counteroffers.map((c) => {
+        const answeredBy = q.versions.find(
+          (v) => v.state !== 'DRAFT' && v.submittedAt && v.submittedAt > c.createdAt,
+        );
+        return {
+          round: c.round,
+          version: q.versions.find((v) => v.id === c.quoteVersionId)?.version ?? 0,
+          unit_price_fils: c.unitPriceFils?.toString() ?? null,
+          quantity: c.quantity,
+          delivery_date: c.deliveryDate ? toIsoDate(c.deliveryDate) : null,
+          note: c.note,
+          created_at: c.createdAt.toISOString(),
+          answered: !!answeredBy,
+        };
+      }),
+    },
+    changes: current
+      ? versionChanges(
+          current,
+          q.versions.find((v) => v.state !== 'DRAFT' && v.version < current.version),
+        )
+      : [],
     created_at: q.createdAt.toISOString(),
     updated_at: q.updatedAt.toISOString(),
   };

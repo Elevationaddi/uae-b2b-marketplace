@@ -15,6 +15,19 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: quotation counteroffers (C-14, FD-10 C)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-negotiation`.
+
+**Delivered** (decision P8-20)
+- Migration `20261212000000_phase8_counteroffers` (additive): `quote_counteroffers` (round per quote, unique; optional unit price, quantity, delivery date, note).
+- `POST /buyer/.../quotes/{id}/request-revision` accepts an optional counteroffer; at most 3 rounds per quote, one open round at a time (`quote.round_open`, `quote.negotiation_limit`); audited as `quote.counteroffer`.
+- Quote responses carry `negotiation` (rounds used, maximum, counteroffers with answered flag) and `changes` (current version against the previous one). Acceptance stays tied to the latest version.
+- Web: counteroffer fields in the revision dialog with rounds left; Negotiation panel with rounds and a before/now comparison for buyer and supplier. EN/AR.
+
+**Tests actually run locally (2026-11-28)**
+- New integration test in `apps/api/test/rfq.int.test.ts`: invalid counter values (422), three rounds with supplier revisions and change lists, open-round refusal, fourth round refused, old version not acceptable, latest accepted, 3 audit events.
+- Full API suite 170 passed (20 files). Lint, Prettier, typecheck clean.
+
 ## Phase 8: protected staging profile and Vercel adaptations (C-20, C-21)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-staging-vercel`. Code only; nothing deployed, provisioned or connected.
 

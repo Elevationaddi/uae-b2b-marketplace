@@ -217,3 +217,76 @@ export function dubaiLocalFromNow(hours: number): string {
 export function dateFromNow(days: number): string {
   return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 }
+
+const MONEY_FIELDS = new Set(['unit_price_fils', 'shipping_fils', 'total_fils']);
+
+/**
+ * C-14: negotiation rounds (buyer counteroffers) and what changed in the current version, shown
+ * to the buyer and the quoting supplier. Only the latest version can be accepted.
+ */
+export function Negotiation({ q }: { q: QuoteResponse }) {
+  const t = useT();
+  const { locale } = useApp();
+  const n = q.negotiation;
+  if (n.counteroffers.length === 0 && q.changes.length === 0) return null;
+  const value = (field: string, v: string | null) => {
+    if (v === null || v === '') return '—';
+    if (MONEY_FIELDS.has(field)) return <Money fils={v} />;
+    if (field === 'valid_until') return formatDubaiTime(v, locale);
+    if (field === 'delivery_date') return formatDate(v, locale);
+    return v;
+  };
+  return (
+    <section className="subcard" data-testid="negotiation" aria-label={t('nego.title')}>
+      <h4 className="h4">{t('nego.title')}</h4>
+      <p className="muted small">{t('nego.rounds', { used: n.rounds_used, max: n.rounds_max })}</p>
+      {n.counteroffers.length ? (
+        <ol className="plain-list">
+          {n.counteroffers.map((c) => (
+            <li key={c.round} data-testid="counteroffer">
+              <strong>{t('nego.round', { round: c.round, version: c.version })}</strong>{' '}
+              <span className="muted small">{formatDubaiTime(c.created_at, locale)}</span>
+              {c.unit_price_fils ? (
+                <>
+                  {' · '}
+                  {t('quote.unit_price')}: <Money fils={c.unit_price_fils} />
+                </>
+              ) : null}
+              {c.quantity ? ` · ${t('quote.quantity')}: ${c.quantity}` : ''}
+              {c.delivery_date
+                ? ` · ${t('quote.delivery_date')}: ${formatDate(c.delivery_date, locale)}`
+                : ''}
+              {c.note ? <p className="pre-wrap small">{c.note}</p> : null}
+              <span className={`pill small ${c.answered ? 'pill-ok' : 'pill-info'}`}>
+                {t(c.answered ? 'nego.answered' : 'nego.waiting')}
+              </span>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      {q.changes.length ? (
+        <div className="table-wrap">
+          <table className="table" data-testid="version-changes">
+            <caption>{t('nego.changes', { version: q.current?.version ?? 0 })}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t('nego.field')}</th>
+                <th scope="col">{t('nego.before')}</th>
+                <th scope="col">{t('nego.after')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {q.changes.map((c) => (
+                <tr key={c.field}>
+                  <th scope="row">{t(`nego.field.${c.field}` as MessageKey)}</th>
+                  <td className="pre-wrap">{value(c.field, c.from)}</td>
+                  <td className="pre-wrap">{value(c.field, c.to)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </section>
+  );
+}

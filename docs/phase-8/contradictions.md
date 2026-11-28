@@ -26,7 +26,8 @@ Severity levels:
 | C-17 | **Fixed in code** | 10 open tickets per company, admin exceptions, urgent categories never blocked (P8-13). |
 | C-07 | **Fixed in code** | Suppliers cancel a paid, undispatched order with a reason; this requests a full refund that finance approves; the order is cancelled when the refund succeeds (P8-14). |
 | C-11 | **Fixed in code (policy text needs legal review)** | Bilingual storefront return policy shown at checkout and snapshotted on each order (P8-14). Customised-goods exclusions are left to each supplier's policy text. |
-| C-10, C-14, C-18 to C-24 | Open | Next pull requests or the final report. |
+| C-14 | **Fixed in code** | Structured counteroffers, at most 3 rounds per quote, version comparison, latest-only acceptance (P8-20). |
+| C-10, C-18 to C-24 | Open | Next pull requests or the final report. |
 
 ## Money, payouts and order completion
 

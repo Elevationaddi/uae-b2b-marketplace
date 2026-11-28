@@ -713,3 +713,88 @@ describe('admin RFQ moderation', () => {
     expect(audit.map((e) => e.action).sort()).toEqual(['admin.rfq.hidden', 'admin.rfq.unhidden']);
   }, 120_000);
 });
+
+describe('C-14 counteroffers (FD-10 C: at most 3 rounds)', () => {
+  it('records structured counteroffers, shows version changes, limits rounds and accepts only the latest', async () => {
+    const s = await seller({ product: true });
+    const b = await buyer();
+    const rfq = await openRfq(b);
+    let q = await submittedQuote(s, rfq.id);
+    const reqPath = `/buyer/workspaces/${b.ws}/quotes/${q.id}/request-revision`;
+    const quoteOf = async () =>
+      (await b.client.get(`/buyer/workspaces/${b.ws}/rfqs/${rfq.id}`).expect(200)).body.data
+        .quotes[0];
+
+    // Invalid counter values are refused.
+    await b.client.post(reqPath, { version_id: q.current.id, unit_price_fils: '0' }).expect(422);
+    await b.client.post(reqPath, { version_id: q.current.id, quantity: 0 }).expect(422);
+
+    const firstVersionId = q.current.id;
+    for (let round = 1; round <= 3; round += 1) {
+      const res = await b.client
+        .post(reqPath, {
+          version_id: q.current.id,
+          unit_price_fils: String(1000 - round * 20),
+          quantity: 100 + round * 10,
+          delivery_date: inDays(25),
+          reason: `Round ${round}: can you meet this price?`,
+        })
+        .expect(200);
+      const view = res.body.data.quotes[0];
+      expect(view.negotiation.rounds_used).toBe(round);
+      expect(view.negotiation.counteroffers[round - 1]).toMatchObject({
+        round,
+        unit_price_fils: String(1000 - round * 20),
+        quantity: 100 + round * 10,
+        answered: false,
+      });
+      // One open round at a time.
+      const open = await b.client.post(reqPath, { version_id: q.current.id }).expect(409);
+      expect(open.body.error.message_key).toBe('quote.round_open');
+
+      // The supplier sees the counteroffer and answers with a new version.
+      const sv = (await s.client.get(`/seller/workspaces/${s.ws}/rfqs/${rfq.id}`).expect(200)).body
+        .data.quotes[0];
+      expect(sv.negotiation.counteroffers).toHaveLength(round);
+      const revised = (
+        await s.client
+          .post(`/seller/workspaces/${s.ws}/quotes/${q.id}/revise`, {
+            ...quoteBody({ unit_price_fils: String(1000 - round * 10) }),
+            expected_version: sv.version,
+          })
+          .expect(200)
+      ).body.data.quotes[0];
+      q = revised;
+      expect(revised.changes).toEqual(
+        expect.arrayContaining([
+          {
+            field: 'unit_price_fils',
+            from: String(1000 - (round - 1) * 10),
+            to: String(1000 - round * 10),
+          },
+        ]),
+      );
+    }
+    const after = await quoteOf();
+    expect(after.negotiation.counteroffers.every((c: { answered: boolean }) => c.answered)).toBe(
+      true,
+    );
+
+    // A fourth round is refused; the buyer can still accept or decline the latest version.
+    const limit = await b.client.post(reqPath, { version_id: q.current.id }).expect(409);
+    expect(limit.body.error.message_key).toBe('quote.negotiation_limit');
+    await b.client
+      .post(`/buyer/workspaces/${b.ws}/quotes/${q.id}/accept`, { version_id: firstVersionId })
+      .set('Idempotency-Key', key())
+      .expect(409);
+    await b.client
+      .post(`/buyer/workspaces/${b.ws}/quotes/${q.id}/accept`, { version_id: q.current.id })
+      .set('Idempotency-Key', key())
+      .expect(200);
+    expect(await prisma.quoteCounteroffer.count({ where: { quoteId: q.id } })).toBe(3);
+    const audit = await prisma.auditEvent.findMany({
+      where: { resourceId: q.id, action: 'quote.counteroffer' },
+    });
+    expect(audit).toHaveLength(3);
+  });
+});

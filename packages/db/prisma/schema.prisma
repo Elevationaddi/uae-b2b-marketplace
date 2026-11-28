@@ -1099,11 +1099,12 @@ model Quote {
   createdAt         DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  rfq             Rfq            @relation(fields: [rfqId], references: [id], onDelete: Restrict)
-  sellerWorkspace Workspace      @relation("QuoteSeller", fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
-  currentVersion  QuoteVersion?  @relation("QuoteCurrent", fields: [currentVersionId], references: [id], onDelete: Restrict)
-  versions        QuoteVersion[] @relation("QuoteVersions")
+  rfq             Rfq                 @relation(fields: [rfqId], references: [id], onDelete: Restrict)
+  sellerWorkspace Workspace           @relation("QuoteSeller", fields: [sellerWorkspaceId], references: [id], onDelete: Restrict)
+  currentVersion  QuoteVersion?       @relation("QuoteCurrent", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  versions        QuoteVersion[]      @relation("QuoteVersions")
   events          RfqEvent[]
+  counteroffers   QuoteCounteroffer[]
 
   @@unique([rfqId, sellerWorkspaceId])
   @@index([sellerWorkspaceId, state])
@@ -1138,13 +1139,35 @@ model QuoteVersion {
   createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  quote     Quote       @relation("QuoteVersions", fields: [quoteId], references: [id], onDelete: Restrict)
-  currentOf Quote?      @relation("QuoteCurrent")
-  awardOf   Rfq?        @relation("RfqAward")
+  quote     Quote               @relation("QuoteVersions", fields: [quoteId], references: [id], onDelete: Restrict)
+  currentOf Quote?              @relation("QuoteCurrent")
+  awardOf   Rfq?                @relation("RfqAward")
   files     QuoteFile[]
+  counters  QuoteCounteroffer[]
 
   @@unique([quoteId, version])
   @@map("quote_versions")
+}
+
+/// C-14: a buyer negotiation round on one submitted version (append-only). Every revision
+/// request is a round; the optional terms are the buyer's counteroffer.
+model QuoteCounteroffer {
+  id             String    @id @default(uuid()) @db.Uuid
+  quoteId        String    @map("quote_id") @db.Uuid
+  quoteVersionId String    @map("quote_version_id") @db.Uuid
+  round          Int
+  unitPriceFils  BigInt?   @map("unit_price_fils")
+  quantity       Int?
+  deliveryDate   DateTime? @map("delivery_date") @db.Date
+  note           String?
+  createdById    String    @map("created_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  quote        Quote        @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  quoteVersion QuoteVersion @relation(fields: [quoteVersionId], references: [id], onDelete: Restrict)
+
+  @@unique([quoteId, round])
+  @@map("quote_counteroffers")
 }
 
 model QuoteFile {

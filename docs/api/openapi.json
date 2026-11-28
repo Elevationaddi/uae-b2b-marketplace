@@ -82358,6 +82358,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -82376,6 +82477,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -83847,6 +83950,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -83865,6 +84069,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -85058,6 +85264,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -85076,6 +85383,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -86194,6 +86503,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -86212,6 +86622,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -87334,6 +87746,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -87352,6 +87865,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -88470,6 +88985,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -88488,6 +89104,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -89700,6 +90318,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -89718,6 +90437,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -90424,7 +91145,7 @@
     },
     "/api/v1/buyer/workspaces/{ws}/quotes/{quoteId}/request-revision": {
       "post": {
-        "summary": "Ask the seller to revise the current version",
+        "summary": "Ask the seller to revise the current version, optionally with a counteroffer (at most 3 rounds per quote)",
         "description": "Requires: buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12).",
         "tags": [
           "Buyer RFQs"
@@ -90469,6 +91190,19 @@
                   "reason": {
                     "type": "string",
                     "maxLength": 1000
+                  },
+                  "unit_price_fils": {
+                    "type": "string",
+                    "pattern": "^[1-9]\\d{0,14}$"
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10000000
+                  },
+                  "delivery_date": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
                   }
                 },
                 "required": [
@@ -91154,6 +91888,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -91172,6 +92007,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -92294,6 +93131,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -92312,6 +93250,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -94310,6 +95250,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -94328,6 +95369,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -95832,6 +96875,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -95850,6 +96994,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -97488,6 +98634,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -97506,6 +98753,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -98624,6 +99873,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -98642,6 +99992,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -99835,6 +101187,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -99853,6 +101306,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -100971,6 +102426,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -100989,6 +102545,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -102107,6 +103665,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -102125,6 +103784,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]
@@ -103337,6 +104998,107 @@
                               "revision_requested": {
                                 "type": "boolean"
                               },
+                              "negotiation": {
+                                "type": "object",
+                                "properties": {
+                                  "rounds_used": {
+                                    "type": "integer"
+                                  },
+                                  "rounds_max": {
+                                    "type": "integer"
+                                  },
+                                  "counteroffers": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "round": {
+                                          "type": "integer"
+                                        },
+                                        "version": {
+                                          "type": "integer"
+                                        },
+                                        "unit_price_fils": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{1,15}$"
+                                        },
+                                        "quantity": {
+                                          "type": [
+                                            "integer",
+                                            "null"
+                                          ]
+                                        },
+                                        "delivery_date": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ],
+                                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                                        },
+                                        "note": {
+                                          "type": [
+                                            "string",
+                                            "null"
+                                          ]
+                                        },
+                                        "created_at": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "answered": {
+                                          "type": "boolean"
+                                        }
+                                      },
+                                      "required": [
+                                        "round",
+                                        "version",
+                                        "unit_price_fils",
+                                        "quantity",
+                                        "delivery_date",
+                                        "note",
+                                        "created_at",
+                                        "answered"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "rounds_used",
+                                  "rounds_max",
+                                  "counteroffers"
+                                ]
+                              },
+                              "changes": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "field": {
+                                      "type": "string"
+                                    },
+                                    "from": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    },
+                                    "to": {
+                                      "type": [
+                                        "string",
+                                        "null"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "field",
+                                    "from",
+                                    "to"
+                                  ]
+                                }
+                              },
                               "created_at": {
                                 "type": "string",
                                 "format": "date-time"
@@ -103355,6 +105117,8 @@
                               "current",
                               "history",
                               "revision_requested",
+                              "negotiation",
+                              "changes",
                               "created_at",
                               "updated_at"
                             ]

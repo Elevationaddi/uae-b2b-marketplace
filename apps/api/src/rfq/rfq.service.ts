@@ -4,6 +4,8 @@ import {
   type inviteCandidateQuery,
   type quoteAcceptRequest,
   type quoteVersionActionRequest,
+  type quoteRevisionRequest,
+  NEGOTIATION_MAX_ROUNDS,
   type rfqCancelRequest,
   type rfqCreateRequest,
   type rfqListQuery,
@@ -612,7 +614,7 @@ export class RfqService {
     user: User,
     ws: string,
     quoteId: string,
-    b: z.infer<typeof quoteVersionActionRequest>,
+    b: z.infer<typeof quoteRevisionRequest>,
     meta: RequestMeta,
   ) {
     const ctx = await this.ctx(user, ws);
@@ -621,7 +623,35 @@ export class RfqService {
     if (q.rfq.state !== 'OPEN') throw new ApiError('CONFLICT', 'rfq.not_open');
     if (q.state !== 'SUBMITTED' || q.currentVersionId !== b.version_id)
       throw new ApiError('CONFLICT', 'quote.superseded');
+    const counter = b.unit_price_fils || b.quantity || b.delivery_date;
+    if (b.delivery_date && b.delivery_date < new Date().toISOString().slice(0, 10))
+      throw new ApiError('VALIDATION_FAILED', 'common.validation', { delivery_date: 'past' });
     await this.prisma.$transaction(async (tx) => {
+      // C-14 (FD-10 C): every revision request is a negotiation round; at most 3 per quote.
+      await tx.$queryRaw`SELECT id FROM quotes WHERE id = ${q.id}::uuid FOR UPDATE`;
+      const rounds = await tx.quoteCounteroffer.findMany({
+        where: { quoteId: q.id },
+        orderBy: { round: 'desc' },
+      });
+      // One open round at a time: the supplier answers with a new version first.
+      if (rounds[0] && rounds[0].quoteVersionId === b.version_id)
+        throw new ApiError('CONFLICT', 'quote.round_open');
+      if (rounds.length >= NEGOTIATION_MAX_ROUNDS)
+        throw new ApiError('CONFLICT', 'quote.negotiation_limit', {
+          max: String(NEGOTIATION_MAX_ROUNDS),
+        });
+      await tx.quoteCounteroffer.create({
+        data: {
+          quoteId: q.id,
+          quoteVersionId: b.version_id,
+          round: rounds.length + 1,
+          unitPriceFils: b.unit_price_fils ? BigInt(b.unit_price_fils) : null,
+          quantity: b.quantity ?? null,
+          deliveryDate: b.delivery_date ? new Date(`${b.delivery_date}T00:00:00Z`) : null,
+          note: b.reason ?? null,
+          createdById: user.id,
+        },
+      });
       await rfqEvent(tx, {
         rfqId: q.rfqId,
         quoteId: q.id,
@@ -634,11 +664,17 @@ export class RfqService {
       await writeAudit(tx, {
         actorId: user.id,
         actorType: 'user',
-        action: 'quote.revision_requested',
+        action: counter ? 'quote.counteroffer' : 'quote.revision_requested',
         resourceType: 'quote',
         resourceId: q.id,
         companyId: ctx.company.id,
         reason: b.reason ?? null,
+        details: {
+          round: rounds.length + 1,
+          unit_price_fils: b.unit_price_fils ?? null,
+          quantity: b.quantity ?? null,
+          delivery_date: b.delivery_date ?? null,
+        },
         requestId: meta.requestId,
         ip: meta.ip,
       });
