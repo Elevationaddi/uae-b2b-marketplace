@@ -459,7 +459,11 @@ describe('T35 seller licence expiry', () => {
 
 describe('Phase 8 support rules (C-16, C-17)', () => {
   const ticket = (b: Buyer, category = 'OTHER') =>
-    b.client.post(support(b), { category, subject: 'Help please', body: 'Details of the question.' });
+    b.client.post(support(b), {
+      category,
+      subject: 'Help please',
+      body: 'Details of the question.',
+    });
 
   it('limits open tickets per company, lets urgent cases through and honours admin exceptions', async () => {
     const b = await buyer();
@@ -473,8 +477,11 @@ describe('Phase 8 support rules (C-16, C-17)', () => {
     let l = (await sup.get(`/admin/companies/${b.companyId}/support-limit`).expect(200)).body.data;
     expect(l).toMatchObject({ limit: 10, default_limit: 10, exception: false, open_tickets: 13 });
     // Finance cannot change it (needs admin.support.manage).
-    await admins.finance!.client
-      .post(`/admin/companies/${b.companyId}/support-limit`, { limit: 20, reason: 'Big account' })
+    await admins
+      .finance!.client.post(`/admin/companies/${b.companyId}/support-limit`, {
+        limit: 20,
+        reason: 'Big account',
+      })
       .expect(403);
     await sup
       .post(`/admin/companies/${b.companyId}/support-limit`, { limit: 0, reason: 'Big account' })
