@@ -42,6 +42,7 @@ export const REFUND_STATES = [
   'FAILED',
 ] as const;
 export const PAYOUT_STATES = [
+  'PROPOSED',
   'REQUESTED',
   'APPROVED',
   'REJECTED',
@@ -256,6 +257,8 @@ export const payoutItem = z.object({
   order_count: z.number().int(),
   requested_by: z.string().nullable(),
   requested_by_me: z.boolean(),
+  /** Set when the weekly schedule proposed this payout; finance must confirm it (Q9). */
+  proposed_at: isoDateTime.nullable(),
   approved_by: z.string().nullable(),
   decision_reason: z.string().nullable(),
   provider_ref: z.string().nullable(),

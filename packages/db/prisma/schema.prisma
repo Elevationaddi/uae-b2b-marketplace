@@ -1696,6 +1696,7 @@ enum RefundState {
 }
 
 enum PayoutState {
+  PROPOSED
   REQUESTED
   APPROVED
   REJECTED
@@ -1844,9 +1845,11 @@ model Payout {
   amountFils        BigInt      @map("amount_fils")
   currency          String      @default("AED")
   state             PayoutState @default(REQUESTED)
-  requestedById     String      @map("requested_by_id") @db.Uuid
+  /// Null while PROPOSED by the weekly schedule; set when a finance user confirms the proposal.
+  requestedById     String?     @map("requested_by_id") @db.Uuid
   approvedById      String?     @map("approved_by_id") @db.Uuid
   decisionReason    String?     @map("decision_reason")
+  proposedAt        DateTime?   @map("proposed_at") @db.Timestamptz(3)
   providerRef       String?     @unique @map("provider_ref")
   failureCode       String?     @map("failure_code")
   submittedAt       DateTime?   @map("submitted_at") @db.Timestamptz(3)
@@ -2016,17 +2019,20 @@ enum OrderHoldKind {
 
 /// Versioned, append-only commission policy (C-05). The newest version prices new checkouts.
 model CommissionPolicy {
-  id          String   @id @default(uuid()) @db.Uuid
-  version     Int      @unique
-  rateBps     Int      @map("rate_bps")
-  base        String   @default("MERCHANDISE_EX_VAT_DELIVERY")
-  reason      String
-  createdById String?  @map("created_by_id") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id            String   @id @default(uuid()) @db.Uuid
+  version       Int      @unique
+  rateBps       Int      @map("rate_bps")
+  base          String   @default("MERCHANDISE_EX_VAT_DELIVERY")
+  reason        String
+  createdById   String?  @map("created_by_id") @db.Uuid
+  /// Applies to checkouts created from this time; set at least the notice period ahead.
+  effectiveFrom DateTime @default(now()) @map("effective_from") @db.Timestamptz(3)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   checkouts Checkout[]
   orders    Order[]
 
+  @@index([effectiveFrom])
   @@map("commission_policies")
 }
 
@@ -2051,13 +2057,27 @@ model OrderHold {
 
 /// Weekly payout run (Dubai calendar week starting Monday).
 model PayoutRun {
-  id        String   @id @default(uuid()) @db.Uuid
-  weekStart DateTime @unique @map("week_start") @db.Date
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id            String    @id @default(uuid()) @db.Uuid
+  weekStart     DateTime  @unique @map("week_start") @db.Date
+  /// When the weekly schedule was due (Monday 10:00 Dubai by default, moved past holidays).
+  scheduledFor  DateTime? @map("scheduled_for") @db.Timestamptz(3)
+  proposedAt    DateTime? @map("proposed_at") @db.Timestamptz(3)
+  proposedCount Int?      @map("proposed_count")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
 
   payouts Payout[]
 
   @@map("payout_runs")
+}
+
+/// UAE public holidays that move the weekly payout run to the next working day.
+model PayoutHoliday {
+  date        DateTime @id @db.Date
+  name        String
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@map("payout_holidays")
 }
 
 enum VatRegistrationStatus {

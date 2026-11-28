@@ -44,14 +44,19 @@ export interface ActiveCommission {
 }
 
 /**
- * The commission that prices a new checkout: the newest policy version, or (before any policy is
+ * The commission that prices a new checkout: the policy version most recently in effect, or (before any policy is
  * recorded) the configured fallback rate (COMMISSION_BPS, or the labelled sandbox fixture).
  */
 export async function activeCommission(
   tx: TxClient,
   fallbackBps: number,
+  now: Date = new Date(),
 ): Promise<ActiveCommission> {
-  const p = await tx.commissionPolicy.findFirst({ orderBy: { version: 'desc' } });
+  // FD-05: a change takes effect only from its effective date (at least 30 days' notice).
+  const p = await tx.commissionPolicy.findFirst({
+    where: { effectiveFrom: { lte: now } },
+    orderBy: [{ effectiveFrom: 'desc' }, { version: 'desc' }],
+  });
   return p
     ? { bps: p.rateBps, policyId: p.id, version: p.version }
     : { bps: fallbackBps, policyId: null, version: null };

@@ -308,6 +308,53 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
   }),
   admin(
     'post',
+    '/payouts/{id}/confirm',
+    'Confirm a payout proposed by the weekly schedule; it becomes a request that a different finance approver must approve',
+    'admin.payouts.request',
+    {
+      response: f.payoutItem,
+    },
+  ),
+  admin(
+    'post',
+    '/payouts/{id}/withdraw',
+    'Withdraw a payout proposed by the weekly schedule (reason recorded; its orders are released)',
+    'admin.payouts.request',
+    {
+      body: f.financeDecisionRequest,
+      response: f.payoutItem,
+    },
+  ),
+  admin(
+    'get',
+    '/payouts/holidays',
+    'UAE public holidays that move the weekly payout run',
+    'admin.finance.read',
+    {
+      response: z.array(fp.payoutHolidayItem),
+    },
+  ),
+  admin(
+    'post',
+    '/payouts/holidays',
+    'Record a UAE public holiday (a payout run due that day moves to the next working day)',
+    'admin.payouts.request',
+    {
+      body: fp.payoutHolidayCreateRequest,
+      response: fp.payoutHolidayItem,
+    },
+  ),
+  admin(
+    'delete',
+    '/payouts/holidays/{date}',
+    'Remove a recorded holiday',
+    'admin.payouts.request',
+    {
+      response: z.object({ date: z.string() }),
+    },
+  ),
+  admin(
+    'post',
     '/sandbox/operations/{ref}/complete',
     'SANDBOX ONLY: simulate the provider finishing a refund or payout',
     'admin.finance.read',
@@ -369,7 +416,7 @@ export const FULFILMENT_ROUTES: CatalogRoute[] = [
   admin(
     'post',
     '/finance/commission',
-    'Record a new commission policy version (TOTP step-up; applies to new checkouts)',
+    'Record a new commission policy version (TOTP step-up; applies to new checkouts from its effective date, at least 30 days ahead; suppliers are notified)',
     'admin.commission.manage',
     {
       body: fp.commissionPolicyCreateRequest,
