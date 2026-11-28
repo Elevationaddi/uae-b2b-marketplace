@@ -15,6 +15,18 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: support limits, ticket auto-close, quote validity and review label (C-12, C-13, C-16, C-17)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-support-quote-review`.
+
+**Delivered**
+- Migration `20261206000000_phase8_support_limits` (additive): support categories Security and Compliance, `companies.support_ticket_limit` (1 to 100 or null), and an index for resolved tickets.
+- Open-ticket limit is now 10 per company (was 20 per workspace); Payment, Security and Compliance tickets always pass; support managers can set a per-company exception with a reason (audited) from the admin company page (P8-13).
+- Hourly `support.auto_close` task closes resolved tickets after 7 days without a customer response (audited as a system action).
+- Quote validity defaults to 7 days. Reviews show "Verified business buyer". Buyer dispute texts now describe the window from verified delivery.
+
+**Tests actually run locally (2026-11-28)**
+- 2 new integration tests in `operations.int.test.ts` (limit, urgent bypass, exception, audit; auto-close of silent tickets only). Full counts are in the PR description.
+
 ## Phase 8: PostgreSQL scheduler for background work
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-job-queue`. **Authority:** founder message of 2026-11-28 09:28 UTC: build a PostgreSQL job queue, do not assume BullMQ runs on Vercel, and never lose financial operations when a function stops. Nothing deployed or provisioned.
 

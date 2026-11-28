@@ -337,6 +337,8 @@ model Company {
   vatStatus              VatRegistrationStatus @default(UNKNOWN) @map("vat_status")
   vatStatusConfirmedAt   DateTime?             @map("vat_status_confirmed_at") @db.Timestamptz(3)
   vatStatusConfirmedById String?               @map("vat_status_confirmed_by_id") @db.Uuid
+  /// Admin exception to the open support ticket limit (C-17); null means the default.
+  supportTicketLimit     Int?                  @map("support_ticket_limit")
   status                 CompanyStatus         @default(DRAFT)
   suspensionKind         SuspensionKind?       @map("suspension_kind")
   /// Last 30-day licence expiry reminder sent for this expiry date (dedupe).
@@ -1917,6 +1919,8 @@ enum SupportCategory {
   RFQ
   CATALOG
   OTHER
+  SECURITY
+  COMPLIANCE
 }
 
 enum ExportState {
