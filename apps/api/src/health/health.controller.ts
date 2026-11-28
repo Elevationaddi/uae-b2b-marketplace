@@ -3,8 +3,8 @@ import type { AppEnv } from '@app/config';
 import type { Liveness, Readiness } from '@app/contracts';
 import { pingDatabase, type PrismaClient } from '@app/db';
 import type { Response } from 'express';
-import type Redis from 'ioredis';
-import { APP_ENV, PRISMA, REDIS } from '../infra/tokens';
+import { KvStore } from '../common/kv-store';
+import { APP_ENV, PRISMA } from '../infra/tokens';
 import { API_VERSION } from '../version';
 
 const CHECK_TIMEOUT_MS = 2_000;
@@ -34,7 +34,7 @@ export class HealthController {
   constructor(
     @Inject(APP_ENV) private readonly env: AppEnv,
     @Inject(PRISMA) private readonly prisma: PrismaClient,
-    @Inject(REDIS) private readonly redis: Redis,
+    private readonly kv: KvStore,
   ) {}
 
   /** Liveness: the process is up. Does not touch dependencies. */
@@ -46,17 +46,15 @@ export class HealthController {
     };
   }
 
-  /** Readiness: PostgreSQL and Redis reachable. 503 when any dependency is down. */
+  /** Readiness: PostgreSQL and the rate-limit store (Redis or PostgreSQL) reachable. 503 when any dependency is down. */
   @Get('ready')
   async ready(
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ data: Readiness; meta: { next_cursor: null } }> {
     const [database, redis] = await Promise.all([
       timed(() => pingDatabase(this.prisma)),
-      timed(async () => {
-        const pong = await this.redis.ping();
-        if (pong !== 'PONG') throw new Error('unexpected ping reply');
-      }),
+      // Redis, or the PostgreSQL rate-limit table when no Redis is configured.
+      timed(() => this.kv.ping()),
     ]);
     const ok = database.status === 'up' && redis.status === 'up';
     res.status(ok ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE);

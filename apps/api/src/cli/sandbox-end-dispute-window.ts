@@ -16,7 +16,7 @@ const DAY = 86_400_000;
 
 async function main() {
   const env = parseEnv(process.env);
-  if (env.isProduction || env.PAYMENT_MODE !== 'mock')
+  if (env.appEnv === 'production' || env.PAYMENT_MODE !== 'mock')
     throw new Error(
       'sandbox:end-dispute-window is available only in sandbox mode (PAYMENT_MODE=mock)',
     );

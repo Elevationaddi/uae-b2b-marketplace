@@ -1959,3 +1959,11 @@ textarea {
   flex-wrap: wrap;
   gap: var(--space-2);
 }
+
+/* Staging mail catcher */
+.mail-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  margin-block-start: var(--space-2);
+}

@@ -11,9 +11,41 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16). 14 of 24 conflicts fixed in code | Remaining authorised code: C-10, C-14, C-18 to C-21, buyer cancellation, sample requests, staging profile; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
+| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16) (#20); protected staging profile and Vercel adaptations (C-20, C-21). 16 of 24 conflicts fixed in code | Remaining authorised code: C-10, C-14, C-18, C-19, sample requests; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: buyer cancellation before dispatch (FD-09)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-buyer-cancellation`.
+
+**Delivered** (decision P8-19)
+- Migration `20261211000000_phase8_buyer_cancellation` (additive): `orders.buyer_cancel_*` with state check, `refunds.buyer_cancellation`.
+- `POST /buyer/workspaces/{ws}/orders/{id}/cancel-request` (reason required; once per order; 409 after dispatch). Ready stock: full refund requested for finance approval. Quote orders: supplier review.
+- `POST /seller/workspaces/{ws}/orders/{id}/buyer-cancel/decision` (accept requests the refund; decline needs a reason).
+- Process and dispatch refused while a request is pending; finance refusal declines the request; provider success cancels the order as `cancelled_by_buyer`.
+- Notifications (EN/AR) to the supplier on request, to the buyer on decision; order timeline events; web buttons, dialogs and status on order pages.
+
+**Tests actually run locally (2026-11-28)**
+- New `apps/api/test/buyer-cancellation.int.test.ts` (5): ready-stock refund review through provider success, finance refusal, refused after dispatch, custom order accepted by the supplier (no refund before acceptance), custom order declined.
+- Full API suite after merging main: 174 passed (21 files); web 15, worker 12. Lint, Prettier, typecheck clean.
+
+## Phase 8: protected staging profile and Vercel adaptations (C-20, C-21)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-staging-vercel`. Code only; nothing deployed, provisioned or connected.
+
+**Delivered** (details in `docs/phase-8/staging.md`)
+- `APP_ENV` deployment profile (`development`, `test`, `staging`, `production`). Staging is a production build that refuses live payments, email sending, missing protection or weak secrets; the labelled sandbox provider is allowed there and still refused in production.
+- Staging protection: HTTP Basic password on every web and admin page (`STAGING_ACCESS_PASSWORD`), registration limited to fictional domains (`STAGING_ALLOWED_EMAIL_DOMAINS`), staging banner (fictional data only, no real or confidential documents).
+- Mail catcher `EMAIL_PROVIDER=catcher`: emails stored 7 days in `caught_emails` and shown in the admin Staging mailbox; never allowed in production.
+- Redis is optional: rate limits and TOTP replay markers fall back to PostgreSQL (`rate_limit_buckets`); readiness checks the store in use. `rate-limiter-flexible` removed.
+- Vercel Blob storage driver (`STORAGE_DRIVER=vercel-blob`, private store, streamed through the API).
+- Vercel API entry (`apps/api/api/index.js`, `src/vercel.ts`, `vercel.json`): Nest app built once per instance, 503 on a failed cold start. Prisma engines for Vercel Functions.
+- Migration `20261209000000_phase8_staging_profile` (additive).
+
+**Tests actually run locally (2026-11-28)**
+- New: config staging tests (3), web staging-auth tests (3), Blob driver tests (3, SDK mocked), API staging integration tests (3: PostgreSQL rate limits and readiness without Redis, TOTP replay store, staging registration allowlist), worker mail-catcher tests (2).
+- Smoke test of the Vercel entry on a local HTTP server: readiness 200 without Redis, public config 200, invalid configuration answers 503.
+- Full API suite 164 passed before the last test fix (1 failure in the new test from counters left by an earlier local run; fixed and re-run twice: 3 of 3 passed). Lint, Prettier and typecheck clean.
+- CI audit fix: `@vercel/blob` pulled zod 4.1.11 (GHSA-mrhx-c7xc-m3w5); overridden to 4.6.7, `pnpm audit --prod` clean.
 
 ## Phase 8: scheduled weekly payouts and commission notice (founder decisions 2026-11-28 16:33 UTC)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-payout-schedule`.

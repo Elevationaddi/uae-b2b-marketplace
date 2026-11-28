@@ -2,6 +2,7 @@
  * Phase 6 routes (customer support, admin support queue, operations overview, scoped report
  * exports) for the generated OpenAPI document.
  */
+import { caughtEmailItem, stagingMailboxQuery } from './auth';
 import * as o from './operations';
 import type { CatalogRoute } from './openapi-catalog';
 
@@ -83,6 +84,13 @@ export const OPERATIONS_ROUTES: CatalogRoute[] = [
       response: o.operationsOverview,
       errors: [403, 422],
     },
+  ),
+  admin(
+    'get',
+    '/staging/emails',
+    'STAGING ONLY (EMAIL_PROVIDER=catcher): emails that would have been sent, kept 7 days; 404 otherwise',
+    'admin.support.read',
+    { query: stagingMailboxQuery, response: caughtEmailItem, list: true, errors: [403, 404] },
   ),
   admin('get', '/support', 'Support queue', 'admin.support.read', {
     query: o.adminSupportListQuery,

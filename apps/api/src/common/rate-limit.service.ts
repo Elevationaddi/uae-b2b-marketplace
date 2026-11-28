@@ -1,9 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
-import Redis from 'ioredis';
-import { RateLimiterRedis, RateLimiterRes } from 'rate-limiter-flexible';
-import { APP_ENV, REDIS } from '../infra/tokens';
+import { APP_ENV } from '../infra/tokens';
 import { ApiError } from './api-error';
+import { KvStore } from './kv-store';
 
 /** Named policies: points per duration (seconds). Scaled by RATE_LIMIT_SCALE outside production. */
 const POLICIES = {
@@ -29,47 +28,37 @@ const POLICIES = {
 } as const;
 export type RateLimitPolicy = keyof typeof POLICIES;
 
+/**
+ * Fixed-window rate limits on the shared store (Redis, or PostgreSQL when no Redis is configured).
+ * Every API instance sees the same counters, so limits hold across serverless functions.
+ */
 @Injectable()
 export class RateLimitService {
-  private readonly limiters = new Map<RateLimitPolicy, RateLimiterRedis>();
-
   constructor(
-    @Inject(REDIS) private readonly redis: Redis,
+    private readonly kv: KvStore,
     @Inject(APP_ENV) private readonly env: AppEnv,
   ) {}
 
-  private limiter(policy: RateLimitPolicy): RateLimiterRedis {
-    let l = this.limiters.get(policy);
-    if (!l) {
-      const p = POLICIES[policy];
-      const scale = this.env.isProduction ? 1 : this.env.RATE_LIMIT_SCALE;
-      l = new RateLimiterRedis({
-        storeClient: this.redis,
-        keyPrefix: `rl:${policy}`,
-        points: Math.max(1, Math.round(p.points * scale)),
-        duration: p.duration,
-        useRedisPackage: false,
-      });
-      this.limiters.set(policy, l);
-    }
-    return l;
+  private points(policy: RateLimitPolicy): number {
+    const scale = this.env.isProduction ? 1 : this.env.RATE_LIMIT_SCALE;
+    return Math.max(1, Math.round(POLICIES[policy].points * scale));
+  }
+
+  private key(policy: RateLimitPolicy, key: string) {
+    return `rl:${policy}:${key.toLowerCase()}`;
   }
 
   /** Consume one point; throws 429 RATE_LIMITED with retry_after when exhausted. */
   async consume(policy: RateLimitPolicy, key: string): Promise<void> {
-    try {
-      await this.limiter(policy).consume(key.toLowerCase());
-    } catch (err) {
-      if (err instanceof RateLimiterRes) {
-        throw new ApiError('RATE_LIMITED', 'common.rate_limited', {
-          retry_after: String(Math.ceil(err.msBeforeNext / 1000)),
-        });
-      }
-      throw err; // Redis failure: fail closed via the error filter (500)
-    }
+    // A store failure propagates and fails closed via the error filter (500).
+    const c = await this.kv.increment(this.key(policy, key), POLICIES[policy].duration);
+    if (c.points > this.points(policy))
+      throw new ApiError('RATE_LIMITED', 'common.rate_limited', {
+        retry_after: String(Math.max(1, Math.ceil(c.msBeforeNext / 1000))),
+      });
   }
 
   async reset(policy: RateLimitPolicy, key: string): Promise<void> {
-    await this.limiter(policy).delete(key.toLowerCase());
+    await this.kv.delete(this.key(policy, key));
   }
 }

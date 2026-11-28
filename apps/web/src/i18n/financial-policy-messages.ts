@@ -25,7 +25,8 @@ export const financialPolicyEn = {
   'bcancel.state.DECLINED': 'The cancellation requested on {date} was declined.',
   'bcancel.state.REFUNDED': 'Cancelled at the buyer’s request and refunded in full.',
   'order.event.order.buyer_cancel_requested': 'Buyer asked to cancel',
-  'order.event.order.buyer_cancel_accepted': 'Supplier accepted the cancellation; full refund requested',
+  'order.event.order.buyer_cancel_accepted':
+    'Supplier accepted the cancellation; full refund requested',
   'order.event.order.buyer_cancel_declined': 'Supplier declined the cancellation',
   'order.event.order.buyer_cancel_rejected': 'Finance refused the cancellation refund',
   'notif.type.order.buyer_cancel_requested':
