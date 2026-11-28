@@ -16,6 +16,7 @@ export interface SellerGroup {
   seller_company_id: string;
   delivery: { fee_fils: string | null; emirates: Emirate[]; days: number | null };
   vat: SupplierVat;
+  returnPolicy: { en: string | null; ar: string | null } | null;
   lines: PricedLine[];
   merchandise: bigint;
 }
@@ -73,6 +74,10 @@ export async function loadCart(tx: Tx, buyerWorkspaceId: string): Promise<Seller
           days: sf?.deliveryDays ?? null,
         },
         vat: supplierVat(w.company),
+        returnPolicy:
+          sf && (sf.returnPolicyEn || sf.returnPolicyAr)
+            ? { en: sf.returnPolicyEn, ar: sf.returnPolicyAr }
+            : null,
         lines: [],
         merchandise: 0n,
       };
@@ -188,6 +193,7 @@ export function buildPreview(groups: SellerGroup[], address: Address, settings: 
         g: out.map((p) => ({
           s: p.group.seller.workspace_id,
           x: [p.taxCode, p.taxBps, p.issue],
+          r: p.group.returnPolicy,
           f: p.shipping.toString(),
           l: p.group.lines.map((l) => [l.sku_id, l.quantity, l.unit_price_fils, l.issue]),
         })),

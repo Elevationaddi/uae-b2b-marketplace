@@ -37,6 +37,7 @@ import {
   sandboxOperationCompleteRequest,
   shipmentDeliverRequest,
   shipmentDispatchRequest,
+  sellerCancelRequest,
   uuid,
 } from '@app/contracts';
 import type { Request, Response } from 'express';
@@ -84,6 +85,26 @@ export class SellerFulfilmentController {
     private readonly orders: OrderService,
     private readonly limits: RateLimitService,
   ) {}
+
+  /** C-07: cancel a paid, undispatched order; a full refund goes to finance for approval. */
+  @Post('orders/:id/cancel')
+  @HttpCode(200)
+  async cancel(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    await this.fulfilment.sellerCancel(
+      a.user,
+      ws,
+      id,
+      parse(sellerCancelRequest, b),
+      requestMeta(req),
+    );
+    return ok(await this.orders.sellerDetail(a.user, ws, id));
+  }
 
   @Post('orders/:id/process')
   @HttpCode(200)

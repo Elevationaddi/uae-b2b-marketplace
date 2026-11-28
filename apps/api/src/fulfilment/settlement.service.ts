@@ -204,6 +204,26 @@ export class SettlementService {
             data: { state: 'RESOLUTION_PROPOSED' },
           });
       }
+      if (!approve && r.sellerCancellation) {
+        // C-07: finance refused the supplier's cancellation; fulfilment can continue.
+        await tx.order.update({
+          where: { id: r.orderId },
+          data: {
+            sellerCancelRequestedAt: null,
+            sellerCancelReason: null,
+            version: { increment: 1 },
+          },
+        });
+        await tx.orderEvent.create({
+          data: {
+            orderId: r.orderId,
+            kind: 'order.seller_cancel_rejected',
+            actorSide: 'ADMIN',
+            actorId: admin.id,
+            reason: b.reason,
+          },
+        });
+      }
       if (!approve) await recomputeSettlement(tx, r.orderId);
       await this.audit(
         tx,
