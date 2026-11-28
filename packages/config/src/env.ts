@@ -56,6 +56,11 @@ export const rawEnvSchema = z.object({
   APP_NAME: z.string().trim().min(1).max(80).default('B2B Marketplace (working name)'),
 
   SESSION_SECRET: z.string().min(1),
+  /**
+   * Bearer secret a scheduled function (Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`)
+   * must present to run background tasks. Unset: the cron endpoint refuses every request.
+   */
+  CRON_SECRET: z.string().optional(),
   /** 32-byte key, base64, used to encrypt admin TOTP secrets at rest (AES-256-GCM). */
   MFA_ENCRYPTION_KEY: z.string().refine((v) => Buffer.from(v, 'base64').length === 32, {
     message: 'must be 32 bytes, base64 encoded',
@@ -174,6 +179,9 @@ function isWeakSecret(value: string | undefined, minLength: number): boolean {
 /** Production-only rules. Each returns an issue string; empty array means compliant. */
 export function productionIssues(env: RawEnv): string[] {
   const issues: string[] = [];
+  if (env.CRON_SECRET !== undefined && isWeakSecret(env.CRON_SECRET, 32)) {
+    issues.push('CRON_SECRET must be a random value of at least 32 characters in production');
+  }
   if (isWeakSecret(env.SESSION_SECRET, 32)) {
     issues.push(
       'SESSION_SECRET must be at least 32 characters and not a placeholder in production',

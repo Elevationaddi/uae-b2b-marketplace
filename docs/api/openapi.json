@@ -151594,6 +151594,57 @@
                             "payouts_awaiting_approval"
                           ]
                         },
+                        "background_tasks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "every_seconds": {
+                                "type": "integer"
+                              },
+                              "last_status": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "succeeded",
+                                  "failed",
+                                  null
+                                ]
+                              },
+                              "last_finished_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "next_run_at": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "consecutive_failures": {
+                                "type": "integer"
+                              },
+                              "overdue": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "every_seconds",
+                              "last_status",
+                              "last_finished_at",
+                              "next_run_at",
+                              "consecutive_failures",
+                              "overdue"
+                            ]
+                          }
+                        },
                         "generated_at": {
                           "type": "string",
                           "format": "date-time"
@@ -151603,6 +151654,7 @@
                         "range",
                         "commerce",
                         "cases",
+                        "background_tasks",
                         "generated_at"
                       ]
                     },

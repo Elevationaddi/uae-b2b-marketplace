@@ -2041,3 +2041,25 @@ enum VatRegistrationStatus {
   REGISTERED
   NOT_REGISTERED
 }
+
+/// Recurring background task with a lease (Phase 8, PostgreSQL scheduler replacing BullMQ).
+model BackgroundTask {
+  name                String    @id
+  everySeconds        Int       @map("every_seconds")
+  nextRunAt           DateTime  @default(now()) @map("next_run_at") @db.Timestamptz(3)
+  leaseOwner          String?   @map("lease_owner")
+  leaseExpiresAt      DateTime? @map("lease_expires_at") @db.Timestamptz(3)
+  lastStartedAt       DateTime? @map("last_started_at") @db.Timestamptz(3)
+  lastFinishedAt      DateTime? @map("last_finished_at") @db.Timestamptz(3)
+  lastStatus          String?   @map("last_status")
+  lastError           String?   @map("last_error")
+  lastResult          Json?     @map("last_result")
+  runCount            Int       @default(0) @map("run_count")
+  failureCount        Int       @default(0) @map("failure_count")
+  consecutiveFailures Int       @default(0) @map("consecutive_failures")
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([nextRunAt])
+  @@map("background_tasks")
+}
