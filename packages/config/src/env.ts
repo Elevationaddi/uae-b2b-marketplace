@@ -163,6 +163,18 @@ export const rawEnvSchema = z.object({
    * this window (founder decision 28 Nov 2026: 14). Each order stores its own window end.
    */
   DISPUTE_WINDOW_DAYS: z.coerce.number().int().min(1).max(90).default(14),
+  /**
+   * Weekly payout schedule (founder decision 28 Nov 2026, Q9): ISO weekday (1 = Monday) and Dubai
+   * time at which the scheduler proposes payouts. A weekend or recorded UAE public holiday moves
+   * the run to the next working day. Proposals still need finance confirmation and approval.
+   */
+  PAYOUT_WEEKDAY: z.coerce.number().int().min(1).max(5).default(1),
+  PAYOUT_TIME: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'PAYOUT_TIME must be HH:MM (24 h, Asia/Dubai)')
+    .default('10:00'),
+  /** Days of supplier notice before a commission change takes effect (founder FD-05: 30). */
+  COMMISSION_NOTICE_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   /** Minutes a checkout holds stock while payment is pending (D11: 15). */
   RESERVATION_MINUTES: z.coerce.number().int().min(5).max(120).default(15),
 

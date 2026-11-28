@@ -50,6 +50,14 @@ export const payoutRunSummary = z.object({
   /** Monday (YYYY-MM-DD) of the current Dubai week. */
   week_start: z.string(),
   week_end: z.string(),
+  /** When this week's run is due (configured weekday and time, moved past weekends and holidays). */
+  scheduled_for: isoDateTime,
+  next_scheduled_for: isoDateTime,
+  /** When the scheduler proposed this week's payouts (null until then). */
+  proposed_at: isoDateTime.nullable(),
+  proposed_count: z.number().int().nullable(),
+  /** Configured schedule: ISO weekday (1 = Monday) and Dubai time. */
+  schedule: z.object({ weekday: z.number().int(), time: z.string() }),
   payout_count: z.number().int(),
   amount_fils: filsString,
   /** Sandbox: derived from the ledger. Payout approval is refused above this amount. */
@@ -65,6 +73,8 @@ export const commissionPolicyCreateRequest = z.object({
   rate_bps: z.number().int('integer').min(0, 'min').max(COMMISSION_LIMITS.maxBps, 'max'),
   reason: text(1000),
   totp_code: z.string().regex(/^\d{6}$/, 'code'),
+  /** When the new rate applies; at least COMMISSION_NOTICE_DAYS (30) ahead (FD-05). */
+  effective_from: isoDateTime,
 });
 export const commissionPolicyItem = z.object({
   id: uuid,
@@ -73,6 +83,9 @@ export const commissionPolicyItem = z.object({
   base: z.string(),
   reason: z.string(),
   created_by: z.string().nullable(),
+  effective_from: isoDateTime,
+  /** True until the effective date passes. */
+  scheduled: z.boolean(),
   created_at: isoDateTime,
 });
 export const commissionSettings = z.object({
@@ -83,7 +96,24 @@ export const commissionSettings = z.object({
     source: z.enum(['policy', 'configuration']),
   }),
   can_manage: z.boolean(),
+  /** Minimum days between recording a change and its effective date. */
+  notice_days: z.number().int(),
+  /** Earliest allowed effective date for a change recorded now. */
+  earliest_effective_from: isoDateTime,
   history: z.array(commissionPolicyItem),
+});
+
+// ------------------------------------------------------------------ payout holidays (Q9)
+
+export const payoutHolidayCreateRequest = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date'),
+  name: z.string().trim().min(2, 'min').max(200, 'max'),
+});
+export const payoutHolidayItem = z.object({
+  date: z.string(),
+  name: z.string(),
+  created_by: z.string().nullable(),
+  created_at: isoDateTime,
 });
 
 // ------------------------------------------------------------------ reconciliation
@@ -94,3 +124,4 @@ export type OrderHoldItem = z.infer<typeof orderHoldItem>;
 export type PayoutRunSummary = z.infer<typeof payoutRunSummary>;
 export type CommissionPolicyItem = z.infer<typeof commissionPolicyItem>;
 export type CommissionSettings = z.infer<typeof commissionSettings>;
+export type PayoutHolidayItem = z.infer<typeof payoutHolidayItem>;

@@ -11,6 +11,7 @@ import type { AppEnv } from '@app/config';
 import {
   allocateRefund,
   completeSandboxOperation,
+  createSellerPayout,
   currentPayoutRun,
   HOLDING_BLOCKERS,
   merchandiseCommissionShare,
@@ -329,53 +330,79 @@ export class SettlementService {
     const id = await this.prisma.$transaction(async (tx) => {
       const now = new Date();
       const run = await currentPayoutRun(tx, now);
-      const ids = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM orders WHERE seller_workspace_id = ${b.seller_workspace_id}::uuid
-          AND settlement_state = 'ELIGIBLE' ORDER BY id FOR UPDATE`;
-      const live = await tx.payout.count({
-        where: {
-          runId: run.id,
-          sellerWorkspaceId: b.seller_workspace_id,
-          state: { notIn: ['REJECTED', 'FAILED'] },
-        },
+      const r = await createSellerPayout(tx, {
+        sellerWorkspaceId: b.seller_workspace_id,
+        runId: run.id,
+        requestedById: admin.id,
+        now,
       });
-      if (live) throw new ApiError('CONFLICT', 'payout.already_in_run');
-      const allocations: { orderId: string; amountFils: bigint }[] = [];
-      let companyId: string | null = null;
-      for (const { id: orderId } of ids) {
-        const o = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
-        const left = await remainingPayable(tx, orderId);
-        if ((await settlementBlockers(tx, o, left, now)).length) {
-          await recomputeSettlement(tx, orderId, now);
-          continue;
-        }
-        companyId = o.sellerCompanyId;
-        allocations.push({ orderId, amountFils: left });
-      }
-      if (allocations.length === 0 || !companyId)
-        throw new ApiError('CONFLICT', 'payout.nothing_eligible');
-      const amount = allocations.reduce((s, a) => s + a.amountFils, 0n);
-      const p = await tx.payout.create({
-        data: {
-          number: await nextCaseNumber(tx, 'payout'),
-          sellerWorkspaceId: b.seller_workspace_id,
-          sellerCompanyId: companyId,
-          amountFils: amount,
-          requestedById: admin.id,
-          runId: run.id,
-          allocations: { create: allocations },
-        },
-      });
-      await tx.order.updateMany({
-        where: { id: { in: allocations.map((a) => a.orderId) } },
-        data: { settlementState: 'IN_PAYOUT' },
-      });
-      await this.audit(tx, admin, 'payout.requested', 'payout', p.id, meta, undefined, {
-        amount_fils: amount.toString(),
-        orders: allocations.length,
+      if (!r.ok) throw new ApiError('CONFLICT', r.error);
+      await this.audit(tx, admin, 'payout.requested', 'payout', r.payout.id, meta, undefined, {
+        amount_fils: r.payout.amountFils.toString(),
+        orders: r.orders,
         week_start: toIsoDate(run.weekStart),
       });
-      return p.id;
+      return r.payout.id;
+    });
+    return this.payout(admin, id);
+  }
+
+  /**
+   * Q9: the weekly schedule only proposes payouts. A finance user confirms a proposal, which makes
+   * it a request with that user as requester; a different finance approver must still approve it.
+   * Orders are checked again: a proposal whose order was held or disputed meanwhile is refused and
+   * should be withdrawn.
+   */
+  async confirmProposal(admin: User, id: string, meta: RequestMeta) {
+    assertUuid(id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM payouts WHERE id = ${id}::uuid FOR UPDATE`;
+      const p = await tx.payout.findUnique({ where: { id }, include: { allocations: true } });
+      if (!p) throw new ApiError('NOT_FOUND', 'common.not_found');
+      if (p.state !== 'PROPOSED') throw new ApiError('CONFLICT', 'payout.invalid_transition');
+      const now = new Date();
+      for (const a of p.allocations) {
+        const o = await tx.order.findUniqueOrThrow({ where: { id: a.orderId } });
+        const left = await remainingPayable(tx, a.orderId);
+        if (left < a.amountFils) throw new ApiError('CONFLICT', 'payout.order_changed');
+        if ((await settlementBlockers(tx, o, left, now)).length)
+          throw new ApiError('CONFLICT', 'payout.order_held');
+      }
+      await tx.payout.update({
+        where: { id },
+        data: { state: 'REQUESTED', requestedById: admin.id },
+      });
+      await this.audit(tx, admin, 'payout.confirmed', 'payout', id, meta, undefined, {
+        amount_fils: p.amountFils.toString(),
+      });
+    });
+    return this.payout(admin, id);
+  }
+
+  /** Withdraw a scheduled proposal with a reason; its orders return to eligibility checks. */
+  async withdrawProposal(
+    admin: User,
+    id: string,
+    b: z.infer<typeof financeDecisionRequest>,
+    meta: RequestMeta,
+  ) {
+    assertUuid(id);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM payouts WHERE id = ${id}::uuid FOR UPDATE`;
+      const p = await tx.payout.findUnique({ where: { id }, include: { allocations: true } });
+      if (!p) throw new ApiError('NOT_FOUND', 'common.not_found');
+      if (p.state !== 'PROPOSED') throw new ApiError('CONFLICT', 'payout.invalid_transition');
+      await tx.payout.update({
+        where: { id },
+        data: { state: 'REJECTED', approvedById: admin.id, decisionReason: b.reason },
+      });
+      const orderIds = p.allocations.map((a) => a.orderId);
+      await tx.order.updateMany({
+        where: { id: { in: orderIds }, settlementState: 'IN_PAYOUT' },
+        data: { settlementState: 'NOT_ELIGIBLE' },
+      });
+      for (const oid of orderIds) await recomputeSettlement(tx, oid);
+      await this.audit(tx, admin, 'payout.withdrawn', 'payout', id, meta, b.reason);
     });
     return this.payout(admin, id);
   }
@@ -471,8 +498,9 @@ export class SettlementService {
       amount_fils: p.amountFils.toString(),
       state: p.state,
       order_count: p._count.allocations,
-      requested_by: users.get(p.requestedById) ?? '',
-      requested_by_me: p.requestedById === adminId,
+      requested_by: p.requestedById ? (users.get(p.requestedById) ?? '') : null,
+      requested_by_me: p.requestedById !== null && p.requestedById === adminId,
+      proposed_at: p.proposedAt?.toISOString() ?? null,
       approved_by: p.approvedById ? (users.get(p.approvedById) ?? '') : null,
       decision_reason: p.decisionReason,
       provider_ref: p.providerRef,

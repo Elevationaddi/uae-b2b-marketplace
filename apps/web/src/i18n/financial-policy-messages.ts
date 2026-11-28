@@ -79,7 +79,7 @@ export const financialPolicyEn = {
 
   'commission.title': 'Commission',
   'commission.intro':
-    'The platform commission is a percentage of merchandise value, excluding VAT and delivery. A new rate applies to checkouts created after it is saved; existing orders keep the rate they were priced with.',
+    'The platform commission is a percentage of merchandise value, excluding VAT and delivery. A new rate applies to checkouts created from its effective date, at least 30 days after it is recorded, and every supplier is notified; existing orders keep the rate they were priced with.',
   'commission.current': 'Current rate',
   'commission.source.policy': 'Policy version {version}',
   'commission.source.configuration': 'From configuration (no policy version recorded yet)',
@@ -89,7 +89,8 @@ export const financialPolicyEn = {
   'commission.reason': 'Reason for the change',
   'commission.totp': 'Authenticator code',
   'commission.save': 'Save new rate',
-  'commission.saved': 'New commission rate saved. It applies to new checkouts.',
+  'commission.saved':
+    'New commission rate recorded. Suppliers have been notified; it applies to checkouts from its effective date.',
   'commission.history': 'History',
   'commission.empty': 'No policy versions recorded yet.',
   'commission.readonly': 'Only a finance approver can change the rate.',
@@ -112,6 +113,38 @@ export const financialPolicyEn = {
   'error.hold.exists': 'This order already has an active hold of that type.',
   'error.hold.already_released': 'This hold has already been released.',
   'error.reconciliation.not_open': 'This case is already resolved.',
+
+  'payout.state.PROPOSED': 'Proposed by the schedule',
+  'payout.scheduled_for': 'Scheduled run',
+  'payout.next_run': 'Next week’s run',
+  'payout.proposal_status': 'Schedule',
+  'payout.proposed_on': '{count} payouts proposed on {date}',
+  'payout.not_proposed': 'Not proposed yet',
+  'payout.proposed_by_schedule': 'Weekly schedule',
+  'payout.confirm': 'Confirm',
+  'payout.confirm_title': 'Confirm payout {number}?',
+  'payout.confirm_body':
+    'Confirming makes you the requester. A different finance approver must still approve it before anything is sent to the provider.',
+  'payout.withdraw': 'Withdraw',
+  'payout.withdraw_title': 'Withdraw proposed payout {number}?',
+  'payout.holidays': 'UAE public holidays',
+  'payout.holidays_note':
+    'A payout run due on a weekend or a recorded holiday moves to the next working day. Record each public holiday once it is announced.',
+  'payout.holidays_empty': 'No holidays recorded.',
+  'payout.holiday_date': 'Date',
+  'payout.holiday_name': 'Holiday name',
+  'payout.holiday_add': 'Add holiday',
+  'payout.holiday_remove': 'Remove',
+  'payout.holiday_remove_title': 'Remove the holiday on {date}?',
+  'error.payout_holiday.exists': 'A holiday is already recorded on that date.',
+  'commission.effective_from': 'Effective from',
+  'commission.effective_hint':
+    'Suppliers get at least {days} days’ notice. Earliest: {date} (Dubai).',
+  'commission.scheduled': 'Scheduled',
+  'error.commission.notice_too_short':
+    'The effective date must give suppliers the full notice period.',
+  'notif.type.commission.change_scheduled':
+    'The platform commission changes to {rate} from {date}. Orders placed before then keep their rate.',
 } as const;
 
 export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> = {
@@ -191,7 +224,7 @@ export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> =
 
   'commission.title': 'العمولة',
   'commission.intro':
-    'عمولة المنصة نسبة من قيمة البضاعة دون ضريبة القيمة المضافة والتوصيل. تنطبق النسبة الجديدة على عمليات الدفع التي تُنشأ بعد حفظها، وتحتفظ الطلبات الحالية بالنسبة التي سُعّرت بها.',
+    'عمولة المنصة نسبة من قيمة البضاعة دون ضريبة القيمة المضافة والتوصيل. تنطبق النسبة الجديدة على عمليات الدفع اعتباراً من تاريخ سريانها، بعد 30 يوماً على الأقل من تسجيلها، ويُشعَر كل مورد بها، وتحتفظ الطلبات الحالية بالنسبة التي سُعّرت بها.',
   'commission.current': 'النسبة الحالية',
   'commission.source.policy': 'إصدار السياسة {version}',
   'commission.source.configuration': 'من الإعدادات (لم يُسجَّل أي إصدار سياسة بعد)',
@@ -201,7 +234,8 @@ export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> =
   'commission.reason': 'سبب التغيير',
   'commission.totp': 'رمز تطبيق المصادقة',
   'commission.save': 'حفظ النسبة الجديدة',
-  'commission.saved': 'تم حفظ نسبة العمولة الجديدة. تنطبق على عمليات الدفع الجديدة.',
+  'commission.saved':
+    'تم تسجيل نسبة العمولة الجديدة وإشعار الموردين. تنطبق على عمليات الدفع اعتباراً من تاريخ سريانها.',
   'commission.history': 'السجل',
   'commission.empty': 'لم يُسجَّل أي إصدار سياسة بعد.',
   'commission.readonly': 'يمكن لمعتمد المالية فقط تغيير النسبة.',
@@ -223,4 +257,35 @@ export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> =
   'error.hold.exists': 'لدى هذا الطلب تعليق نشط من هذا النوع بالفعل.',
   'error.hold.already_released': 'تم رفع هذا التعليق بالفعل.',
   'error.reconciliation.not_open': 'تم حل هذه الحالة بالفعل.',
+
+  'payout.state.PROPOSED': 'مقترح من الجدول',
+  'payout.scheduled_for': 'موعد الدورة',
+  'payout.next_run': 'دورة الأسبوع القادم',
+  'payout.proposal_status': 'الجدول',
+  'payout.proposed_on': 'اقتُرح {count} تحويلات في {date}',
+  'payout.not_proposed': 'لم يُقترح بعد',
+  'payout.proposed_by_schedule': 'الجدول الأسبوعي',
+  'payout.confirm': 'تأكيد',
+  'payout.confirm_title': 'هل تؤكد التحويل {number}؟',
+  'payout.confirm_body':
+    'بالتأكيد تصبح مقدم الطلب. يجب أن يوافق عليه معتمد مالي آخر قبل إرسال أي شيء إلى مزود الدفع.',
+  'payout.withdraw': 'سحب',
+  'payout.withdraw_title': 'هل تسحب التحويل المقترح {number}؟',
+  'payout.holidays': 'العطلات الرسمية في الإمارات',
+  'payout.holidays_note':
+    'تنتقل دورة التحويل التي تصادف عطلة نهاية الأسبوع أو عطلة مسجلة إلى يوم العمل التالي. سجّل كل عطلة رسمية عند الإعلان عنها.',
+  'payout.holidays_empty': 'لا توجد عطلات مسجلة.',
+  'payout.holiday_date': 'التاريخ',
+  'payout.holiday_name': 'اسم العطلة',
+  'payout.holiday_add': 'إضافة عطلة',
+  'payout.holiday_remove': 'إزالة',
+  'payout.holiday_remove_title': 'هل تزيل العطلة في {date}؟',
+  'error.payout_holiday.exists': 'توجد عطلة مسجلة في هذا التاريخ بالفعل.',
+  'commission.effective_from': 'يسري اعتباراً من',
+  'commission.effective_hint':
+    'يحصل الموردون على إشعار لا يقل عن {days} يوماً. أقرب موعد: {date} (دبي).',
+  'commission.scheduled': 'مجدول',
+  'error.commission.notice_too_short': 'يجب أن يمنح تاريخ السريان الموردين فترة الإشعار كاملة.',
+  'notif.type.commission.change_scheduled':
+    'تتغير عمولة المنصة إلى {rate} اعتباراً من {date}. تحتفظ الطلبات السابقة بنسبتها.',
 };
