@@ -52,6 +52,13 @@ export const STOCK_MOVEMENT_KINDS = [
   'RELEASE_UNAVAILABLE',
   'SET_ON_HAND',
 ] as const;
+/** Every movement kind, including the system movements written by checkout (Phase 4). */
+export const ALL_STOCK_MOVEMENT_KINDS = [
+  ...STOCK_MOVEMENT_KINDS,
+  'RESERVE',
+  'RELEASE_RESERVATION',
+  'SALE',
+] as const;
 export const STOREFRONT_MEDIA_KINDS = ['LOGO', 'COVER', 'FACTORY', 'WAREHOUSE', 'OTHER'] as const;
 export const MARKETPLACE_SORTS = [
   'relevance',
@@ -655,7 +662,7 @@ export const inventoryQuery = z.object({
 });
 export const stockMovementItem = z.object({
   id: uuid,
-  kind: z.enum(STOCK_MOVEMENT_KINDS),
+  kind: z.enum(ALL_STOCK_MOVEMENT_KINDS),
   delta_on_hand: z.number().int(),
   delta_reserved: z.number().int(),
   delta_unavailable: z.number().int(),
@@ -687,6 +694,10 @@ const storefrontFields = {
   fulfilment_en: optText(1000),
   fulfilment_ar: optText(1000),
   certifications: z.array(certification).max(20, 'max'),
+  /** Phase 4 delivery terms (provisional P4-1): flat fee per order and the emirates served. */
+  delivery_fee_fils: filsString.nullish(),
+  delivery_emirates: z.array(emirate).max(7, 'max'),
+  delivery_days: z.number().int().min(0).max(90).nullish(),
 };
 export const storefrontUpdateRequest = z
   .object({
@@ -744,6 +755,9 @@ export const storefrontResponse = z.object({
     }),
   ),
   media: z.array(storefrontMediaItem),
+  delivery_fee_fils: filsString.nullable(),
+  delivery_emirates: z.array(emirate),
+  delivery_days: z.number().int().nullable(),
   version: z.number().int(),
   published_at: isoDateTime.nullable(),
 });
@@ -847,7 +861,17 @@ export const viewerInfo = z.object({
   /** RFQ / purchase availability for this viewer; never a fake transaction. */
   trading: z.object({
     available: z.boolean(),
-    reason: z.enum(['sign_in', 'requires_approved_buyer', 'phase_unavailable', 'quote_only']),
+    /** Why the viewer cannot add to cart; null when available (Phase 4 cart). */
+    reason: z
+      .enum([
+        'sign_in',
+        'requires_approved_buyer',
+        'phase_unavailable',
+        'quote_only',
+        'made_to_order',
+        'checkout_disabled',
+      ])
+      .nullable(),
     /** Phase 3: an approved trading buyer may request a quotation for this product. */
     rfq: z.boolean(),
   }),

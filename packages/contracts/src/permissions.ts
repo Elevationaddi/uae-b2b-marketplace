@@ -153,6 +153,9 @@ export const ADMIN_CAPABILITIES = [
   'admin.featured.manage',
   'admin.rfqs.read',
   'admin.rfqs.moderate',
+  /** Phase 4: order details (support cases) and read-only payments, ledger and reconciliation. */
+  'admin.orders.read',
+  'admin.finance.read',
 ] as const;
 export type AdminCapability = (typeof ADMIN_CAPABILITIES)[number];
 
@@ -173,9 +176,15 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.rfqs.read',
     'admin.rfqs.moderate',
   ],
-  SUPPORT: ['admin.companies.read', 'admin.users.read', 'admin.catalog.read', 'admin.rfqs.read'],
-  FINANCE: ['admin.companies.read'],
-  FINANCE_APPROVER: ['admin.companies.read'],
+  SUPPORT: [
+    'admin.companies.read',
+    'admin.users.read',
+    'admin.catalog.read',
+    'admin.rfqs.read',
+    'admin.orders.read',
+  ],
+  FINANCE: ['admin.companies.read', 'admin.orders.read', 'admin.finance.read'],
+  FINANCE_APPROVER: ['admin.companies.read', 'admin.orders.read', 'admin.finance.read'],
   // Super-admin manages roles/config/system; no implicit compliance or financial approval.
   SUPER_ADMIN: [
     'admin.companies.read',

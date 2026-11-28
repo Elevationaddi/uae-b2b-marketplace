@@ -121,7 +121,7 @@ export const RFQ_ROUTES: CatalogRoute[] = [
   buyer(
     'post',
     '/quotes/{quoteId}/accept',
-    'Award: accept the exact current version (header Idempotency-Key required). 409 quote.superseded, quote.expired, rfq.already_awarded. Orders are created in Phase 4.',
+    'Award: accept the exact current version (header Idempotency-Key required). 409 quote.superseded, quote.expired, rfq.already_awarded. Creates the unpaid order and checkout (Phase 4).',
     { body: r.quoteAcceptRequest, response: r.awardResponse, capability: buyerEdit },
   ),
 

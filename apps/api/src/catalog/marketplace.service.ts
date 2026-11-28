@@ -15,6 +15,7 @@ import { Prisma, type PrismaClient } from '@app/db';
 import type { z } from 'zod';
 import { ApiError } from '../common/api-error';
 import { PRISMA } from '../infra/tokens';
+import { CommerceConfig } from '../commerce/commerce-common';
 import { assertUuid, decodeOffset, encodeOffset, searchTokens } from './access';
 import { mapCertifications, mediaUrl } from './mappers';
 
@@ -79,7 +80,10 @@ interface CatRow {
 
 @Injectable()
 export class MarketplaceService {
-  constructor(@Inject(PRISMA) private readonly prisma: PrismaClient) {}
+  constructor(
+    @Inject(PRISMA) private readonly prisma: PrismaClient,
+    private readonly commerce: CommerceConfig,
+  ) {}
 
   // ------------------------------------------------------------------ viewer
 
@@ -386,14 +390,18 @@ export class MarketplaceService {
     return r;
   }
 
-  private tradingFor(viewer: Viewer, priceType: string) {
+  /** Cart eligibility (P4-6): ready-stock FIXED/TIERED listings, approved buyers, checkout on. */
+  private tradingFor(viewer: Viewer, priceType: string, mode: string) {
     if (!viewer.verified) return { available: false, reason: 'sign_in' as const, rfq: false };
     if (!viewer.approvedBuyer)
       return { available: false, reason: 'requires_approved_buyer' as const, rfq: false };
-    // Purchase (cart/checkout) arrives in Phase 4; quotations are available from Phase 3.
     if (priceType === 'QUOTE_ONLY')
       return { available: false, reason: 'quote_only' as const, rfq: true };
-    return { available: false, reason: 'phase_unavailable' as const, rfq: true };
+    if (mode !== 'READY_STOCK')
+      return { available: false, reason: 'made_to_order' as const, rfq: true };
+    if (!this.commerce.checkoutEnabled)
+      return { available: false, reason: 'checkout_disabled' as const, rfq: true };
+    return { available: true, reason: null, rfq: true };
   }
 
   async product(id: string, viewer: Viewer): Promise<PublicProductDetail> {
@@ -538,7 +546,7 @@ export class MarketplaceService {
         tier: viewer.verified ? 'verified' : 'guest',
         saved: saved > 0,
         compared: compared > 0,
-        trading: this.tradingFor(viewer, r.price_type),
+        trading: this.tradingFor(viewer, r.price_type, v.mode),
       },
       published_at: r.published_at?.toISOString() ?? null,
     };

@@ -113,8 +113,6 @@ export const rfqEn = {
     'The platform has hidden this request from suppliers while it is reviewed. Contact support if you think this is a mistake.',
   'rfq.awarded_title': 'Quote accepted',
   'rfq.awarded_body': 'Payment is due by {due} (Dubai time).',
-  'rfq.order_later_phase':
-    'Orders and payment open in the next release. The award is recorded; no payment has been taken.',
   'rfq.award_total': 'Accepted total:',
   'rfq.timeline': 'History',
 
@@ -404,8 +402,6 @@ export const rfqAr: Record<keyof typeof rfqEn, string> = {
     'أخفت المنصة هذا الطلب عن الموردين أثناء مراجعته. تواصل مع الدعم إذا كنت تعتقد أن ذلك خطأ.',
   'rfq.awarded_title': 'تم قبول العرض',
   'rfq.awarded_body': 'موعد الدفع قبل {due} (بتوقيت دبي).',
-  'rfq.order_later_phase':
-    'تتوفر الطلبات والدفع في الإصدار القادم. تم تسجيل الترسية ولم يتم تحصيل أي مبلغ.',
   'rfq.award_total': 'الإجمالي المقبول:',
   'rfq.timeline': 'السجل',
 

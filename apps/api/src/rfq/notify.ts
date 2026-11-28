@@ -5,7 +5,7 @@ type Payload = Record<string, string | number | null>;
 
 /** Which email opt-in governs a notification type (in-app is always on). */
 function emailCategory(type: NotificationType): 'rfqs' | 'quotes' | 'messages' {
-  if (type.startsWith('quote.')) return 'quotes';
+  if (type.startsWith('quote.') || type.startsWith('order.')) return 'quotes';
   if (type.startsWith('message.')) return 'messages';
   return 'rfqs';
 }
@@ -69,6 +69,22 @@ const SUMMARY: Record<
   'message.new': {
     en: (p) => `New message from ${p.company}`,
     ar: (p) => `رسالة جديدة من ${p.company}`,
+  },
+  'order.paid': {
+    en: (p) => `Payment confirmed for ${p.order_number}`,
+    ar: (p) => `تم تأكيد الدفع للطلب ${p.order_number}`,
+  },
+  'order.received': {
+    en: (p) => `New paid order ${p.order_number}`,
+    ar: (p) => `طلب مدفوع جديد ${p.order_number}`,
+  },
+  'order.cancelled': {
+    en: (p) => `${p.order_number} was cancelled`,
+    ar: (p) => `تم إلغاء الطلب ${p.order_number}`,
+  },
+  'order.payment_due': {
+    en: (p) => `Payment is due for ${p.order_number}`,
+    ar: (p) => `الدفع مستحق للطلب ${p.order_number}`,
   },
 };
 

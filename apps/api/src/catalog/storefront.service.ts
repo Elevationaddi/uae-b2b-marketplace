@@ -35,6 +35,9 @@ const FIELD_MAP: Record<string, string> = {
   fulfilment_en: 'fulfilmentEn',
   fulfilment_ar: 'fulfilmentAr',
   certifications: 'certifications',
+  delivery_fee_fils: 'deliveryFeeFils',
+  delivery_emirates: 'deliveryEmirates',
+  delivery_days: 'deliveryDays',
 };
 
 /**
@@ -104,6 +107,9 @@ export class StorefrontService {
         fulfilment_ar: null,
         certifications: [],
         media: [],
+        delivery_fee_fils: null,
+        delivery_emirates: [],
+        delivery_days: null,
         version: 0,
         published_at: null,
       };
@@ -137,7 +143,16 @@ export class StorefrontService {
         if (k === 'expected_version' || v === undefined) continue;
         const col = FIELD_MAP[k];
         if (!col) continue;
-        data[col] = k === 'certifications' ? (v as Prisma.InputJsonValue) : v;
+        data[col] =
+          k === 'certifications'
+            ? (v as Prisma.InputJsonValue)
+            : k === 'delivery_fee_fils'
+              ? v === null
+                ? null
+                : BigInt(v as string)
+              : k === 'delivery_emirates'
+                ? [...new Set(v as string[])]
+                : v;
         changed.push(k);
       }
       const r = await tx.storefront.updateMany({

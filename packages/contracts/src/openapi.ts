@@ -17,12 +17,13 @@ import { errorBodySchema, metaSchema } from './envelope';
 import { livenessSchema, readinessSchema } from './health';
 import { CATALOG_ROUTES } from './openapi-catalog';
 import { RFQ_ROUTES } from './openapi-rfq';
+import { COMMERCE_ROUTES } from './openapi-commerce';
 import * as team from './team';
 
 extendZodWithOpenApi(z);
 
 type Method = 'get' | 'post' | 'patch' | 'delete';
-type Security = 'none' | 'company' | 'admin' | 'admin_pending_mfa';
+type Security = 'none' | 'company' | 'admin' | 'admin_pending_mfa' | 'signature';
 
 type Route = {
   method: Method;
@@ -608,6 +609,7 @@ const ROUTES: Route[] = [
   },
   ...CATALOG_ROUTES,
   ...RFQ_ROUTES,
+  ...COMMERCE_ROUTES,
 ];
 
 export const API_ROUTES = ROUTES.map((r) => ({ method: r.method, path: r.path }));
@@ -634,6 +636,13 @@ export function buildOpenApiDocument(): Record<string, unknown> {
     description:
       'Must equal the csrf cookie on every POST/PATCH/DELETE; Origin must be the web origin (admin origin for /admin).',
   });
+  registry.registerComponent('securitySchemes', 'webhookSignature', {
+    type: 'apiKey',
+    in: 'header',
+    name: 'X-Sandbox-Signature',
+    description:
+      'Provider webhook signature: t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>">. No session or CSRF; 5-minute window.',
+  });
   const errorRef = errorBodySchema;
 
   for (const r of ROUTES) {
@@ -648,6 +657,7 @@ export function buildOpenApiDocument(): Record<string, unknown> {
     if (r.security === 'admin' || r.security === 'admin_pending_mfa')
       security.push(write ? { adminSession: [], csrfToken: [] } : { adminSession: [] });
     if (r.security === 'none' && write) security.push({ csrfToken: [] });
+    if (r.security === 'signature') security.push({ webhookSignature: [] });
 
     const responses: Record<string, unknown> = {};
     const status = r.status ?? 200;

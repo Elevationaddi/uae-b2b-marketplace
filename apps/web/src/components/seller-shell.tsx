@@ -26,9 +26,10 @@ function SellerFrame({ children }: { children: (ws: Workspace, base: string) => 
     [`${base}/pricing`, 'seller.nav.pricing'],
     [`${base}/rfqs`, 'seller.nav.rfqs'],
     [`${base}/quotes`, 'seller.nav.quotes'],
+    [`${base}/orders`, 'seller.nav.orders'],
     [`/${locale}/app/messages/${ws.id}`, 'seller.nav.messages'],
   ];
-  const later: MessageKey[] = ['seller.nav.orders', 'seller.nav.finance'];
+  const later: MessageKey[] = ['seller.nav.finance'];
   const active = (href: string) =>
     href === base || href === `${base}/products`
       ? pathname === href

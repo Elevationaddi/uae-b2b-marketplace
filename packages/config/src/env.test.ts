@@ -35,6 +35,7 @@ const prod = {
   EMAIL_FROM: 'no-reply@app.invalid',
   FILE_SCANNER: 'live',
   TAX_STANDARD_BPS: '500',
+  COMMISSION_BPS: '1000',
 };
 
 function issuesOf(source: Record<string, string>): string[] {
@@ -136,6 +137,14 @@ describe('approved decisions in configuration', () => {
     expect(issuesOf({ ...dev, QUOTE_PAYMENT_WINDOW_HOURS: '0' }).join()).toMatch(
       /QUOTE_PAYMENT_WINDOW_HOURS/,
     );
+  });
+
+  it('defaults reservation to 15 minutes and requires commission in production (D11, D05)', () => {
+    expect(parseEnv(dev).RESERVATION_MINUTES).toBe(15);
+    expect(parseEnv(dev).COMMISSION_BPS).toBeUndefined();
+    const { COMMISSION_BPS: _c, ...noCommission } = prod;
+    expect(issuesOf(noCommission).join()).toMatch(/COMMISSION_BPS/);
+    expect(issuesOf({ ...dev, COMMISSION_BPS: '9000' }).join()).toMatch(/COMMISSION_BPS/);
   });
 
   it('uses a configurable working name (A06)', () => {

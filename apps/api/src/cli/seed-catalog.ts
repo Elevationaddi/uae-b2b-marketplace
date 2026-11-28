@@ -346,6 +346,17 @@ const SELLERS: {
         'Dispatch from Sharjah within 3 working days for stock items; nationwide delivery by own fleet.',
       fulfilmentAr:
         'الشحن من الشارقة خلال 3 أيام عمل للمنتجات المتوفرة؛ التوصيل لجميع الإمارات بأسطولنا.',
+      deliveryFeeFils: 5000n,
+      deliveryEmirates: [
+        'ABU_DHABI',
+        'DUBAI',
+        'SHARJAH',
+        'AJMAN',
+        'UMM_AL_QUWAIN',
+        'RAS_AL_KHAIMAH',
+        'FUJAIRAH',
+      ],
+      deliveryDays: 3,
       certifications: [{ name: 'ISO 9001:2015', issuer: 'Fictional Certification Body' }],
     },
     products: [
@@ -495,6 +506,9 @@ const SELLERS: {
       samplesAvailable: true,
       fulfilmentEn: 'Stock garments ship within 2 days; made-to-order runs 2-4 weeks.',
       fulfilmentAr: 'تشحن الملابس المتوفرة خلال يومين؛ الطلبات الخاصة من 2 إلى 4 أسابيع.',
+      deliveryFeeFils: 3500n,
+      deliveryEmirates: ['DUBAI', 'SHARJAH', 'AJMAN'],
+      deliveryDays: 2,
       certifications: [{ name: 'OEKO-TEX Standard 100 (declared)', issuer: 'Fictional' }],
     },
     products: [
@@ -630,6 +644,9 @@ const SELLERS: {
       samplesAvailable: true,
       fulfilmentEn: 'Next-day delivery in Abu Dhabi and Dubai for orders confirmed by 2 pm.',
       fulfilmentAr: 'توصيل في اليوم التالي في أبوظبي ودبي للطلبات المؤكدة قبل الساعة 2 ظهراً.',
+      deliveryFeeFils: 7500n,
+      deliveryEmirates: ['DUBAI', 'SHARJAH', 'ABU_DHABI'],
+      deliveryDays: 4,
       certifications: [
         { name: 'HACCP (declared)', issuer: 'Fictional' },
         { name: 'Halal (declared)', issuer: 'Fictional' },

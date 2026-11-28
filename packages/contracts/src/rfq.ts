@@ -226,6 +226,16 @@ export const rfqDetail = rfqSummary.extend({
   quote_blocked_reason: z.string().nullable(),
   /** Seller view only: the caller's workspace was invited. */
   invited: z.boolean().optional(),
+  /** Buyer view only (Phase 4): the order created by the award and its checkout. */
+  award_order: z
+    .object({
+      checkout_id: uuid,
+      order_id: uuid,
+      checkout_state: z.string(),
+      order_state: z.string(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const sellerRfqItem = rfqSummary.extend({
@@ -262,8 +272,9 @@ export const awardResponse = z.object({
   total_fils: filsString,
   awarded_at: isoDateTime,
   payment_due_at: isoDateTime,
-  /** Orders and checkout are created in Phase 4; until then the award is recorded only. */
+  /** The unpaid order and checkout created by the award (Phase 4); pay before payment_due_at. */
   order_id: uuid.nullable(),
+  checkout_id: uuid.nullable(),
 });
 
 /** Eligible sellers a buyer may invite (public storefronts of trading-eligible sellers). */
@@ -332,6 +343,11 @@ export const NOTIFICATION_TYPES = [
   'quote.accepted',
   'quote.expired',
   'message.new',
+  /** Phase 4 orders and payments. */
+  'order.paid',
+  'order.received',
+  'order.cancelled',
+  'order.payment_due',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

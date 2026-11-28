@@ -4,6 +4,7 @@
  */
 import { catalogAr, catalogEn } from './catalog-messages';
 import { rfqAr, rfqEn } from './rfq-messages';
+import { commerceAr, commerceEn } from './commerce-messages';
 
 export const LOCALES = ['en', 'ar'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -17,6 +18,7 @@ export const DIRECTION: Record<Locale, 'ltr' | 'rtl'> = { en: 'ltr', ar: 'rtl' }
 const en = {
   ...catalogEn,
   ...rfqEn,
+  ...commerceEn,
   'company.uploaded': 'Document uploaded and scanned clean.',
   'company.upload_blocked':
     'The malware scan blocked this file. Remove it and upload a clean copy.',
@@ -462,6 +464,7 @@ type Messages = Record<keyof typeof en, string>;
 const ar: Messages = {
   ...catalogAr,
   ...rfqAr,
+  ...commerceAr,
   'company.uploaded': 'تم رفع المستند وفحصه وهو سليم.',
   'company.upload_blocked': 'حظر فحص البرمجيات الخبيثة هذا الملف. احذفه وارفع نسخة سليمة.',
   'admin.record_decision': 'تسجيل القرار',

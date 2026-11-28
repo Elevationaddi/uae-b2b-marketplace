@@ -246,6 +246,9 @@ export function mapStorefront(
     fulfilment_en: s.fulfilmentEn,
     fulfilment_ar: s.fulfilmentAr,
     certifications: mapCertifications(s.certifications),
+    delivery_fee_fils: s.deliveryFeeFils?.toString() ?? null,
+    delivery_emirates: s.deliveryEmirates,
+    delivery_days: s.deliveryDays,
     media: [...s.media]
       .sort((a, b) => a.kind.localeCompare(b.kind) || a.position - b.position)
       .map((m) => ({

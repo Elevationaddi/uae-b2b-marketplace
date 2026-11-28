@@ -13,7 +13,7 @@ export type CatalogRoute = {
   path: string;
   summary: string;
   tag: string;
-  security: 'none' | 'company' | 'admin';
+  security: 'none' | 'company' | 'admin' | 'signature';
   body?: ZodTypeAny;
   multipart?: boolean;
   query?: z.ZodObject;

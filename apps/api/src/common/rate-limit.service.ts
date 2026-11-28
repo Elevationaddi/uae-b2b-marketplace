@@ -22,6 +22,8 @@ const POLICIES = {
   search_ip: { points: 600, duration: 60 },
   lists_user: { points: 300, duration: 60 },
   message_user: { points: 60, duration: 60 },
+  checkout_user: { points: 30, duration: 60 },
+  payment_webhook_ip: { points: 600, duration: 60 },
 } as const;
 export type RateLimitPolicy = keyof typeof POLICIES;
 
