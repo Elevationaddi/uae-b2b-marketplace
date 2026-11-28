@@ -7,6 +7,7 @@ import { errorText, useApp, useT } from '@/components/app-context';
 import { QuoteForm, type QuoteFormValues } from '@/components/quote-form';
 import { Resource } from '@/components/resource';
 import {
+  Negotiation,
   QuoteFigures,
   QuoteState,
   RfqState,
@@ -148,6 +149,7 @@ function MyQuote({
           {q.revision_requested && q.state === 'SUBMITTED' ? (
             <Alert kind="warning">{t('seller.quote.revision_requested_body')}</Alert>
           ) : null}
+          <Negotiation q={q} />
           {q.state === 'ACCEPTED' ? (
             <Alert kind="success">{t('seller.quote.accepted_body')}</Alert>
           ) : null}

@@ -108,6 +108,20 @@ export const quoteVersionActionRequest = z.object({
   version_id: uuid,
   reason: z.string().trim().max(1000).optional(),
 });
+/** C-14 (FD-10 C): at most this many buyer negotiation rounds per supplier quote. */
+export const NEGOTIATION_MAX_ROUNDS = 3;
+/**
+ * Revision request, optionally with a structured counteroffer (C-14). Each request is one round;
+ * the supplier answers with a new version, and only the latest version can be accepted.
+ */
+export const quoteRevisionRequest = quoteVersionActionRequest.extend({
+  unit_price_fils: z
+    .string()
+    .regex(/^[1-9]\d{0,14}$/, 'invalid')
+    .optional(),
+  quantity: quantity.optional(),
+  delivery_date: isoDate.optional(),
+});
 export const quoteExpectedRequest = z.object({ expected_version: z.number().int().positive() });
 /** docs/07-api.md: accept the exact version shown; totals are never taken from the client. */
 export const quoteAcceptRequest = z.object({
@@ -166,6 +180,28 @@ export const quoteResponse = z.object({
   /** Older submitted versions, newest first (buyer and the quoting seller only). */
   history: z.array(quoteVersionResponse),
   revision_requested: z.boolean(),
+  /** C-14: negotiation rounds and the buyer's counteroffers, oldest first. */
+  negotiation: z.object({
+    rounds_used: z.number().int(),
+    rounds_max: z.number().int(),
+    counteroffers: z.array(
+      z.object({
+        round: z.number().int(),
+        version: z.number().int(),
+        unit_price_fils: filsString.nullable(),
+        quantity: z.number().int().nullable(),
+        delivery_date: isoDate.nullable(),
+        note: z.string().nullable(),
+        created_at: isoDateTime,
+        /** A newer version was submitted after this round. */
+        answered: z.boolean(),
+      }),
+    ),
+  }),
+  /** C-14: what changed in the current version against the previous submitted version. */
+  changes: z.array(
+    z.object({ field: z.string(), from: z.string().nullable(), to: z.string().nullable() }),
+  ),
   created_at: isoDateTime,
   updated_at: isoDateTime,
 });

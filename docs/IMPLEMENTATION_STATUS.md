@@ -11,9 +11,22 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16) (#20); protected staging profile and Vercel adaptations (C-20, C-21). 16 of 24 conflicts fixed in code | Remaining authorised code: C-14, C-18, C-19, buyer cancellation, sample requests; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
+| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16) (#20); protected staging profile and Vercel adaptations (C-20, C-21). 16 of 24 conflicts fixed in code | Remaining authorised code: C-18, C-19, buyer cancellation, sample requests; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: quotation counteroffers (C-14, FD-10 C)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-negotiation`.
+
+**Delivered** (decision P8-20)
+- Migration `20261212000000_phase8_counteroffers` (additive): `quote_counteroffers` (round per quote, unique; optional unit price, quantity, delivery date, note).
+- `POST /buyer/.../quotes/{id}/request-revision` accepts an optional counteroffer; at most 3 rounds per quote, one open round at a time (`quote.round_open`, `quote.negotiation_limit`); audited as `quote.counteroffer`.
+- Quote responses carry `negotiation` (rounds used, maximum, counteroffers with answered flag) and `changes` (current version against the previous one). Acceptance stays tied to the latest version.
+- Web: counteroffer fields in the revision dialog with rounds left; Negotiation panel with rounds and a before/now comparison for buyer and supplier. EN/AR.
+
+**Tests actually run locally (2026-11-28)**
+- New integration test in `apps/api/test/rfq.int.test.ts`: invalid counter values (422), three rounds with supplier revisions and change lists, open-round refusal, fourth round refused, old version not acceptable, latest accepted, 3 audit events.
+- Full API suite 170 passed (20 files). Lint, Prettier, typecheck clean.
 
 ## Phase 8: delivery options (C-10, FD-08)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-delivery-options`.

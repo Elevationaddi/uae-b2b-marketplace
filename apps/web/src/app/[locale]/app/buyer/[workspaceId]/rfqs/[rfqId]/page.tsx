@@ -1,5 +1,6 @@
 'use client';
 import type { AwardResponse, ConversationDetail, QuoteResponse, RfqDetail } from '@app/contracts';
+import { parseAedToFils } from '@app/contracts';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
@@ -9,6 +10,7 @@ import { Money } from '@/components/catalog-ui';
 import { Resource } from '@/components/resource';
 import { RfqForm } from '@/components/rfq-form';
 import {
+  Negotiation,
   QuoteComparison,
   QuoteFigures,
   QuoteState,
@@ -53,6 +55,8 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
   const [dialog, setDialog] = useState<Dialog>(null);
   const [editing, setEditing] = useState(false);
   const [reason, setReason] = useState('');
+  const [counter, setCounter] = useState({ price: '', quantity: '', date: '' });
+  const [counterError, setCounterError] = useState<string | null>(null);
   const [po, setPo] = useState('');
   const [idemKey, setIdemKey] = useState(newKey);
   const [notice, setNotice] = useState<string | null>(
@@ -64,6 +68,8 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
   const close = () => {
     setDialog(null);
     setReason('');
+    setCounter({ price: '', quantity: '', date: '' });
+    setCounterError(null);
     setPo('');
     m.setError(null);
   };
@@ -221,6 +227,15 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
                         <Button
                           type="button"
                           variant="secondary"
+                          disabled={
+                            q.negotiation.rounds_used >= q.negotiation.rounds_max ||
+                            q.revision_requested
+                          }
+                          title={
+                            q.negotiation.rounds_used >= q.negotiation.rounds_max
+                              ? t('nego.limit_reached')
+                              : undefined
+                          }
                           onClick={() => setDialog({ kind: 'revision', q })}
                         >
                           {t('quote.request_revision')}
@@ -312,14 +327,61 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
               busy={m.busy}
               error={m.error}
               onClose={close}
-              onConfirm={() =>
-                act(
+              onConfirm={() => {
+                const extra: Record<string, unknown> = {};
+                if (dialog.kind === 'revision') {
+                  if (counter.price) {
+                    const fils = parseAedToFils(counter.price);
+                    if (fils === null || fils <= 0n) {
+                      setCounterError(t('nego.invalid_price'));
+                      return;
+                    }
+                    extra.unit_price_fils = fils.toString();
+                  }
+                  if (counter.quantity) extra.quantity = Number(counter.quantity);
+                  if (counter.date) extra.delivery_date = counter.date;
+                }
+                setCounterError(null);
+                return act(
                   `${buyerApi(ws)}/quotes/${dialog.q.id}/${dialog.kind === 'revision' ? 'request-revision' : 'decline'}`,
-                  { version_id: dialog.q.current!.id, reason: reason || undefined },
+                  { version_id: dialog.q.current!.id, reason: reason || undefined, ...extra },
                   t(dialog.kind === 'revision' ? 'quote.revision_sent' : 'quote.declined'),
-                )
-              }
+                );
+              }}
             >
+              {dialog.kind === 'revision' ? (
+                <fieldset data-testid="counteroffer-fields">
+                  <legend>{t('nego.counter_legend')}</legend>
+                  <p className="muted small">
+                    {t('nego.rounds_left', {
+                      left: dialog.q.negotiation.rounds_max - dialog.q.negotiation.rounds_used,
+                    })}
+                  </p>
+                  {counterError ? <Alert kind="error">{counterError}</Alert> : null}
+                  <Field
+                    label={t('nego.counter_price')}
+                    inputMode="decimal"
+                    optional
+                    value={counter.price}
+                    onChange={(e) => setCounter({ ...counter, price: e.target.value })}
+                  />
+                  <Field
+                    label={t('quote.quantity')}
+                    type="number"
+                    min={1}
+                    optional
+                    value={counter.quantity}
+                    onChange={(e) => setCounter({ ...counter, quantity: e.target.value })}
+                  />
+                  <Field
+                    label={t('quote.delivery_date')}
+                    type="date"
+                    optional
+                    value={counter.date}
+                    onChange={(e) => setCounter({ ...counter, date: e.target.value })}
+                  />
+                </fieldset>
+              ) : null}
               <TextArea
                 label={t('common.reason')}
                 optional
@@ -406,6 +468,7 @@ function QuoteDetail({
         {q.seller.company_name} · v{v.version} <QuoteState value={q.state} />
       </h3>
       <QuoteFigures v={v} />
+      <Negotiation q={q} />
       <h4 className="h4">{t('quote.specs')}</h4>
       <p className="pre-wrap">{v.specs}</p>
       {v.deviations ? (

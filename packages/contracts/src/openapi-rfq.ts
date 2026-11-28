@@ -108,9 +108,9 @@ export const RFQ_ROUTES: CatalogRoute[] = [
   buyer(
     'post',
     '/quotes/{quoteId}/request-revision',
-    'Ask the seller to revise the current version',
+    'Ask the seller to revise the current version, optionally with a counteroffer (at most 3 rounds per quote)',
     {
-      body: r.quoteVersionActionRequest,
+      body: r.quoteRevisionRequest,
       capability: buyerEdit,
     },
   ),

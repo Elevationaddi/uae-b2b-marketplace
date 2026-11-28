@@ -27,8 +27,9 @@ Severity levels:
 | C-07 | **Fixed in code** | Suppliers cancel a paid, undispatched order with a reason; this requests a full refund that finance approves; the order is cancelled when the refund succeeds (P8-14). |
 | C-11 | **Fixed in code (policy text needs legal review)** | Bilingual storefront return policy shown at checkout and snapshotted on each order (P8-14). Customised-goods exclusions are left to each supplier's policy text. |
 | C-10 | **Fixed in code** | Per-emirate fees and days, free buyer collection with instructions revealed after payment, method choice at checkout, method and terms snapshotted per order, quote orders use quote terms, optional proof of dispatch (P8-18). |
+| C-14 | **Fixed in code** | Structured counteroffers, at most 3 rounds per quote, version comparison, latest-only acceptance (P8-20). |
 | C-20, C-21 | **Fixed in code (PR #21; nothing deployed)** | Protected staging profile, mail catcher, PostgreSQL fallback for Redis, Vercel API entry and Vercel Blob driver (P8-17, `docs/phase-8/staging.md`). |
-| C-14, C-18, C-19, C-22 to C-24 | Open | C-14, C-18, C-19 in the next pull requests; C-22 stays a launch blocker; C-23, C-24 are provider questions. |
+| C-18, C-19, C-22 to C-24 | Open | C-18, C-19 in the next pull requests; C-22 stays a launch blocker; C-23, C-24 are provider questions. |
 
 ## Money, payouts and order completion
 
