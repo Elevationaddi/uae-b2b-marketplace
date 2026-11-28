@@ -1,5 +1,7 @@
 # Domains, DNS and third-party integration requirements
 
+> **Partly superseded on 2026-11-28.** References to Azure (Key Vault, Application Gateway, Container Apps, Terraform, Azure Monitor) belong to the rejected Azure proposal. The current plan is [vercel-architecture.md](vercel-architecture.md). Domain purchases are not authorised: staging uses the `*.vercel.app` address.
+
 **Date:** 2026-11-28 (UTC). **Status:** requirements only. No domain has been registered, no DNS changed, no third-party account opened.
 
 ## 1. Domains
@@ -62,7 +64,7 @@ The web app already sends `Strict-Transport-Security: max-age=31536000; includeS
 | **Penetration tester** (independent) | 8F | Scope: web, admin, API and staging infrastructure. Rules of engagement. | Test accounts on staging | Staging IP allowlist | 8F |
 
 ## 4. What the founder needs to supply or approve before 8B
-1. Approval of the monthly infrastructure amount (`cost-estimate.md`), and of the Azure billing route (direct, Microsoft partner or CSP).
-2. The Azure subscription owner, and who receives alerts and budget notices.
+1. Answers to the questions in `vercel-architecture.md` (Vercel plan, region, spend budget with pause, free-tier sign-ups).
+2. Who receives Vercel budget alerts.
 3. The brand and domain (or approval to register a working domain for staging).
 4. Resend data-processing approval (8D) and Stripe eligibility answers (8C).

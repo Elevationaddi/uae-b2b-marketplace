@@ -11,9 +11,24 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS (code only, nothing provisioned) | 8A merged f3e5f53 (PR #10; Azure plan since rejected by the founder on 2026-11-28 09:28 UTC). Financial conflicts C-01 to C-06 fixed in code: see "Phase 8: financial policy conflicts" | Founder's zero-cost Vercel-first revision in progress; provider eligibility, tax/legal approvals |
+| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). 14 of 24 conflicts fixed in code | Founder answers (Vercel plan, free-tier sign-ups, provisional rules P8-1 to P8-14, 21 UX questions); C-10, C-14, C-18 to C-24; launch blockers in the readiness checklist |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: Vercel-first architecture at zero added cost (founder message 2026-11-28 09:28 UTC)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-vercel-docs`. Documentation only; nothing provisioned, connected or subscribed.
+
+**Delivered**
+- `docs/phase-8/vercel-architecture.md`:
+  - architecture and diagram;
+  - every service in the founder's four categories, with commercial-use, card, limit, overage and region columns;
+  - usage-charge risks and spend protection;
+  - worker, database, storage, malware-scanning and residency plans;
+  - documented limits with alternatives, and questions for the founder.
+- Vercel facts were checked against Vercel's documentation. Values the docs did not show are marked **confirm**, to be read from the provider or the founder's account before choosing.
+- Azure proposal archived: `docs/phase-8/archive/azure` and `infra/archive/azure` (never applied). The Terraform job was removed from CI. Decision F02 is marked rejected and replaced.
+- Risk register: R-04, R-05, R-21 and R-23 closed; R-26 to R-30 added (usage charges, residency, free-tier limits, cron frequency, RPO proof).
+- Readiness checklist: revised 8A section, plus a launch-blocker list that includes the restore drill for RPO 15 minutes.
 
 ## Phase 8: security fixes (SR-1, SR-2)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-security`.
