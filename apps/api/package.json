@@ -12,6 +12,7 @@
     "test": "node ../../scripts/with-env.mjs vitest run",
     "db:seed": "node ../../scripts/with-env.mjs tsx src/cli/seed.ts",
     "admin:create": "node ../../scripts/with-env.mjs tsx src/cli/create-admin.ts",
+    "sandbox:end-dispute-window": "node ../../scripts/with-env.mjs tsx src/cli/sandbox-end-dispute-window.ts",
     "dev:totp": "tsx src/cli/totp.ts"
   },
   "dependencies": {
@@ -51,6 +52,6 @@
     "tsx": "4.23.15",
     "typescript": "5.9.3",
     "unplugin-swc": "1.6.0",
-    "vitest": "3.2.7"
+    "vitest": "4.1.12"
   }
 }

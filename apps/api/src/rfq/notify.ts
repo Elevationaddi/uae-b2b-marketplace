@@ -106,6 +106,15 @@ const SUMMARY: Record<
     en: (p) => `The buyer confirmed receipt of ${p.order_number}`,
     ar: (p) => `أكد المشتري استلام الطلب ${p.order_number}`,
   },
+  'order.supplier_cancelled': {
+    en: (p) =>
+      `The supplier asked to cancel ${p.order_number}; a full refund is awaiting finance approval`,
+    ar: (p) => `طلب المورد إلغاء الطلب ${p.order_number}؛ والاسترداد الكامل بانتظار موافقة المالية`,
+  },
+  'order.auto_completed': {
+    en: (p) => `${p.order_number} was completed automatically after the dispute window ended`,
+    ar: (p) => `اكتمل الطلب ${p.order_number} تلقائيًا بعد انتهاء فترة النزاع`,
+  },
   'order.refunded': {
     en: (p) => `A refund was confirmed for ${p.order_number}`,
     ar: (p) => `تم تأكيد استرداد مبلغ للطلب ${p.order_number}`,

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { buildCsp, createNonce } from './lib/csp';
 import { hostOf, routeForHost } from './lib/hosts';
 
 const WEB_ORIGIN = process.env.WEB_ORIGIN ?? 'http://localhost:3000';
@@ -21,7 +22,15 @@ export function middleware(req: NextRequest) {
   if (decision.kind === 'redirect') {
     return NextResponse.redirect(new URL(decision.location, ADMIN_ORIGIN));
   }
-  return NextResponse.next();
+  // SR-2: per-response nonce. Next.js reads it from the request's CSP header for its own scripts.
+  const nonce = createNonce();
+  const csp = buildCsp(nonce, process.env.NODE_ENV !== 'production');
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('content-security-policy', csp);
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set('content-security-policy', csp);
+  return res;
 }
 
 export const config = {

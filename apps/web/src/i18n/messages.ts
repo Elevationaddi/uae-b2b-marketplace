@@ -7,6 +7,8 @@ import { rfqAr, rfqEn } from './rfq-messages';
 import { commerceAr, commerceEn } from './commerce-messages';
 import { fulfilmentAr, fulfilmentEn } from './fulfilment-messages';
 import { operationsAr, operationsEn } from './operations-messages';
+import { financialPolicyAr, financialPolicyEn } from './financial-policy-messages';
+import { taxAr, taxEn } from './tax-messages';
 
 export const LOCALES = ['en', 'ar'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -23,6 +25,8 @@ const en = {
   ...commerceEn,
   ...fulfilmentEn,
   ...operationsEn,
+  ...financialPolicyEn,
+  ...taxEn,
   'company.uploaded': 'Document uploaded and scanned clean.',
   'company.upload_blocked':
     'The malware scan blocked this file. Remove it and upload a clean copy.',
@@ -471,6 +475,8 @@ const ar: Messages = {
   ...commerceAr,
   ...fulfilmentAr,
   ...operationsAr,
+  ...financialPolicyAr,
+  ...taxAr,
   'company.uploaded': 'تم رفع المستند وفحصه وهو سليم.',
   'company.upload_blocked': 'حظر فحص البرمجيات الخبيثة هذا الملف. احذفه وارفع نسخة سليمة.',
   'admin.record_decision': 'تسجيل القرار',

@@ -89,6 +89,23 @@ export function FulfilmentCard({
       ]
     : [];
   if (f.completed_at) rows.push([t('ful.completed_at'), formatDubaiTime(f.completed_at, locale)]);
+  if (f.delivery_verified_at && f.delivery_verification)
+    rows.push([
+      t('ful.delivery_verified'),
+      t(`ful.verified.${f.delivery_verification}`, {
+        date: formatDubaiTime(f.delivery_verified_at, locale),
+      }),
+    ]);
+  if (f.dispute_window_ends_at) {
+    const ends = formatDubaiTime(f.dispute_window_ends_at, locale);
+    rows.push([
+      t('ful.window_ends'),
+      Date.parse(f.dispute_window_ends_at) > Date.now()
+        ? t('ful.window_open', { date: ends })
+        : t('ful.window_closed', { date: ends }),
+    ]);
+  } else if (s && o.state !== 'CANCELLED')
+    rows.push([t('ful.window_ends'), t('ful.window_pending')]);
   if (f.settlement_state)
     rows.push([
       t('ful.settlement'),
@@ -103,6 +120,14 @@ export function FulfilmentCard({
         {t('ful.title')}
       </h2>
       <NextStep o={o} side={side} />
+      {o.seller_cancel && o.state !== 'CANCELLED' ? (
+        <Alert kind="warning">
+          {t('order.cancel_pending', {
+            date: formatDubaiTime(o.seller_cancel.requested_at, locale),
+            reason: o.seller_cancel.reason,
+          })}
+        </Alert>
+      ) : null}
       {s ? null : <p className="muted">{t('ful.no_shipment')}</p>}
       {rows.length ? <DefinitionList items={rows} /> : null}
       {f.dispute ? (
@@ -122,6 +147,9 @@ export function FulfilmentCard({
           {a.can_deliver ? <DeliverForm path={`${orderApi}/deliver`} onDone={onUpdated} /> : null}
           {a.can_confirm_receipt ? (
             <ConfirmReceipt path={`${orderApi}/confirm-receipt`} onDone={onUpdated} />
+          ) : null}
+          {a.can_cancel ? (
+            <CancelOrder path={`${orderApi}/cancel`} number={o.number} onDone={onUpdated} />
           ) : null}
           {a.can_review ? <ReviewForm path={`${orderApi}/review`} onDone={onUpdated} /> : null}
           {a.can_dispute ? (
@@ -162,6 +190,58 @@ export function Stars({ rating }: { rating: number }) {
       {'★'.repeat(rating)}
       <span className="stars-off">{'★'.repeat(5 - rating)}</span>
     </span>
+  );
+}
+
+/** C-07: supplier cancels a paid, undispatched order (full refund after finance approval). */
+function CancelOrder({
+  path,
+  number,
+  onDone,
+}: {
+  path: string;
+  number: string;
+  onDone: (o: OrderDetail) => void;
+}) {
+  const t = useT();
+  const m = useMutation();
+  const fe = useFieldError(m.error);
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  return (
+    <div>
+      <Button variant="danger" onClick={() => setOpen(true)}>
+        {t('order.cancel')}
+      </Button>
+      <ConfirmDialog
+        open={open}
+        title={t('order.cancel_title', { number })}
+        confirmLabel={t('order.cancel')}
+        busy={m.busy}
+        error={m.error && Object.keys(m.error.fieldErrors).length === 0 ? m.error : null}
+        onClose={() => {
+          setOpen(false);
+          m.setError(null);
+        }}
+        onConfirm={async () => {
+          const r = await m.run<OrderDetail>(path, { method: 'POST', body: { reason } });
+          if (r.ok) {
+            setOpen(false);
+            onDone(r.data);
+          }
+        }}
+      >
+        <p>{t('order.cancel_body')}</p>
+        <TextArea
+          label={t('order.cancel_reason')}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          required
+          rows={2}
+          error={fe('reason')}
+        />
+      </ConfirmDialog>
+    </div>
   );
 }
 

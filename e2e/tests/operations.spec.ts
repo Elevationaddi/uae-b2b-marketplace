@@ -70,7 +70,14 @@ test('buyer and support agent work a ticket from open to closed', async ({
 
   await admin.reload();
   await admin.getByLabel(/Resolution note/).fill('Invoice re-sent.');
+  // Wait for the server to record the resolution before closing the admin browser; otherwise a
+  // slow engine (webkit) can abort the request when the context closes.
+  const resolved = admin.waitForResponse(
+    (r) =>
+      /\/admin\/support\/[0-9a-f-]{36}\/resolve$/.test(r.url()) && r.request().method() === 'POST',
+  );
   await press(admin.getByRole('button', { name: 'Mark resolved' }));
+  expect((await resolved).status()).toBe(200);
   await expect(admin.getByText('Resolved').first()).toBeVisible();
   await ctx.close();
 

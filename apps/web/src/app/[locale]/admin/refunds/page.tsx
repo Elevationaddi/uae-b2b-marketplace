@@ -1,5 +1,5 @@
 'use client';
-import { parseAedToFils, REFUND_STATES, type RefundItem } from '@app/contracts';
+import { formatFils, parseAedToFils, REFUND_STATES, type RefundItem } from '@app/contracts';
 import { useState, type FormEvent } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
@@ -34,6 +34,17 @@ function CreateRefund({ onDone }: { onDone: () => void }) {
     const aed = String(fd.get('amount') ?? '');
     const fils = parseAedToFils(aed);
     const dispute = String(fd.get('dispute_id') ?? '').trim();
+    // Optional split (C-06): send all three parts only when at least one was filled in.
+    const parts = ['merchandise', 'shipping', 'tax'].map((k) => String(fd.get(k) ?? '').trim());
+    const split = parts.some((p) => p !== '')
+      ? Object.fromEntries(
+          ['merchandise_fils', 'shipping_fils', 'tax_fils'].map((k, i) => {
+            const v = parts[i] === '' ? '0' : parts[i]!;
+            const f = parseAedToFils(v);
+            return [k, f === null ? v : String(f)];
+          }),
+        )
+      : {};
     const r = await m.run<RefundItem>('/admin/refunds', {
       method: 'POST',
       body: {
@@ -41,6 +52,7 @@ function CreateRefund({ onDone }: { onDone: () => void }) {
         amount_fils: fils === null ? aed : String(fils),
         reason: String(fd.get('reason') ?? ''),
         ...(dispute ? { dispute_id: dispute } : {}),
+        ...split,
       },
     });
     if (r.ok) {
@@ -64,6 +76,31 @@ function CreateRefund({ onDone }: { onDone: () => void }) {
           hint={t('dispute.amount_hint')}
           error={fe('amount_fils')}
         />
+        <fieldset className="fieldset">
+          <legend>{t('refund.split_title')}</legend>
+          <p className="muted small">{t('refund.split_hint')}</p>
+          <Field
+            label={t('refund.merchandise')}
+            name="merchandise"
+            inputMode="decimal"
+            optional
+            error={fe('merchandise_fils')}
+          />
+          <Field
+            label={t('refund.shipping')}
+            name="shipping"
+            inputMode="decimal"
+            optional
+            error={fe('shipping_fils')}
+          />
+          <Field
+            label={t('refund.tax')}
+            name="tax"
+            inputMode="decimal"
+            optional
+            error={fe('tax_fils')}
+          />
+        </fieldset>
         <TextArea label={t('refund.reason')} name="reason" required rows={2} error={fe('reason')} />
         <Field label={t('refund.dispute_id')} name="dispute_id" optional error={fe('dispute_id')} />
         {m.error && Object.keys(m.error.fieldErrors).length === 0 ? (
@@ -156,6 +193,17 @@ function Refunds() {
                           <Money fils={r.amount_fils} />
                           <span className="muted small block">
                             {t('refund.commission_share')}: <Money fils={r.commission_fils} />
+                          </span>
+                          <span className="muted small block" data-testid="refund-parts">
+                            {r.merchandise_fils !== null &&
+                            r.shipping_fils !== null &&
+                            r.tax_fils !== null
+                              ? t('refund.parts', {
+                                  merchandise: formatFils(r.merchandise_fils, locale),
+                                  shipping: formatFils(r.shipping_fils, locale),
+                                  tax: formatFils(r.tax_fils, locale),
+                                })
+                              : t('refund.parts_legacy')}
                           </span>
                         </td>
                         <td>

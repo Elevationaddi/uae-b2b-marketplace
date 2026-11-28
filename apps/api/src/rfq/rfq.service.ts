@@ -27,6 +27,7 @@ import {
 import { AttachmentService, type Upload } from './attachments';
 import { CommerceConfig } from '../commerce/commerce-common';
 import { createQuoteCheckout } from '../commerce/checkout.service';
+import { supplierVat } from '../commerce/tax';
 import { notify, workspaceRecipients } from './notify';
 import {
   QUOTE_INCLUDE,
@@ -789,7 +790,9 @@ export class RfqService {
             userId: user.id,
             payBy: paymentDueAt,
             poReference: b.po_reference ?? null,
-            commissionBps: this.commerce.commissionBps,
+            commissionFallbackBps: this.commerce.commissionBps,
+            tax: this.commerce.tax,
+            sellerVat: supplierVat(seller),
           });
         }
         const others = await tx.quote.findMany({

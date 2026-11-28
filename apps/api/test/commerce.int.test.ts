@@ -75,6 +75,9 @@ describe('T40 ledger fixture, T14 return without webhook, T15 replay', () => {
     expect(pv.shipping_fils).toBe('5000');
     expect(pv.tax_fils).toBe('5250');
     expect(pv.total_fils).toBe('110250');
+    // Default TAX_TREATMENT: every supplier at the labelled provisional rate (F05).
+    expect(pv.tax_provisional).toBe(true);
+    expect(pv.groups[0]).toMatchObject({ tax_code: 'PROVISIONAL_STANDARD', tax_bps: 500 });
 
     const c = (await createCheckout(b, pv.preview_hash).expect(201)).body.data;
     expect(c.state).toBe('PENDING_PAYMENT');

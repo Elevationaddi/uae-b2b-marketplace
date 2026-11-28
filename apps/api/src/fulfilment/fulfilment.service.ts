@@ -5,9 +5,20 @@ import type {
   reviewListQuery,
   shipmentDeliverRequest,
   shipmentDispatchRequest,
+  sellerCancelRequest,
 } from '@app/contracts';
 import type { AppEnv } from '@app/config';
-import { Prisma, recomputeSettlement, writeAudit, type PrismaClient, type User } from '@app/db';
+import {
+  allocateRefund,
+  merchandiseCommissionShare,
+  Prisma,
+  recomputeSettlement,
+  refundParts,
+  verifyDelivery,
+  writeAudit,
+  type PrismaClient,
+  type User,
+} from '@app/db';
 import type { z } from 'zod';
 import { assertUuid, decodeOffset, encodeOffset } from '../catalog/access';
 import { ApiError } from '../common/api-error';
@@ -17,7 +28,7 @@ import { AttachmentService, type Upload } from '../rfq/attachments';
 import { loadWorkspaceContext, type WorkspaceContext } from '../rfq/access';
 import { notify } from '../rfq/notify';
 import { companyNames } from '../commerce/commerce-common';
-import { requireRole } from './fulfilment-common';
+import { nextCaseNumber, requireRole } from './fulfilment-common';
 
 type Tx = Prisma.TransactionClient;
 const PAGE = 20;
@@ -110,7 +121,7 @@ export class FulfilmentService {
   private async tellBuyer(
     tx: Tx,
     o: { id: string; number: string; buyerWorkspaceId: string },
-    type: 'order.dispatched' | 'order.delivered',
+    type: 'order.dispatched' | 'order.delivered' | 'order.supplier_cancelled',
   ) {
     await notify(
       tx,
@@ -132,6 +143,7 @@ export class FulfilmentService {
       const o = await lockScopedOrder(tx, id, { sellerWorkspaceId: ctx.workspace.id });
       if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
       if (o.state !== 'CONFIRMED') throw new ApiError('CONFLICT', 'order.invalid_transition');
+      if (o.sellerCancelRequestedAt) throw new ApiError('CONFLICT', 'order.cancellation_pending');
       await tx.order.update({
         where: { id: o.id },
         data: { state: 'PROCESSING', processingAt: new Date(), version: { increment: 1 } },
@@ -159,6 +171,7 @@ export class FulfilmentService {
       if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
       if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
         throw new ApiError('CONFLICT', 'order.invalid_transition');
+      if (o.sellerCancelRequestedAt) throw new ApiError('CONFLICT', 'order.cancellation_pending');
       const now = new Date();
       await tx.shipment.create({
         data: {
@@ -186,6 +199,79 @@ export class FulfilmentService {
       await this.event(tx, o.id, 'order.dispatched', 'SELLER', user.id);
       await this.audit(tx, ctx, user, 'order.dispatched', o.id, meta, { carrier: body.carrier });
       await this.tellBuyer(tx, o, 'order.dispatched');
+    });
+  }
+
+  /**
+   * C-07: the supplier cancels an unfulfilled (paid, not dispatched) order. This requests a full
+   * refund of what is left, which finance must approve (the supplier is the requester, so a second
+   * person always decides). Fulfilment stops; the order is cancelled when the refund succeeds, and
+   * the request is withdrawn if finance rejects it.
+   */
+  async sellerCancel(
+    user: User,
+    ws: string,
+    id: string,
+    body: z.infer<typeof sellerCancelRequest>,
+    meta: RequestMeta,
+  ) {
+    const ctx = await this.seller(user, ws);
+    await this.prisma.$transaction(async (tx) => {
+      const o = await lockScopedOrder(tx, id, { sellerWorkspaceId: ctx.workspace.id });
+      if (o.state === 'AWAITING_PAYMENT') throw new ApiError('CONFLICT', 'order.not_paid');
+      if (o.state !== 'CONFIRMED' && o.state !== 'PROCESSING')
+        throw new ApiError('CONFLICT', 'order.invalid_transition');
+      if (o.sellerCancelRequestedAt) throw new ApiError('CONFLICT', 'order.cancellation_pending');
+      if (o.settlementState === 'IN_PAYOUT' || o.settlementState === 'PAID_OUT')
+        throw new ApiError('CONFLICT', 'refund.order_settled');
+      const payment = await tx.payment.findFirst({
+        where: { checkoutId: o.checkoutId, state: { in: ['CAPTURED', 'PARTIALLY_REFUNDED'] } },
+      });
+      if (!payment) throw new ApiError('CONFLICT', 'refund.no_capture');
+      const prior = await tx.refund.findMany({
+        where: {
+          orderId: o.id,
+          state: { in: ['REQUESTED', 'APPROVED', 'SUBMITTED', 'SUCCEEDED'] },
+        },
+      });
+      const amount = o.totalFils - prior.reduce((sum, r) => sum + r.amountFils, 0n);
+      const parts = allocateRefund(o, prior, amount);
+      if (typeof parts === 'string') throw new ApiError('CONFLICT', parts);
+      const refund = await tx.refund.create({
+        data: {
+          number: await nextCaseNumber(tx, 'refund'),
+          orderId: o.id,
+          paymentId: payment.id,
+          amountFils: amount,
+          merchandiseFils: parts.merchandise,
+          shippingFils: parts.shipping,
+          taxFils: parts.tax,
+          commissionFils: merchandiseCommissionShare(
+            o,
+            prior.reduce((sum, r) => sum + refundParts(o, r).merchandise, 0n),
+            parts.merchandise,
+            prior.reduce((sum, r) => sum + r.commissionFils, 0n),
+          ),
+          reason: `Supplier cancellation: ${body.reason}`,
+          requestedById: user.id,
+          sellerCancellation: true,
+        },
+      });
+      await tx.order.update({
+        where: { id: o.id },
+        data: {
+          sellerCancelRequestedAt: new Date(),
+          sellerCancelReason: body.reason,
+          version: { increment: 1 },
+        },
+      });
+      await recomputeSettlement(tx, o.id);
+      await this.event(tx, o.id, 'order.seller_cancel_requested', 'SELLER', user.id, body.reason);
+      await this.audit(tx, ctx, user, 'order.seller_cancel_requested', o.id, meta, {
+        refund_id: refund.id,
+        amount_fils: amount.toString(),
+      });
+      await this.tellBuyer(tx, o, 'order.supplier_cancelled');
     });
   }
 
@@ -231,6 +317,12 @@ export class FulfilmentService {
         where: { id: o.id },
         data: { state: 'DELIVERED', deliveredAt: now, version: { increment: 1 } },
       });
+      // Delivery with proof is verified delivery (C-02): the dispute window starts now. Without
+      // proof the window starts when the buyer confirms receipt.
+      if (f) {
+        await verifyDelivery(tx, o, now, 'PROOF_OF_DELIVERY', this.env.DISPUTE_WINDOW_DAYS);
+        await recomputeSettlement(tx, o.id, now);
+      }
       await this.event(tx, o.id, 'order.delivered', 'SELLER', user.id);
       await this.audit(tx, ctx, user, 'order.delivered', o.id, meta, { proof: !!f });
       await this.tellBuyer(tx, o, 'order.delivered');
@@ -281,13 +373,17 @@ export class FulfilmentService {
       const o = await lockScopedOrder(tx, id, { buyerWorkspaceId: ctx.workspace.id });
       if (o.state !== 'DISPATCHED' && o.state !== 'DELIVERED')
         throw new ApiError('CONFLICT', 'order.invalid_transition');
+      const now = new Date();
       await tx.order.update({
         where: { id: o.id },
-        data: { state: 'COMPLETED', completedAt: new Date(), version: { increment: 1 } },
+        data: { state: 'COMPLETED', completedAt: now, version: { increment: 1 } },
       });
+      // Receipt verifies delivery if proof did not already; it never shortens the window (C-02).
+      await verifyDelivery(tx, o, now, 'BUYER_CONFIRMED', this.env.DISPUTE_WINDOW_DAYS);
       await this.event(tx, o.id, 'order.completed', 'BUYER', user.id);
-      // Eligible for a payout, not paid: a provider payout event marks it paid (T25).
-      await recomputeSettlement(tx, o.id);
+      // Payout eligibility waits for the end of the dispute window (C-01); a provider payout
+      // event marks it paid (T25).
+      await recomputeSettlement(tx, o.id, now);
       await this.audit(tx, ctx, user, 'order.receipt_confirmed', o.id, meta);
       await notify(
         tx,

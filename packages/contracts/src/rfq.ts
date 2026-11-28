@@ -352,6 +352,9 @@ export const NOTIFICATION_TYPES = [
   'order.dispatched',
   'order.delivered',
   'order.completed',
+  /** Phase 8: completed automatically after the dispute window (C-03). */
+  'order.auto_completed',
+  'order.supplier_cancelled',
   'order.refunded',
   'dispute.opened',
   'dispute.updated',

@@ -1,5 +1,5 @@
 'use client';
-import { EMIRATES, type CompanyResponse } from '@app/contracts';
+import { EMIRATES, VAT_STATUSES, type CompanyResponse } from '@app/contracts';
 import { useState, type FormEvent } from 'react';
 import type { ApiError } from '@/lib/client';
 import { useT } from './app-context';
@@ -14,6 +14,7 @@ export type CompanyFormValues = {
   activity: string;
   emirate: string;
   trn: string;
+  vat_status: string;
   contact_email: string;
   contact_phone: string;
 };
@@ -28,6 +29,7 @@ export function initialCompanyValues(c?: CompanyResponse): CompanyFormValues {
     activity: c?.activity ?? '',
     emirate: c?.emirate ?? 'DUBAI',
     trn: c?.trn ?? '',
+    vat_status: c?.vat_status ?? 'UNKNOWN',
     contact_email: c?.contact_email ?? '',
     contact_phone: c?.contact_phone ?? '',
   };
@@ -130,6 +132,14 @@ export function CompanyForm({
           value={v.trn}
           onChange={set('trn')}
           error={fe('trn')}
+        />
+        <SelectField
+          label={t('company.vat_status')}
+          hint={t('company.vat_status_hint')}
+          value={v.vat_status}
+          onChange={set('vat_status')}
+          error={fe('vat_status')}
+          options={VAT_STATUSES.map((s) => ({ value: s, label: t(`vat.${s}`) }))}
         />
         <Field
           label={t('company.contact_email')}

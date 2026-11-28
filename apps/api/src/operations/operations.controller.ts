@@ -21,6 +21,7 @@ import {
   supportListQuery,
   supportReplyRequest,
   supportResolveRequest,
+  supportLimitRequest,
 } from '@app/contracts';
 import type { Request, Response } from 'express';
 import {
@@ -157,6 +158,27 @@ export class AdminOperationsController {
   ) {
     const body = parse(supportReplyRequest, b);
     return ok(await this.support.adminReply(a.user, id, body.body, requestMeta(req)));
+  }
+
+  @Get('companies/:id/support-limit')
+  @RequireAdmin('admin.support.read')
+  async supportLimit(@Param('id') id: string) {
+    return ok(await this.support.limit(id));
+  }
+
+  /** C-17: per-company exception to the open-ticket limit (support managers, reason, audited). */
+  @Post('companies/:id/support-limit')
+  @HttpCode(200)
+  @RequireAdmin('admin.support.manage')
+  async setSupportLimit(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.support.setLimit(a.user, id, parse(supportLimitRequest, b), requestMeta(req)),
+    );
   }
 
   @Post('support/:id/resolve')

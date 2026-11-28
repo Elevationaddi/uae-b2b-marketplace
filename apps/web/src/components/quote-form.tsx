@@ -176,7 +176,7 @@ export function QuoteForm({
         name="valid_until"
         type="datetime-local"
         required
-        defaultValue={initial ? isoToDubaiLocal(initial.valid_until) : dubaiLocalFromNow(24 * 14)}
+        defaultValue={initial ? isoToDubaiLocal(initial.valid_until) : dubaiLocalFromNow(24 * 7)}
         error={fe('valid_until')}
       />
       <TextArea

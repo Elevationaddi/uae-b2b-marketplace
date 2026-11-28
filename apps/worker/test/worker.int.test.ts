@@ -1,16 +1,17 @@
-/** Integration test against real Redis and PostgreSQL (docker compose services). */
+/** Integration test against real PostgreSQL (docker compose service); Redis is not used. */
 import { parseEnv } from '@app/config';
 import pino from 'pino';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startWorker, type RunningWorker } from '../src/worker';
 
-describe('worker (real Redis + PostgreSQL)', () => {
+describe('worker (PostgreSQL scheduler)', () => {
   let w: RunningWorker;
   beforeAll(async () => {
     const env = parseEnv({ ...process.env, NODE_ENV: 'test', LOG_LEVEL: 'silent' });
     w = await startWorker(env, {
       port: 0,
-      heartbeatEveryMs: 500,
+      heartbeatEveryMs: 1000,
+      tickMs: 200,
       logger: pino({ level: 'silent' }),
     });
   });
@@ -18,7 +19,7 @@ describe('worker (real Redis + PostgreSQL)', () => {
     await w?.stop();
   });
 
-  it('processes a heartbeat job through Redis', async () => {
+  it('runs the heartbeat task through the PostgreSQL scheduler', async () => {
     const deadline = Date.now() + 15_000;
     while (!w.lastHeartbeatAt() && Date.now() < deadline)
       await new Promise((r) => setTimeout(r, 200));
@@ -35,7 +36,7 @@ describe('worker (real Redis + PostgreSQL)', () => {
     expect(ready.status).toBe(200);
     expect(body.data.status).toBe('ready');
     expect(body.data.checks.database?.status).toBe('up');
-    expect(body.data.checks.redis?.status).toBe('up');
+    expect(body.data.checks.redis).toBeUndefined();
     expect(body.data.checks.heartbeat?.status).toBe('up');
   });
 });

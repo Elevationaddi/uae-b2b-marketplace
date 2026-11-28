@@ -106,6 +106,20 @@ export const OPERATIONS_ROUTES: CatalogRoute[] = [
     body: o.supportReplyRequest,
     response: o.supportTicketDetail,
   }),
+  admin(
+    'get',
+    '/companies/{id}/support-limit',
+    'Open-ticket limit of a company (default 10) and its open tickets',
+    'admin.support.read',
+    { response: o.supportLimitResponse },
+  ),
+  admin(
+    'post',
+    '/companies/{id}/support-limit',
+    'Set or clear a company exception to the open-ticket limit (reason, audited)',
+    'admin.support.manage',
+    { body: o.supportLimitRequest, response: o.supportLimitResponse },
+  ),
   admin('post', '/support/{id}/resolve', 'Resolve with an optional note', 'admin.support.manage', {
     body: o.supportResolveRequest,
     response: o.supportTicketDetail,

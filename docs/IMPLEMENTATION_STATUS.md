@@ -11,9 +11,123 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS: 8A only (preparation, nothing provisioned) | Branch `phase-8a-infrastructure`; see Phase 8A section | Provisioning approval (cost), provider eligibility, tax/legal approvals; 8B–8H not started |
+| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). 14 of 24 conflicts fixed in code | Founder answers (Vercel plan, free-tier sign-ups, provisional rules P8-1 to P8-14, 21 UX questions); C-10, C-14, C-18 to C-24; launch blockers in the readiness checklist |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: Vercel-first architecture at zero added cost (founder message 2026-11-28 09:28 UTC)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-vercel-docs`. Documentation only; nothing provisioned, connected or subscribed.
+
+**Delivered**
+- `docs/phase-8/vercel-architecture.md`:
+  - architecture and diagram;
+  - every service in the founder's four categories, with commercial-use, card, limit, overage and region columns;
+  - usage-charge risks and spend protection;
+  - worker, database, storage, malware-scanning and residency plans;
+  - documented limits with alternatives, and questions for the founder.
+- Vercel facts were checked against Vercel's documentation. Values the docs did not show are marked **confirm**, to be read from the provider or the founder's account before choosing.
+- Azure proposal archived: `docs/phase-8/archive/azure` and `infra/archive/azure` (never applied). The Terraform job was removed from CI. Decision F02 is marked rejected and replaced.
+- Risk register: R-04, R-05, R-21 and R-23 closed; R-26 to R-30 added (usage charges, residency, free-tier limits, cron frequency, RPO proof).
+- Readiness checklist: revised 8A section, plus a launch-blocker list that includes the restore drill for RPO 15 minutes.
+
+## Phase 8: security fixes (SR-1, SR-2)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-security`.
+
+**Delivered**
+- Nonce-based Content Security Policy: a fresh nonce per response in `apps/web/src/middleware.ts`, `script-src 'self' 'nonce-…' 'strict-dynamic'`, no `'unsafe-inline'` or `'unsafe-eval'` for scripts in production. Next.js applies the nonce to its own scripts (pages already render per request). Zod is configured to validate without `Function` in the browser (`packages/contracts/src/runtime.ts`), which removed the only eval attempt.
+- Vitest 3.2.7 to 4.1.12 in all five packages; no configuration changes were needed.
+
+**Commands actually run (2026-11-28)**
+- Production build (`NODE_ENV=production next build`, `next start`), Playwright on `/en/login`, `/ar/register`, `/en`: CSP header present, nonce on every script, no CSP violations, pages hydrate.
+- `pnpm audit` (all dependencies): no known vulnerabilities.
+- Vitest 4: API 154 passed, worker 10, web 12 (2 new CSP tests), contracts 62, config 23.
+
+## Phase 8: supplier cancellation and return policy (C-07, C-11)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-order-policies`.
+
+**Delivered**
+- Migration `20261207000000_phase8_cancellation_returns` (additive): `orders.seller_cancel_requested_at` and `seller_cancel_reason` (set together), `refunds.seller_cancellation`, `storefronts.return_policy_en` and `return_policy_ar`.
+- Seller route `POST /seller/workspaces/{ws}/orders/{id}/cancel` with a reason: requests a full refund for finance approval, blocks processing and dispatch while pending, notifies the buyer (`order.supplier_cancelled`) and is audited. Finance rejection withdraws it; provider success cancels the order with reason `cancelled_by_supplier` (P8-14).
+- Seller order page: Cancel order with a confirmation and reason, and a pending-cancellation notice for both parties.
+- Storefront return policy (EN/AR), shown in the checkout preview and recorded on each order; the order page shows the policy the buyer accepted.
+
+**Tests actually run locally (2026-11-28)**
+- New `order-policies.int.test.ts` (4 tests): cancel, refusal while pending, finance approval and provider success, rejection then dispatch, refusal after dispatch and for unpaid orders, cross-tenant 404; return policy in preview, hash and order snapshot. Full counts are in the PR description.
+
+## Phase 8: support limits, ticket auto-close, quote validity and review label (C-12, C-13, C-16, C-17)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-support-quote-review`.
+
+**Delivered**
+- Migration `20261206000000_phase8_support_limits` (additive): support categories Security and Compliance, `companies.support_ticket_limit` (1 to 100 or null), and an index for resolved tickets.
+- Open-ticket limit is now 10 per company (was 20 per workspace); Payment, Security and Compliance tickets always pass; support managers can set a per-company exception with a reason (audited) from the admin company page (P8-13).
+- Hourly `support.auto_close` task closes resolved tickets after 7 days without a customer response (audited as a system action).
+- Quote validity defaults to 7 days. Reviews show "Verified business buyer". Buyer dispute texts now describe the window from verified delivery.
+
+**Tests actually run locally (2026-11-28)**
+- 2 new integration tests in `operations.int.test.ts` (limit, urgent bypass, exception, audit; auto-close of silent tickets only). Full counts are in the PR description.
+
+## Phase 8: PostgreSQL scheduler for background work
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-job-queue`. **Authority:** founder message of 2026-11-28 09:28 UTC: build a PostgreSQL job queue, do not assume BullMQ runs on Vercel, and never lose financial operations when a function stops. Nothing deployed or provisioned.
+
+**Delivered**
+- Migration `20261205000000_phase8_background_tasks` (additive): `background_tasks` with cadence, lease, last outcome and failure counters.
+- `packages/db/src/background-tasks.ts`: register, claim with a lease (database clock), finish (only the lease owner), exponential backoff capped at 15 minutes, `runDueTasks` with a deadline, and a health view (P8-12).
+- The worker now drives this scheduler every second instead of BullMQ; Redis is no longer needed by the worker (`bullmq` and `ioredis` removed from it). Its readiness check covers the database and the heartbeat task.
+- `apps/worker/api/cron.ts` and `apps/worker/vercel.json`: a Vercel Function for Vercel Cron (every minute). Each call runs passes about a second apart for up to 45 s, so two-second tasks such as email and payment events still run many times per minute. It refuses without `CRON_SECRET` (bearer, constant-time comparison). Not deployed.
+- Admin overview shows the health of every background task (running, failing, overdue) in EN/AR.
+
+**Tests actually run locally (2026-11-28)**
+- Worker: 4 files, **10 passed**, including 6 new scheduler tests: single claim under concurrency, recovery after a killed run, late finish by a dead runner ignored, backoff, deadline, and cron authentication.
+- API, contracts, config and web suites: see the PR description for counts.
+
+**Limits to know**
+- Vercel Cron runs at most once a minute and only on a paid Vercel plan; on the Hobby plan crons run once a day, which is not enough. Email and payment processing can therefore lag up to about a minute when running only from cron. The long-running worker has no such lag.
+- Function run time counts towards the Vercel plan's included usage; see the cost document in PR 6.
+
+## Phase 8: tax configuration (C-08, C-09)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-tax-configuration`. **Authority:** founder message of 2026-11-28 09:28 UTC: remove the automatic standard VAT assumption, make tax treatment configurable, add supplier VAT status and invoice preparation, and make no real tax calculation or binding invoice without professional approval. Nothing provisioned; still sandbox mode.
+
+**Delivered**
+- Migration `20261204000000_phase8_tax_configuration` (additive): `VatRegistrationStatus` enum; company `vat_status`, `vat_status_confirmed_at`, `vat_status_confirmed_by_id`; checks that a registered company has a 15-digit TRN and that a confirmation names who confirmed it. Companies that already had a TRN are recorded as declaring registration (unconfirmed).
+- `TAX_TREATMENT` (`provisional_standard` default, or `supplier_status`) and `TAX_APPROVAL_REFERENCE`. Production refuses to start without `supplier_status` and an approval reference (P8-9).
+- Per-supplier VAT rule on the checkout preview and on each order (`orders.snapshot.tax`, with the supplier's VAT status and TRN at the time). Unconfirmed suppliers block checkout in `supplier_status` mode (`supplier_vat_unconfirmed`).
+- Company form and page show the VAT declaration and whether compliance confirmed it; admin company page has a confirmation form (reason required, audited as `company.vat_status_confirmed`) (P8-10).
+- Quote submission and revision check the supplier's VAT status in `supplier_status` mode.
+- Non-binding invoice drafts for buyer, seller and admin, marked "not a tax invoice" (P8-11). Order pages and checkout show which VAT rule applied and label the provisional rate.
+- New routes: `POST /admin/companies/{id}/vat-status`, `GET /buyer/workspaces/{ws}/orders/{id}/invoice-draft`, `GET /seller/workspaces/{ws}/orders/{id}/invoice-draft`, `GET /admin/orders/{id}/invoice-draft` (OpenAPI regenerated).
+
+**Tests actually run locally (2026-11-28)**
+- API (unit and PostgreSQL integration): 16 files, **152 passed**, 0 failed, including 7 new unit tests (`tax.test.ts`) and 3 new integration tests (`tax.int.test.ts`).
+- Contracts 62 passed; config 23 passed; web 10 passed. Lint, Prettier and typecheck clean.
+- Browser E2E runs in CI on the pull request.
+
+**Still needed before VAT is used for real**
+- A UAE tax professional must approve the rules (standard rate, delivery charge treatment, zero-rated and exempt supplies, the commission invoice and its VAT). Then set `TAX_APPROVAL_REFERENCE`.
+- Binding invoices, invoice numbering, credit notes and statements are not built; they wait for that approval.
+
+## Phase 8: financial policy conflicts (C-01 to C-06)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-financial-conflicts`. **Authority:** founder message of 2026-11-28 09:28 UTC: code-only changes for the approved business policies, financial conflicts first. Nothing provisioned, no live service connected, still sandbox mode.
+
+**Delivered**
+- Migration `20261203000000_phase8_financial_policies` (additive only; existing orders backfilled from stored data): `commission_policies` (append-only), `order_holds` (never deleted, released once), `payout_runs`, order columns for verified delivery, the dispute window and the commission rate and policy, refund split columns, and `payouts.run_id` with one live payout per supplier per run.
+- Payout eligibility only after verified delivery plus the 14-day window, with no dispute, hold, open reconciliation case or pending refund (C-01, C-02). Auto-completion and eligibility sweep in the worker every 5 minutes (C-03).
+- Weekly payout run, approval re-checks of every order, and a provider balance check (ledger-derived in sandbox) (C-04).
+- Versioned commission policy set by FINANCE_APPROVER with TOTP step-up, reason and audit; each checkout and order records its rate and policy (C-05).
+- Refund split (merchandise, delivery, VAT) with commission reversed on merchandise only (C-06).
+- Admin screens: settlement holds, commission, weekly payout run card, refund split fields, reconciliation case resolution. Order pages show verified delivery and the dispute window (EN/AR).
+- New API routes: `GET/POST /admin/holds`, `POST /admin/holds/{id}/release`, `GET /admin/payouts/run`, `GET/POST /admin/finance/commission`, `POST /admin/finance/reconciliation/{id}/resolve` (OpenAPI regenerated).
+- New capabilities: `admin.holds.manage` (COMPLIANCE, FINANCE, FINANCE_APPROVER), `admin.commission.manage` and `admin.reconciliation.resolve` (FINANCE_APPROVER).
+- SANDBOX-only test clock CLI `sandbox:end-dispute-window` for browser journeys (refuses in production and unless `PAYMENT_MODE=mock`; audited).
+- Provisional rules P8-1 to P8-8 in `docs/00-decisions.md`.
+
+**Tests actually run locally (2026-11-28)**
+- API (unit and PostgreSQL integration): 14 files, **142 passed**, 0 failed, including 14 new unit tests and 6 new integration tests for the financial rules.
+- Contracts 62 passed; config 21 passed; web 10 passed; worker 4 passed. Lint and Prettier clean; typecheck clean for API, web, worker and E2E.
+- Browser E2E was not run locally; it runs in CI on the pull request.
+
+**Known limits**
+- The provider balance is derived from the ledger in sandbox. A live adapter must query the provider's available balance before approval (launch blocker).
+- A reconciliation case opened by a provider event holds an already-eligible order at the next 5-minute sweep; payout requests and approvals re-check immediately.
 
 ## Phase 8A: infrastructure architecture, IaC and cost estimates
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8a-infrastructure`.
@@ -96,7 +210,7 @@ For each completed phase record date, commit, implemented routes, migrations, te
 | `pnpm check:production-refusal` (local .env base, and again with the CI environment and no .env) | pass: 8 of 8 refusals (API and worker × 4 cases) |
 | `pnpm perf:check` (local production build, single machine) | pass (output below) |
 | `pnpm audit --prod` | no known vulnerabilities |
-| `pnpm audit` (incl. dev) | 2 critical, 3 moderate in the vitest test-runner chain (SR-1, dev only) |
+| `pnpm audit` (incl. dev) | 2 critical, 3 moderate in the vitest test-runner chain (SR-1, dev only); fixed in Phase 8 with vitest 4.1.12, now no known vulnerabilities |
 | Secret scan (`git ls-files`, key patterns) | no secrets tracked; only fictional seeded dev credentials |
 | `pnpm lint`, `pnpm format:check`, `pnpm typecheck` | pass |
 | `pnpm test` (worker stopped) | pass: 219 tests, 0 failed (config 21, contracts 62, api 122 incl. new T38 test, web 10, worker 4) |
@@ -697,7 +811,7 @@ E2E also covers: full registration-to-approval journey, password reset single us
 - T01 verified at capability level only until purchase endpoints exist (Phase 3).
 - Document downloads are streamed through the API rather than presigned URLs (simpler to authorize; revisit for large files).
 - Production cannot start yet by design: there is no live email adapter or malware scanner (sandbox adapters only, clearly labelled).
-- CSP still needs `'unsafe-inline'` for scripts (Next.js inline bootstrap); nonces can be added later.
+- ~~CSP still needs `'unsafe-inline'` for scripts~~ Fixed in Phase 8: nonce-based CSP (SR-2).
 - A pending invitation token is kept per browser tab (sessionStorage); opening the link in another tab after sign-up requires clicking it again.
 - Notifications are email only; no in-app notifications or compliance queue alerts yet (Phase 6).
 - Seeded admin TOTP secrets are fixed for development; the seed refuses production.
@@ -729,7 +843,7 @@ Phase 1 approved and merged 2026-11-28. Next: founder answers the decisions abov
 **Date:** 2026-11-27. **Branch:** `phase-0-foundation` (pull request into `main`). **Exit gate (docs/13-roadmap.md):** clean install/build/lint/typecheck, DB connection, documented commands.
 
 ### Delivered
-- pnpm monorepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (BullMQ on Redis), `packages/config`, `packages/contracts`, `packages/db` (Prisma), `packages/ui` (tokens), `e2e` (Playwright), `infra`. Versions pinned and recorded in `docs/DEVELOPMENT.md`.
+- pnpm monorepo: `apps/web` (Next.js), `apps/api` (NestJS), `apps/worker` (background tasks; BullMQ until Phase 8, now the PostgreSQL scheduler), `packages/config`, `packages/contracts`, `packages/db` (Prisma), `packages/ui` (tokens), `e2e` (Playwright), `infra`. Versions pinned and recorded in `docs/DEVELOPMENT.md`.
 - `docker-compose.yml`: PostgreSQL 16, Redis 7, SeaweedFS (S3-compatible), Mailpit. Bound to 127.0.0.1 only.
 - Environment validation (`packages/config`), shared by API and worker. Production refuses mock payments, the dev mail catcher, weak/placeholder secrets, missing storage keys, non-https origins, live payments without PSP keys or the explicit `FEATURE_REAL_PAYMENTS` flag, and trading without a live provider. Live payments are refused outside production. Feature flags (`TRADING_ENABLED`, `FEATURE_REAL_PAYMENTS`, `FEATURE_SUBSCRIPTIONS`, `FEATURE_MILESTONE_PAYMENTS`) default false.
 - API: `/api/v1` prefix, documented success and error envelopes, error codes mapped to the HTTP statuses in docs/07-api.md, request IDs (`X-Request-Id`), structured pino logs with credential/cookie/token redaction and no query strings, helmet headers, CORS restricted to `WEB_ORIGIN`, 1 MB JSON limit, graceful shutdown.

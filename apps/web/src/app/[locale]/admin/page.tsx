@@ -139,9 +139,69 @@ function Operations() {
             ) : (
               <p className="muted">{t('ops.no_finance')}</p>
             )}
+            <BackgroundTasks tasks={o.background_tasks} />
           </>
         )}
       </Resource>
+    </section>
+  );
+}
+
+/** Health of the PostgreSQL-scheduled background tasks (Phase 8). */
+function BackgroundTasks({ tasks }: { tasks: OperationsOverview['background_tasks'] }) {
+  const t = useT();
+  const { locale } = useApp();
+  const problems = tasks.filter((x) => x.overdue || x.last_status === 'failed');
+  return (
+    <section aria-labelledby="ops-tasks" data-testid="background-tasks">
+      <h3 id="ops-tasks" className="h4">
+        {t('ops.tasks')}
+      </h3>
+      {tasks.length === 0 ? (
+        <Alert kind="warning">{t('ops.tasks_none')}</Alert>
+      ) : (
+        <>
+          {problems.length ? (
+            <Alert kind="warning">{t('ops.tasks_problem', { count: problems.length })}</Alert>
+          ) : (
+            <p className="muted small">{t('ops.tasks_ok')}</p>
+          )}
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">{t('ops.task')}</th>
+                  <th scope="col">{t('common.status')}</th>
+                  <th scope="col">{t('ops.task_last')}</th>
+                  <th scope="col">{t('ops.task_next')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tasks.map((x) => (
+                  <tr key={x.name}>
+                    <td>
+                      <code>{x.name}</code>
+                    </td>
+                    <td>
+                      {x.overdue
+                        ? t('ops.task_overdue')
+                        : x.last_status === 'failed'
+                          ? t('ops.task_failed', { count: x.consecutive_failures })
+                          : x.last_status === 'succeeded'
+                            ? t('ops.task_ok')
+                            : t('ops.task_never')}
+                    </td>
+                    <td>
+                      {x.last_finished_at ? formatDubaiTime(x.last_finished_at, locale) : '—'}
+                    </td>
+                    <td>{formatDubaiTime(x.next_run_at, locale)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -19,7 +19,7 @@ import { ApiErrorAlert, Button, DefinitionList, Skeleton } from '@/components/ui
 import { formatDate, type MessageKey } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
 
-/** Published buyer reviews; buyers are shown as "Verified buyer" (no company names). */
+/** Published buyer reviews; buyers are shown as "Verified business buyer" (no company names). */
 function SupplierReviews({ id }: { id: string }) {
   const t = useT();
   const { locale } = useApp();

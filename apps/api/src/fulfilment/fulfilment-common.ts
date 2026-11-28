@@ -1,12 +1,19 @@
 import {
-  FULFILMENT_LIMITS,
   hasCapability,
   type Capability,
   type MembershipRole,
   type OrderFulfilment,
   type WorkspaceKind,
 } from '@app/contracts';
-import type { Dispute, Order, Prisma, Review, Shipment, ShipmentItem } from '@app/db';
+import {
+  withinDisputeWindow,
+  type Dispute,
+  type Order,
+  type Prisma,
+  type Review,
+  type Shipment,
+  type ShipmentItem,
+} from '@app/db';
 import { ApiError } from '../common/api-error';
 import type { WorkspaceContext } from '../rfq/access';
 
@@ -48,13 +55,13 @@ export async function nextCaseNumber(tx: Tx, kind: 'dispute' | 'refund' | 'payou
 
 const DISPUTABLE = ['CONFIRMED', 'PROCESSING', 'DISPATCHED', 'DELIVERED', 'COMPLETED'];
 
-/** Paid, not yet paid out and (after receipt) within the dispute window (P5-3). */
+/**
+ * Paid, not yet paid out and, once delivery is verified, within the dispute window that started
+ * then (C-02: 14 days after verified delivery; buyer confirmation does not waive it).
+ */
 export function disputable(o: Order, now = new Date()): boolean {
   if (!DISPUTABLE.includes(o.state) || o.settlementState === 'PAID_OUT') return false;
-  if (o.state !== 'COMPLETED' || !o.completedAt) return true;
-  return (
-    now.getTime() - o.completedAt.getTime() <= FULFILMENT_LIMITS.disputeWindowDays * 86_400_000
-  );
+  return withinDisputeWindow(o, now);
 }
 
 export type OrderForFulfilment = Order & {
@@ -103,17 +110,30 @@ export function buildFulfilment(
     settlement_state: side === 'buyer' ? null : o.settlementState,
     refunded_fils: o.refundedFils.toString(),
     completed_at: o.completedAt?.toISOString() ?? null,
+    delivery_verified_at: o.deliveryVerifiedAt?.toISOString() ?? null,
+    delivery_verification: (o.deliveryVerification ?? null) as
+      | 'PROOF_OF_DELIVERY'
+      | 'BUYER_CONFIRMED'
+      | null,
+    dispute_window_ends_at: o.disputeWindowEndsAt?.toISOString() ?? null,
     dispute: latest ? { id: latest.id, number: latest.number, state: latest.state } : null,
     review: o.review
       ? { rating: o.review.rating, comment: o.review.comment, state: o.review.state }
       : null,
     actions: {
-      can_process: ship && o.state === 'CONFIRMED',
-      can_dispatch: ship && (o.state === 'CONFIRMED' || o.state === 'PROCESSING'),
+      can_process: ship && o.state === 'CONFIRMED' && !o.sellerCancelRequestedAt,
+      can_dispatch:
+        ship && (o.state === 'CONFIRMED' || o.state === 'PROCESSING') && !o.sellerCancelRequestedAt,
       can_deliver: ship && o.state === 'DISPATCHED',
       can_confirm_receipt: act && (o.state === 'DISPATCHED' || o.state === 'DELIVERED'),
       can_dispute: canDispute,
       can_review: act && o.state === 'COMPLETED' && !o.review,
+      can_cancel:
+        ship &&
+        (o.state === 'CONFIRMED' || o.state === 'PROCESSING') &&
+        !o.sellerCancelRequestedAt &&
+        o.settlementState !== 'IN_PAYOUT' &&
+        o.settlementState !== 'PAID_OUT',
     },
   };
 }

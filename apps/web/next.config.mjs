@@ -1,22 +1,9 @@
 /** @type {import('next').NextConfig} */
-// Next.js injects inline bootstrap scripts, so script-src needs 'unsafe-inline' until a nonce-based CSP is added
-// (tracked as a known limitation). Everything else is same-origin only; the API is reached via the same origin.
+// The Content-Security-Policy is set per request in src/middleware.ts with a fresh script nonce
+// (SR-2, src/lib/csp.ts). The headers below are static.
 const isDev = process.env.NODE_ENV !== 'production';
-const csp = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self'",
-  `connect-src 'self'${isDev ? ' ws:' : ''}`,
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "object-src 'none'",
-].join('; ');
 
 const securityHeaders = [
-  { key: 'Content-Security-Policy', value: csp },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'X-Frame-Options', value: 'DENY' },

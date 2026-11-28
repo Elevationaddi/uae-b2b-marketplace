@@ -9,6 +9,25 @@ Severity levels:
 - **Required:** must change before the pilot (8G).
 - **Minor:** copy or default value.
 
+## Progress (code changes)
+| ID | Status | Notes |
+|---|---|---|
+| C-01 | **Fixed in code** | Eligibility only after verified delivery and the end of the window; blockers listed in P8-2. |
+| C-02 | **Fixed in code** | Window from verified delivery (P8-1), stored per order, shown to buyers and suppliers. |
+| C-03 | **Fixed in code** | Auto-completion sweep and order holds (P8-3, P8-4). |
+| C-04 | **Fixed in code (sandbox)** | Weekly run, one live payout per supplier per week, approval re-checks orders and the balance (P8-5). Live provider balance check is a launch blocker until a live adapter exists. |
+| C-05 | **Fixed in code** | Versioned commission policy with step-up and audit (P8-6). |
+| C-06 | **Fixed in code** | Refund split and merchandise-only commission reversal (P8-7). |
+| C-08 | **Fixed in code (tax rules still need professional approval)** | `TAX_TREATMENT` setting; supplier VAT status declared by the company and confirmed by compliance; per-supplier VAT on checkout, recorded on each order; quotes checked against the status (P8-9, P8-10). Production refuses to start without `TAX_TREATMENT=supplier_status` and `TAX_APPROVAL_REFERENCE`. |
+| C-09 | **Partly fixed** | Non-binding invoice drafts (supplier and buyer TRN, tax rule, commission draft with VAT pending advice) for buyer, seller and admin (P8-11). Binding invoices, numbering, credit notes and statements stay disabled until the tax rules are approved. |
+| C-12 | **Fixed in code** | Public label "Verified business buyer" / "مشترٍ تجاري موثّق"; admins already see the buyer company. |
+| C-13 | **Fixed in code** | The quote form defaults to 7 days; the supplier can change it (maximum 90). |
+| C-16 | **Fixed in code** | Resolved tickets close automatically after 7 days without a customer response (P8-13). |
+| C-17 | **Fixed in code** | 10 open tickets per company, admin exceptions, urgent categories never blocked (P8-13). |
+| C-07 | **Fixed in code** | Suppliers cancel a paid, undispatched order with a reason; this requests a full refund that finance approves; the order is cancelled when the refund succeeds (P8-14). |
+| C-11 | **Fixed in code (policy text needs legal review)** | Bilingual storefront return policy shown at checkout and snapshotted on each order (P8-14). Customised-goods exclusions are left to each supplier's policy text. |
+| C-10, C-14, C-18 to C-24 | Open | Next pull requests or the final report. |
+
 ## Money, payouts and order completion
 
 | ID | Founder decision | Current implementation | Severity | Workstream |

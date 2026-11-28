@@ -61,9 +61,18 @@ function Preview({ p }: { p: CheckoutPreview }) {
             merchandise={g.merchandise_fils}
             shipping={g.shipping_fils}
             tax={g.tax_fils}
-            taxBps={p.tax_bps}
+            taxBps={g.tax_bps}
             total={g.total_fils}
           />
+          <div className="small" data-testid="checkout-return-policy">
+            <strong>{t('checkout.return_policy')}:</strong>{' '}
+            {g.return_policy
+              ? L(g.return_policy.en ?? g.return_policy.ar ?? '', g.return_policy.ar)
+              : t('checkout.no_return_policy')}
+          </div>
+          <p className="muted small" data-testid="checkout-tax-code">
+            {t('tax.code')}: {t(`taxcode.${g.tax_code}`)}
+          </p>
           {g.delivery_days !== null ? (
             <p className="muted small">{t('cart.delivery_days', { count: g.delivery_days })}</p>
           ) : null}
@@ -200,9 +209,14 @@ function Checkout({ ws, base }: { ws: Workspace; base: string }) {
                       merchandise={preview.merchandise_fils}
                       shipping={preview.shipping_fils}
                       tax={preview.tax_fils}
-                      taxBps={preview.tax_bps}
+                      taxBps={preview.tax_bps ?? undefined}
                       total={preview.total_fils}
                     />
+                    {preview.tax_provisional ? (
+                      <p className="muted small" data-testid="tax-provisional">
+                        {t('tax.provisional_note')}
+                      </p>
+                    ) : null}
                     <p className="muted small">
                       {t('checkout.orders_note', { count: preview.groups.length })}{' '}
                       {t('checkout.reservation_note', { minutes: preview.reservation_minutes })}

@@ -4,6 +4,7 @@
  */
 import { z } from 'zod';
 import * as m from './commerce';
+import { invoiceDraft } from './tax';
 import type { CatalogRoute } from './openapi-catalog';
 
 const ok = z.object({ ok: z.literal(true) });
@@ -109,6 +110,10 @@ export const COMMERCE_ROUTES: CatalogRoute[] = [
     response: m.orderDetail,
     capability: read,
   }),
+  buyer('get', '/orders/{id}/invoice-draft', 'Non-binding invoice draft (not a tax invoice)', {
+    response: invoiceDraft,
+    capability: read,
+  }),
   route('Seller orders', 'company', 'get', `${S}/orders`, 'Seller orders (offset cursor)', {
     query: m.orderListQuery,
     response: m.orderSummary,
@@ -119,6 +124,14 @@ export const COMMERCE_ROUTES: CatalogRoute[] = [
     response: m.orderDetail,
     capability: 'seller.orders.read (any seller workspace member)',
   }),
+  route(
+    'Seller orders',
+    'company',
+    'get',
+    `${S}/orders/{id}/invoice-draft`,
+    'Non-binding invoice draft with the commission draft (VAT pending advice)',
+    { response: invoiceDraft, capability: 'seller.orders.read (any seller workspace member)' },
+  ),
   route(
     'Payments',
     'signature',
@@ -159,6 +172,9 @@ export const COMMERCE_ROUTES: CatalogRoute[] = [
     list: true,
   }),
   admin('get', '/orders/{id}', 'Order detail', 'admin.orders.read', { response: m.orderDetail }),
+  admin('get', '/orders/{id}/invoice-draft', 'Non-binding invoice draft', 'admin.orders.read', {
+    response: invoiceDraft,
+  }),
   admin(
     'get',
     '/finance/summary',

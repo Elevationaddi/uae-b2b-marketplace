@@ -186,6 +186,9 @@ test('admin disputes, refunds, payouts and review moderation', async ({ browser 
   const approver = await admin(browser, 'FINANCE_APPROVER');
   await approver.page.goto('/en/admin/refunds');
   await snap(approver.page, 'p5-22b-admin-refunds-approver-en');
+  // Phase 8: settlement holds and the restricted commission setting (approver view).
+  await both(approver.page, '/admin/holds', 'p8-01-admin-holds');
+  await both(approver.page, '/admin/commission', 'p8-02-admin-commission');
   await approver.ctx.close();
 
   const compliance = await admin(browser, 'COMPLIANCE');

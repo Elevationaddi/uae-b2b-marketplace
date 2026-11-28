@@ -1,5 +1,6 @@
 'use client';
 import {
+  OPERATIONS_LIMITS,
   SUPPORT_CATEGORIES,
   SUPPORT_STATES,
   type OrderDetail,
@@ -312,6 +313,9 @@ export function WorkspaceSupportList({
         ) : null}
       </PageHeader>
       <p className="muted">{t('support.intro')}</p>
+      <p className="muted small" data-testid="support-limit-note">
+        {t('support.limit_note', { limit: OPERATIONS_LIMITS.openTicketsPerCompany })}
+      </p>
       <SupportStateTabs value={state} onChange={(v) => (setState(v), c.first())} />
       <Resource state={res.state} reload={res.reload} lines={5}>
         {(items, next) =>

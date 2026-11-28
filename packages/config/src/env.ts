@@ -56,6 +56,11 @@ export const rawEnvSchema = z.object({
   APP_NAME: z.string().trim().min(1).max(80).default('B2B Marketplace (working name)'),
 
   SESSION_SECRET: z.string().min(1),
+  /**
+   * Bearer secret a scheduled function (Vercel Cron sends `Authorization: Bearer <CRON_SECRET>`)
+   * must present to run background tasks. Unset: the cron endpoint refuses every request.
+   */
+  CRON_SECRET: z.string().optional(),
   /** 32-byte key, base64, used to encrypt admin TOTP secrets at rest (AES-256-GCM). */
   MFA_ENCRYPTION_KEY: z.string().refine((v) => Buffer.from(v, 'base64').length === 32, {
     message: 'must be 32 bytes, base64 encoded',
@@ -107,10 +112,28 @@ export const rawEnvSchema = z.object({
   TAX_STANDARD_BPS: z.coerce.number().int().min(0).max(10000).optional(),
 
   /**
-   * Platform commission on merchandise, in basis points (D05 open). Unset outside production uses
-   * the 1000 bps fixture from docs/08-finance.md; production requires an explicit value.
+   * How VAT is decided (F05, C-08). provisional_standard charges every supplier the STANDARD rate
+   * and is labelled provisional (development and sandbox only). supplier_status follows each
+   * supplier's VAT registration as confirmed by compliance. Production requires supplier_status
+   * and a TAX_APPROVAL_REFERENCE recording the tax professional's sign-off.
+   */
+  TAX_TREATMENT: z
+    .enum(['provisional_standard', 'supplier_status'])
+    .default('provisional_standard'),
+  /** Reference to the tax professional's written approval of the tax rules (no secret). */
+  TAX_APPROVAL_REFERENCE: z.string().trim().min(3).max(200).optional(),
+
+  /**
+   * Platform commission on merchandise, in basis points (founder: 10%). Used only until a restricted
+   * admin records the first commission policy version (C-05). Unset outside production uses the
+   * 1000 bps fixture; production requires an explicit value.
    */
   COMMISSION_BPS: z.coerce.number().int().min(0).max(5000).optional(),
+  /**
+   * Days after verified delivery during which a dispute can be opened; payouts wait for the end of
+   * this window (founder decision 28 Nov 2026: 14). Each order stores its own window end.
+   */
+  DISPUTE_WINDOW_DAYS: z.coerce.number().int().min(1).max(90).default(14),
   /** Minutes a checkout holds stock while payment is pending (D11: 15). */
   RESERVATION_MINUTES: z.coerce.number().int().min(5).max(120).default(15),
 
@@ -156,6 +179,9 @@ function isWeakSecret(value: string | undefined, minLength: number): boolean {
 /** Production-only rules. Each returns an issue string; empty array means compliant. */
 export function productionIssues(env: RawEnv): string[] {
   const issues: string[] = [];
+  if (env.CRON_SECRET !== undefined && isWeakSecret(env.CRON_SECRET, 32)) {
+    issues.push('CRON_SECRET must be a random value of at least 32 characters in production');
+  }
   if (isWeakSecret(env.SESSION_SECRET, 32)) {
     issues.push(
       'SESSION_SECRET must be at least 32 characters and not a placeholder in production',
@@ -200,6 +226,16 @@ export function productionIssues(env: RawEnv): string[] {
   }
   if (env.TAX_STANDARD_BPS === undefined) {
     issues.push('TAX_STANDARD_BPS must be set explicitly in production (tax rules, D06)');
+  }
+  if (env.TAX_TREATMENT !== 'supplier_status') {
+    issues.push(
+      'TAX_TREATMENT=supplier_status is required in production (no assumed VAT treatment, F05)',
+    );
+  }
+  if (!env.TAX_APPROVAL_REFERENCE) {
+    issues.push(
+      'TAX_APPROVAL_REFERENCE is required in production (tax rules need professional approval, F05)',
+    );
   }
   if (env.COMMISSION_BPS === undefined) {
     issues.push('COMMISSION_BPS must be set explicitly in production (commission policy, D05)');

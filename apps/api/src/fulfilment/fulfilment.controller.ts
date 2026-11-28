@@ -21,7 +21,11 @@ import {
   disputeListQuery,
   disputeMessageRequest,
   disputeOpenRequest,
+  commissionPolicyCreateRequest,
   financeDecisionRequest,
+  orderHoldCreateRequest,
+  orderHoldListQuery,
+  orderHoldReleaseRequest,
   payoutCreateRequest,
   payoutListQuery,
   refundCreateRequest,
@@ -29,9 +33,11 @@ import {
   reviewCreateRequest,
   reviewHideRequest,
   reviewListQuery,
+  reconciliationResolveRequest,
   sandboxOperationCompleteRequest,
   shipmentDeliverRequest,
   shipmentDispatchRequest,
+  sellerCancelRequest,
   uuid,
 } from '@app/contracts';
 import type { Request, Response } from 'express';
@@ -48,6 +54,7 @@ import { requestMeta } from '../common/request-context';
 import { parse } from '../common/validation';
 import { OrderService } from '../commerce/order.service';
 import { DisputeService } from './dispute.service';
+import { FinancialPolicyService } from './financial-policy.service';
 import { FulfilmentService } from './fulfilment.service';
 import { SettlementService } from './settlement.service';
 
@@ -78,6 +85,26 @@ export class SellerFulfilmentController {
     private readonly orders: OrderService,
     private readonly limits: RateLimitService,
   ) {}
+
+  /** C-07: cancel a paid, undispatched order; a full refund goes to finance for approval. */
+  @Post('orders/:id/cancel')
+  @HttpCode(200)
+  async cancel(
+    @Auth() a: AuthContext,
+    @Param('ws') ws: string,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    await this.fulfilment.sellerCancel(
+      a.user,
+      ws,
+      id,
+      parse(sellerCancelRequest, b),
+      requestMeta(req),
+    );
+    return ok(await this.orders.sellerDetail(a.user, ws, id));
+  }
 
   @Post('orders/:id/process')
   @HttpCode(200)
@@ -632,5 +659,91 @@ export class AdminFulfilmentController {
       requestMeta(req),
     );
     return ok({ id, state: 'PUBLISHED' });
+  }
+}
+
+/** Phase 8: settlement holds, weekly payout run, commission policy, reconciliation resolution. */
+@Controller('admin')
+@UseGuards(AdminAuthGuard)
+export class AdminFinancialPolicyController {
+  constructor(private readonly policy: FinancialPolicyService) {}
+
+  @Get('holds')
+  @RequireAdmin('admin.holds.manage')
+  async holds(@Query() q: unknown) {
+    const r = await this.policy.listHolds(parse(orderHoldListQuery, q));
+    return ok(r.items, r.next);
+  }
+
+  @Post('holds')
+  @RequireAdmin('admin.holds.manage')
+  async placeHold(@Auth() a: AuthContext, @Body() b: unknown, @Req() req: Request) {
+    return ok(
+      await this.policy.placeHold(a.user, parse(orderHoldCreateRequest, b), requestMeta(req)),
+    );
+  }
+
+  @Post('holds/:id/release')
+  @HttpCode(200)
+  @RequireAdmin('admin.holds.manage')
+  async releaseHold(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.policy.releaseHold(
+        a.user,
+        id,
+        parse(orderHoldReleaseRequest, b),
+        requestMeta(req),
+      ),
+    );
+  }
+
+  @Get('payouts/run')
+  @RequireAdmin('admin.finance.read')
+  async payoutRun() {
+    return ok(await this.policy.payoutRun());
+  }
+
+  @Get('finance/commission')
+  @RequireAdmin('admin.finance.read')
+  async commission(@Auth() a: AuthContext) {
+    return ok(await this.policy.commission(a.adminRoles ?? []));
+  }
+
+  @Post('finance/commission')
+  @HttpCode(200)
+  @RequireAdmin('admin.commission.manage')
+  async setCommission(@Auth() a: AuthContext, @Body() b: unknown, @Req() req: Request) {
+    return ok(
+      await this.policy.setCommission(
+        a.user,
+        a.adminRoles ?? [],
+        parse(commissionPolicyCreateRequest, b),
+        requestMeta(req),
+      ),
+    );
+  }
+
+  @Post('finance/reconciliation/:id/resolve')
+  @HttpCode(200)
+  @RequireAdmin('admin.reconciliation.resolve')
+  async resolve(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() b: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.policy.resolveReconciliation(
+        a.user,
+        id,
+        parse(reconciliationResolveRequest, b),
+        requestMeta(req),
+      ),
+    );
   }
 }

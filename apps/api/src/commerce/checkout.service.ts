@@ -8,6 +8,7 @@ import {
   type paymentStartRequest,
 } from '@app/contracts';
 import {
+  activeCommission,
   closeUnpaidCheckout,
   Prisma,
   writeAudit,
@@ -34,6 +35,7 @@ import {
   nextNumber,
 } from './commerce-common';
 import { buildPreview, loadCart, publicLine } from './pricing';
+import type { SupplierVat, TaxSettings } from './tax';
 
 const TX = { isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted, timeout: 20_000 };
 
@@ -59,11 +61,7 @@ export class CheckoutService {
   async preview(user: User, ws: string, addressId: string): Promise<CheckoutPreview> {
     const ctx = await this.carts.ctx(user, ws);
     const address = await this.addresses.own(ctx.workspace.id, addressId);
-    const p = buildPreview(
-      await loadCart(this.prisma, ctx.workspace.id),
-      address,
-      this.config.taxBps,
-    );
+    const p = buildPreview(await loadCart(this.prisma, ctx.workspace.id), address, this.config.tax);
     return {
       address: p.address,
       groups: p.groups.map((g) => ({
@@ -74,13 +72,18 @@ export class CheckoutService {
         tax_fils: g.tax.toString(),
         total_fils: g.total.toString(),
         delivery_days: g.group.delivery.days,
+        tax_bps: g.taxBps,
+        tax_code: g.taxCode,
+        return_policy: g.group.returnPolicy,
         issue: g.issue,
       })),
       merchandise_fils: p.merchandise.toString(),
       shipping_fils: p.shipping.toString(),
       tax_fils: p.tax.toString(),
       total_fils: p.total.toString(),
-      tax_bps: this.config.taxBps,
+      tax_bps: p.taxBps,
+      tax_treatment: this.config.tax.treatment,
+      tax_provisional: p.provisional,
       reservation_minutes: this.config.reservationMinutes,
       preview_hash: p.hash,
       blocked: p.blocked || !this.config.checkoutEnabled,
@@ -101,11 +104,13 @@ export class CheckoutService {
     const id = await this.prisma.$transaction(async (tx) => {
       // Serialise checkouts of one workspace so the same cart cannot be checked out twice.
       await tx.$queryRaw`SELECT id FROM workspaces WHERE id = ${ctx.workspace.id}::uuid FOR UPDATE`;
-      const p = buildPreview(await loadCart(tx, ctx.workspace.id), address, this.config.taxBps);
+      const p = buildPreview(await loadCart(tx, ctx.workspace.id), address, this.config.tax);
       if (p.hash !== b.preview_hash) throw new ApiError('CONFLICT', 'checkout.changed');
       if (p.blocked) throw new ApiError('CONFLICT', 'checkout.blocked');
       if (p.groups.some((g) => g.group.seller_company_id === ctx.company.id))
         throw new ApiError('CONFLICT', 'cart.self_trade');
+      // Commission policy in force now (C-05); recorded on the checkout and every order.
+      const commission = await activeCommission(tx, this.config.commissionBps);
 
       // Reserve in a stable order (sku id) so concurrent checkouts cannot deadlock. The
       // conditional update is the race guard for the last unit (T11).
@@ -137,8 +142,15 @@ export class CheckoutService {
           shippingFils: p.shipping,
           taxFils: p.tax,
           totalFils: p.total,
-          taxRule: { code: 'STANDARD', bps: this.config.taxBps, base: 'merchandise+shipping' },
-          commissionBps: this.config.commissionBps,
+          // Per-supplier rules live on each order's snapshot (F05); this records the treatment.
+          taxRule: {
+            treatment: this.config.tax.treatment,
+            bps: p.taxBps,
+            base: 'merchandise+shipping',
+            per_order: true,
+          },
+          commissionBps: commission.bps,
+          commissionPolicyId: commission.policyId,
           reservationExpiresAt: expiresAt,
           payBy: expiresAt,
         },
@@ -163,7 +175,7 @@ export class CheckoutService {
         });
       }
       for (const g of p.groups) {
-        const commission = bpsOf(g.group.merchandise, this.config.commissionBps);
+        const commissionFils = bpsOf(g.group.merchandise, commission.bps);
         const order = await tx.order.create({
           data: {
             number: await nextNumber(tx, 'order'),
@@ -176,14 +188,28 @@ export class CheckoutService {
             shippingFils: g.shipping,
             taxFils: g.tax,
             totalFils: g.total,
-            commissionFils: commission,
-            sellerPayableFils: g.total - commission,
+            commissionFils,
+            sellerPayableFils: g.total - commissionFils,
+            commissionBps: commission.bps,
+            commissionPolicyId: commission.policyId,
             snapshot: {
               buyer: { company_name: ctx.company.displayName },
               seller: { company_name: g.group.seller.company_name },
               delivery: { fee_fils: g.shipping.toString(), days: g.group.delivery.days },
               address: p.address,
-              commission_bps: this.config.commissionBps,
+              commission_bps: commission.bps,
+              commission_policy_version: commission.version,
+              tax: {
+                treatment: this.config.tax.treatment,
+                code: g.taxCode,
+                bps: g.taxBps,
+                provisional: g.provisional,
+                base: 'merchandise+shipping',
+                supplier_vat_status: g.group.vat.status,
+                supplier_trn: g.group.vat.trn,
+              },
+              // C-11: the return policy the buyer saw before paying.
+              return_policy: g.group.returnPolicy,
             },
             lines: {
               create: g.group.lines.map((l, i) => ({
@@ -405,6 +431,29 @@ export class CheckoutService {
   }
 }
 
+/** The tax rule recorded on a quote order: the quote's own code and rate, labelled (F05). */
+function quoteOrderTax(tax: TaxSettings, vat: SupplierVat, v: QuoteVersion) {
+  const provisional = tax.treatment === 'provisional_standard';
+  const code =
+    v.taxCode === 'STANDARD'
+      ? provisional
+        ? 'PROVISIONAL_STANDARD'
+        : 'STANDARD'
+      : vat.status === 'NOT_REGISTERED' && !provisional
+        ? 'NO_VAT_NOT_REGISTERED'
+        : v.taxCode;
+  return {
+    treatment: tax.treatment,
+    code,
+    bps: v.taxBps,
+    provisional,
+    base: 'merchandise+shipping',
+    source: 'quote',
+    supplier_vat_status: vat.status,
+    supplier_trn: vat.trn,
+  };
+}
+
 /**
  * Award to unpaid order (Phase 4): inside the award transaction, create the QUOTE checkout and a
  * single AWAITING_PAYMENT order from the accepted version. Totals are the quote's own figures
@@ -420,11 +469,16 @@ export async function createQuoteCheckout(
     userId: string;
     payBy: Date;
     poReference: string | null;
-    commissionBps: number;
+    /** Rate used when no commission policy version has been recorded yet. */
+    commissionFallbackBps: number;
+    /** VAT treatment (F05) and the supplier's VAT status at award. */
+    tax: TaxSettings;
+    sellerVat: SupplierVat;
   },
 ): Promise<{ checkoutId: string; orderId: string }> {
   const v = input.version;
-  const commission = bpsOf(v.subtotalFils, input.commissionBps);
+  const policy = await activeCommission(tx, input.commissionFallbackBps);
+  const commission = bpsOf(v.subtotalFils, policy.bps);
   const checkout = await tx.checkout.create({
     data: {
       number: await nextNumber(tx, 'checkout'),
@@ -440,7 +494,8 @@ export async function createQuoteCheckout(
       taxFils: v.taxFils,
       totalFils: v.totalFils,
       taxRule: { code: v.taxCode, bps: v.taxBps, base: 'merchandise+shipping', source: 'quote' },
-      commissionBps: input.commissionBps,
+      commissionBps: policy.bps,
+      commissionPolicyId: policy.policyId,
       payBy: input.payBy,
     },
   });
@@ -458,6 +513,8 @@ export async function createQuoteCheckout(
       totalFils: v.totalFils,
       commissionFils: commission,
       sellerPayableFils: v.totalFils - commission,
+      commissionBps: policy.bps,
+      commissionPolicyId: policy.policyId,
       snapshot: {
         buyer: { company_name: input.buyer.companyName },
         seller: { company_name: input.seller.companyName },
@@ -469,7 +526,9 @@ export async function createQuoteCheckout(
         },
         rfq: { id: input.rfq.id, number: input.rfq.number },
         quote_version_id: v.id,
-        commission_bps: input.commissionBps,
+        commission_bps: policy.bps,
+        commission_policy_version: policy.version,
+        tax: quoteOrderTax(input.tax, input.sellerVat, v),
       },
       lines: {
         create: [

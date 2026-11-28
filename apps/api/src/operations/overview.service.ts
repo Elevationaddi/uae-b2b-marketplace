@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { OPERATIONS_LIMITS, type OperationsOverview, type overviewQuery } from '@app/contracts';
 import type { AppEnv } from '@app/config';
-import type { PrismaClient } from '@app/db';
+import { taskHealth, type PrismaClient } from '@app/db';
 import type { z } from 'zod';
 import { ApiError } from '../common/api-error';
 import { APP_ENV, PRISMA } from '../infra/tokens';
@@ -92,6 +92,7 @@ export class OverviewService {
         refunds_awaiting_approval: refundsWaiting,
         payouts_awaiting_approval: payoutsWaiting,
       },
+      background_tasks: await taskHealth(this.prisma),
       generated_at: new Date().toISOString(),
     };
   }
