@@ -98,8 +98,18 @@ export async function startWorker(
           await pingDatabase(prisma);
           lastHeartbeat = new Date();
           return { at: lastHeartbeat.toISOString() };
-        case OUTBOX_JOB:
-          return { delivered: await dispatchOutbox(prisma, mailer, env, log) };
+        case OUTBOX_JOB: {
+          // Drain several batches per tick (bounded to ~1.5 s) so a backlog cannot delay fresh
+          // one-time links such as verification emails by minutes.
+          const started = Date.now();
+          let delivered = 0;
+          for (let i = 0; i < 10; i++) {
+            const n = await dispatchOutbox(prisma, mailer, env, log);
+            delivered += n;
+            if (n < 20 || Date.now() - started > 1_500) break;
+          }
+          return { delivered };
+        }
         case LICENCE_JOB: {
           const res = await runLicenceExpiry(prisma, env);
           if (res.reminded || res.restricted) log.info(res, 'licence expiry run');
