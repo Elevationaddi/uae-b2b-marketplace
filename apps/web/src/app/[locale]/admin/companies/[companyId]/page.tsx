@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import type { SupportLimitResponse } from '@app/contracts';
 import { useState } from 'react';
 import { AdminShell, useAdmin } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
@@ -145,6 +146,94 @@ function VatStatus({ c, onDone }: { c: CompanyDetail; onDone: (c: CompanyDetail)
   );
 }
 
+/** C-17: open-ticket limit of the company and the support manager's exception. */
+function SupportLimit({ companyId }: { companyId: string }) {
+  const t = useT();
+  const me = useAdmin();
+  const res = useResource<SupportLimitResponse>(`/admin/companies/${companyId}/support-limit`);
+  const m = useMutation();
+  const fe = useFieldError(m.error);
+  const [limit, setLimit] = useState('');
+  const [reason, setReason] = useState('');
+  const [ok, setOk] = useState(false);
+  const canManage = me.capabilities.includes('admin.support.manage');
+  async function save(value: number | string | null) {
+    setOk(false);
+    const r = await m.run<SupportLimitResponse>(`/admin/companies/${companyId}/support-limit`, {
+      method: 'POST',
+      body: { limit: value, reason },
+    });
+    if (r.ok) {
+      setOk(true);
+      setReason('');
+      setLimit('');
+      res.setData(r.data);
+    }
+  }
+  return (
+    <section className="card" aria-labelledby="sl-heading" data-testid="admin-support-limit">
+      <h2 id="sl-heading" className="h3">
+        {t('support.limit_title')}
+      </h2>
+      <Resource state={res.state} reload={res.reload} lines={2}>
+        {(l) => (
+          <>
+            <p>
+              {t('support.limit_current', { open: l.open_tickets, limit: l.limit })} ·{' '}
+              <span className="muted small">
+                {l.exception
+                  ? t('support.limit_exception')
+                  : t('support.limit_default', { limit: l.default_limit })}
+              </span>
+            </p>
+            {canManage ? (
+              <form
+                noValidate
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const n = Number(limit);
+                  // An invalid entry is sent as typed so the server reports the field error.
+                  void save(Number.isInteger(n) && limit.trim() !== '' ? n : limit);
+                }}
+              >
+                {ok ? <Alert kind="success">{t('support.limit_saved')}</Alert> : null}
+                {m.error && Object.keys(m.error.fieldErrors).length === 0 ? (
+                  <ApiErrorAlert error={m.error} />
+                ) : null}
+                <Field
+                  label={t('support.limit_value')}
+                  inputMode="numeric"
+                  value={limit}
+                  onChange={(e) => setLimit(e.target.value)}
+                  error={fe('limit')}
+                />
+                <TextArea
+                  label={t('support.limit_reason')}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  required
+                  rows={2}
+                  error={fe('reason')}
+                />
+                <div className="actions">
+                  <Button type="submit" busy={m.busy}>
+                    {t('support.limit_save')}
+                  </Button>
+                  {l.exception ? (
+                    <Button type="button" variant="secondary" onClick={() => void save(null)}>
+                      {t('support.limit_clear')}
+                    </Button>
+                  ) : null}
+                </div>
+              </form>
+            ) : null}
+          </>
+        )}
+      </Resource>
+    </section>
+  );
+}
+
 function Body({ companyId }: { companyId: string }) {
   const { locale } = useApp();
   const t = useT();
@@ -196,6 +285,9 @@ function Body({ companyId }: { companyId: string }) {
             />
           </section>
           <VatStatus c={c} onDone={setData} />
+          {me.capabilities.includes('admin.support.read') ? (
+            <SupportLimit companyId={c.id} />
+          ) : null}
           <section className="card" aria-labelledby="members-heading">
             <h2 id="members-heading">{t('admin.members')}</h2>
             {c.members.length === 0 ? (

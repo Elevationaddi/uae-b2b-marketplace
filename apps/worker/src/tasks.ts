@@ -5,6 +5,7 @@ import {
   expireExports,
   pingDatabase,
   processPendingPaymentEvents,
+  autoCloseResolvedTickets,
   runSettlementSweep,
   submitApprovedSettlements,
   type PrismaClient,
@@ -36,6 +37,7 @@ import {
  *   (idempotency key per refund/payout, so a retry never pays twice).
  * - settlement.sweep: auto-completion and payout eligibility (C-01, C-03).
  * - export.cleanup: deletes the bytes of report exports past their 24 h retention.
+ * - support.auto_close: closes resolved tickets after 7 days without a customer response (C-16).
  * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
  */
 export const TASK = {
@@ -49,6 +51,7 @@ export const TASK = {
   settlementSubmit: 'settlement.submit',
   settlementSweep: 'settlement.sweep',
   exportCleanup: 'export.cleanup',
+  supportAutoClose: 'support.auto_close',
   sandboxWebhooks: 'sandbox.webhooks',
 } as const;
 
@@ -143,6 +146,15 @@ export function buildTasks(
         const expired = await expireExports(prisma);
         if (expired) log.info({ expired }, 'report exports expired');
         return { expired };
+      },
+    },
+    {
+      name: TASK.supportAutoClose,
+      everySeconds: 3600,
+      run: async () => {
+        const closed = await autoCloseResolvedTickets(prisma);
+        if (closed) log.info({ closed }, 'resolved support tickets closed after 7 days');
+        return { closed };
       },
     },
     {

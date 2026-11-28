@@ -21,7 +21,14 @@ export const SUPPORT_CATEGORIES = [
   'RFQ',
   'CATALOG',
   'OTHER',
+  'SECURITY',
+  'COMPLIANCE',
 ] as const;
+/**
+ * Urgent financial, security or compliance cases are never blocked by the open-ticket limit
+ * (founder decision, C-17).
+ */
+export const URGENT_SUPPORT_CATEGORIES = ['PAYMENT', 'SECURITY', 'COMPLIANCE'] as const;
 export const REPORT_TYPES = [
   'orders',
   'refunds',
@@ -36,7 +43,10 @@ export type ReportType = (typeof REPORT_TYPES)[number];
 /** Provisional limits (P6-x pending founder); enforced server-side. */
 export const OPERATIONS_LIMITS = {
   maxSupportMessages: 200,
-  openTicketsPerWorkspace: 20,
+  /** Open tickets per company (founder: 10), unless an admin set an exception for the company. */
+  openTicketsPerCompany: 10,
+  /** Days a resolved ticket waits for the customer before closing automatically (C-16). */
+  autoCloseResolvedDays: 7,
   exportMaxRows: 50_000,
   exportMaxDays: 366,
   exportTtlHours: 24,
@@ -52,6 +62,20 @@ export const supportCreateRequest = z.object({
   body: text(4000),
   order_id: uuid.optional(),
   rfq_id: uuid.optional(),
+});
+/** Support manager's per-company exception to the open-ticket limit; null restores the default. */
+export const supportLimitRequest = z
+  .object({
+    limit: z.number().int().min(1, 'min').max(100, 'max').nullable(),
+    reason: z.string().trim().min(5, 'min').max(2000, 'max'),
+  })
+  .strict();
+export const supportLimitResponse = z.object({
+  company_id: uuid,
+  limit: z.number().int(),
+  default_limit: z.number().int(),
+  exception: z.boolean(),
+  open_tickets: z.number().int(),
 });
 export const supportReplyRequest = z.object({ body: text(4000) });
 /** Admin resolution note (optional), shown to the customer as the last message. */
@@ -172,4 +196,5 @@ export const exportItem = z.object({
 export type SupportTicketSummary = z.infer<typeof supportTicketSummary>;
 export type SupportTicketDetail = z.infer<typeof supportTicketDetail>;
 export type OperationsOverview = z.infer<typeof operationsOverview>;
+export type SupportLimitResponse = z.infer<typeof supportLimitResponse>;
 export type ExportItem = z.infer<typeof exportItem>;
