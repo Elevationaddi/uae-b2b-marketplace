@@ -11,9 +11,24 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
 | 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
 | 7 | DONE (sandbox-safe part; accepted 2026-11-28) | Merged to `main` as 2ccd947 (PR #9); CI green | Live integrations moved to Phase 8 workstreams |
-| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16). 14 of 24 conflicts fixed in code | Remaining authorised code: C-10, C-14, C-18 to C-21, buyer cancellation, sample requests, staging profile; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
+| 8 | IN PROGRESS (code only, nothing provisioned; sandbox) | Azure 8A rejected 2026-11-28 and archived. Merged: financial conflicts C-01 to C-06 (#13), VAT configuration (#14), PostgreSQL scheduler (#15), support/quote/review rules (#16), supplier cancellation and return policy (#17), nonce CSP and Vitest 4 (#18); Vercel-first architecture (#19). Founder answered all questions on 28 Nov 16:33 UTC (P8-1 to P8-14 approved). Then: scheduled weekly payouts and 30-day commission notice (P8-15, P8-16). 14 of 24 conflicts fixed in code | Remaining authorised code: C-14, C-18 to C-21, buyer cancellation, sample requests, staging profile; founder: Vercel plan and spend controls, then deployment authorisation; launch blockers in the readiness checklist |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 8: delivery options (C-10, FD-08)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-delivery-options`.
+
+**Delivered**
+- Migration `20261210000000_phase8_delivery_options` (additive): `storefronts.delivery_rates` (backfilled from the old flat fee and emirate list, which stay in place unused), collection fields, `orders.delivery_method` (`DELIVERY`, `COLLECTION`, `QUOTE_TERMS`), `shipments.dispatch_proof_file_id`.
+- Storefront: per-emirate fee and days for all seven emirates; free buyer collection (emirate, days, EN/AR instructions; enabling it needs an emirate and English instructions).
+- Checkout: the buyer picks delivery or collection per supplier; unserved emirates block delivery only; collection is free; the method is covered by the preview hash. Orders snapshot method, charge, days and collection terms; quote orders record `QUOTE_TERMS`.
+- Collection instructions are hidden from the buyer until payment is confirmed; the supplier always sees them. Later storefront edits do not change an order.
+- Fulfilment: collection handover without a carrier; optional proof of dispatch upload (scanned, audited downloads `GET .../orders/{id}/dispatch-proof`, 404 for anyone outside the order).
+- Web: rate table and collection section on the storefront page, method choice at checkout, delivery method and collection on order pages, dispatch-proof field. EN/AR messages.
+
+**Tests actually run locally (2026-11-28)**
+- New integration suite `apps/api/test/delivery-options.int.test.ts` (5): per-emirate pricing and unserved emirate, invalid rates and collection settings (422), collection not offered, collection snapshot and post-payment reveal with carrier-free handover, dispatch proof with tenant isolation.
+- Full API suite 163 passed (18 files) before merging main; web 12 passed. Lint, Prettier, typecheck clean.
 
 ## Phase 8: scheduled weekly payouts and commission notice (founder decisions 2026-11-28 16:33 UTC)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-payout-schedule`.
