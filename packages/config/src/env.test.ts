@@ -35,6 +35,8 @@ const prod = {
   EMAIL_FROM: 'no-reply@app.invalid',
   FILE_SCANNER: 'live',
   TAX_STANDARD_BPS: '500',
+  TAX_TREATMENT: 'supplier_status',
+  TAX_APPROVAL_REFERENCE: 'Tax adviser letter 2027-01',
   COMMISSION_BPS: '1000',
 };
 
@@ -201,5 +203,22 @@ describe('quote tax configuration (D06)', () => {
     const { TAX_STANDARD_BPS: _omit, ...noTax } = prod;
     expect(issuesOf(noTax).join()).toMatch(/TAX_STANDARD_BPS/);
     expect(issuesOf({ ...dev, TAX_STANDARD_BPS: '10001' }).join()).toMatch(/TAX_STANDARD_BPS/);
+  });
+});
+
+describe('tax treatment (F05)', () => {
+  it('defaults to the labelled provisional rate outside production', () => {
+    expect(parseEnv(dev).TAX_TREATMENT).toBe('provisional_standard');
+    expect(parseEnv({ ...dev, TAX_TREATMENT: 'supplier_status' }).TAX_TREATMENT).toBe(
+      'supplier_status',
+    );
+  });
+  it('production needs supplier-status VAT and a professional approval reference', () => {
+    expect(issuesOf(prod)).toEqual([]);
+    expect(issuesOf({ ...prod, TAX_TREATMENT: 'provisional_standard' }).join()).toMatch(
+      /TAX_TREATMENT=supplier_status/,
+    );
+    const { TAX_APPROVAL_REFERENCE: _omit, ...noApproval } = prod;
+    expect(issuesOf(noApproval).join()).toMatch(/TAX_APPROVAL_REFERENCE/);
   });
 });

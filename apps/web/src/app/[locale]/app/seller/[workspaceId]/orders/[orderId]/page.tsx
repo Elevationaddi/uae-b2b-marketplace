@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useT } from '@/components/app-context';
 import { OrderDetailView, OrderState } from '@/components/commerce-ui';
+import { InvoiceDraftCard } from '@/components/invoice-draft';
 import { FulfilmentCard } from '@/components/fulfilment-ui';
 import { Resource } from '@/components/resource';
 import type { Workspace } from '@/components/session';
@@ -44,7 +45,15 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
               <Link href={`${base}/support/new?order=${o.id}`}>{t('support.contact')}</Link>
             </p>
           ) : null}
-          <OrderDetailView o={o} side="seller" />
+          <OrderDetailView
+            o={o}
+            side="seller"
+            invoiceDraft={
+              <InvoiceDraftCard
+                url={`/seller/workspaces/${ws.id}/orders/${orderId}/invoice-draft`}
+              />
+            }
+          />
         </>
       )}
     </Resource>

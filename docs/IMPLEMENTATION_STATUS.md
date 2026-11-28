@@ -15,6 +15,27 @@ Phases 0–7 are merged and were accepted by the founder on 2026-11-28 as comple
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 8: tax configuration (C-08, C-09)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-tax-configuration`. **Authority:** founder message of 2026-11-28 09:28 UTC: remove the automatic standard VAT assumption, make tax treatment configurable, add supplier VAT status and invoice preparation, and make no real tax calculation or binding invoice without professional approval. Nothing provisioned; still sandbox mode.
+
+**Delivered**
+- Migration `20261204000000_phase8_tax_configuration` (additive): `VatRegistrationStatus` enum; company `vat_status`, `vat_status_confirmed_at`, `vat_status_confirmed_by_id`; checks that a registered company has a 15-digit TRN and that a confirmation names who confirmed it. Companies that already had a TRN are recorded as declaring registration (unconfirmed).
+- `TAX_TREATMENT` (`provisional_standard` default, or `supplier_status`) and `TAX_APPROVAL_REFERENCE`. Production refuses to start without `supplier_status` and an approval reference (P8-9).
+- Per-supplier VAT rule on the checkout preview and on each order (`orders.snapshot.tax`, with the supplier's VAT status and TRN at the time). Unconfirmed suppliers block checkout in `supplier_status` mode (`supplier_vat_unconfirmed`).
+- Company form and page show the VAT declaration and whether compliance confirmed it; admin company page has a confirmation form (reason required, audited as `company.vat_status_confirmed`) (P8-10).
+- Quote submission and revision check the supplier's VAT status in `supplier_status` mode.
+- Non-binding invoice drafts for buyer, seller and admin, marked "not a tax invoice" (P8-11). Order pages and checkout show which VAT rule applied and label the provisional rate.
+- New routes: `POST /admin/companies/{id}/vat-status`, `GET /buyer/workspaces/{ws}/orders/{id}/invoice-draft`, `GET /seller/workspaces/{ws}/orders/{id}/invoice-draft`, `GET /admin/orders/{id}/invoice-draft` (OpenAPI regenerated).
+
+**Tests actually run locally (2026-11-28)**
+- API (unit and PostgreSQL integration): 16 files, **152 passed**, 0 failed, including 7 new unit tests (`tax.test.ts`) and 3 new integration tests (`tax.int.test.ts`).
+- Contracts 62 passed; config 23 passed; web 10 passed. Lint, Prettier and typecheck clean.
+- Browser E2E runs in CI on the pull request.
+
+**Still needed before VAT is used for real**
+- A UAE tax professional must approve the rules (standard rate, delivery charge treatment, zero-rated and exempt supplies, the commission invoice and its VAT). Then set `TAX_APPROVAL_REFERENCE`.
+- Binding invoices, invoice numbering, credit notes and statements are not built; they wait for that approval.
+
 ## Phase 8: financial policy conflicts (C-01 to C-06)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-financial-conflicts`. **Authority:** founder message of 2026-11-28 09:28 UTC: code-only changes for the approved business policies, financial conflicts first. Nothing provisioned, no live service connected, still sandbox mode.
 

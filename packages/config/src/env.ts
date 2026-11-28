@@ -107,6 +107,18 @@ export const rawEnvSchema = z.object({
   TAX_STANDARD_BPS: z.coerce.number().int().min(0).max(10000).optional(),
 
   /**
+   * How VAT is decided (F05, C-08). provisional_standard charges every supplier the STANDARD rate
+   * and is labelled provisional (development and sandbox only). supplier_status follows each
+   * supplier's VAT registration as confirmed by compliance. Production requires supplier_status
+   * and a TAX_APPROVAL_REFERENCE recording the tax professional's sign-off.
+   */
+  TAX_TREATMENT: z
+    .enum(['provisional_standard', 'supplier_status'])
+    .default('provisional_standard'),
+  /** Reference to the tax professional's written approval of the tax rules (no secret). */
+  TAX_APPROVAL_REFERENCE: z.string().trim().min(3).max(200).optional(),
+
+  /**
    * Platform commission on merchandise, in basis points (founder: 10%). Used only until a restricted
    * admin records the first commission policy version (C-05). Unset outside production uses the
    * 1000 bps fixture; production requires an explicit value.
@@ -206,6 +218,16 @@ export function productionIssues(env: RawEnv): string[] {
   }
   if (env.TAX_STANDARD_BPS === undefined) {
     issues.push('TAX_STANDARD_BPS must be set explicitly in production (tax rules, D06)');
+  }
+  if (env.TAX_TREATMENT !== 'supplier_status') {
+    issues.push(
+      'TAX_TREATMENT=supplier_status is required in production (no assumed VAT treatment, F05)',
+    );
+  }
+  if (!env.TAX_APPROVAL_REFERENCE) {
+    issues.push(
+      'TAX_APPROVAL_REFERENCE is required in production (tax rules need professional approval, F05)',
+    );
   }
   if (env.COMMISSION_BPS === undefined) {
     issues.push('COMMISSION_BPS must be set explicitly in production (commission policy, D05)');

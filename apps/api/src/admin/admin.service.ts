@@ -392,6 +392,8 @@ export class AdminService {
       ...companySummary(c),
       activity: c.activity,
       trn: c.trn,
+      vat_status: c.vatStatus,
+      vat_status_confirmed_at: c.vatStatusConfirmedAt?.toISOString() ?? null,
       contact_email: c.contactEmail,
       contact_phone: c.contactPhone,
       members: c.workspaces.flatMap((w) =>
@@ -433,6 +435,56 @@ export class AdminService {
         resourceId: c.id,
         companyId: c.id,
         reason,
+        requestId: meta.requestId,
+        ip: meta.ip,
+      });
+    });
+    return this.company(companyId);
+  }
+
+  /**
+   * Compliance confirms a company's VAT registration (F05, C-08), correcting it if needed. Only a
+   * confirmed status lets supplier_status mode charge (or not charge) VAT for the supplier.
+   */
+  async confirmVatStatus(
+    admin: User,
+    companyId: string,
+    b: { vat_status: 'REGISTERED' | 'NOT_REGISTERED'; trn?: string; reason: string },
+    meta: RequestMeta,
+  ) {
+    assertId(companyId);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM companies WHERE id = ${companyId}::uuid FOR UPDATE`;
+      const c = await tx.company.findUnique({ where: { id: companyId } });
+      if (!c) throw new ApiError('NOT_FOUND', 'common.not_found');
+      const trn = b.trn ?? c.trn;
+      if (b.vat_status === 'REGISTERED' && !trn)
+        throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+          trn: 'trn_required',
+        });
+      await tx.company.update({
+        where: { id: c.id },
+        data: {
+          vatStatus: b.vat_status,
+          trn,
+          vatStatusConfirmedAt: new Date(),
+          vatStatusConfirmedById: admin.id,
+          version: { increment: 1 },
+        },
+      });
+      await writeAudit(tx, {
+        actorId: admin.id,
+        actorType: 'admin',
+        action: 'company.vat_status_confirmed',
+        resourceType: 'company',
+        resourceId: c.id,
+        companyId: c.id,
+        reason: b.reason,
+        details: {
+          vat_status: b.vat_status,
+          previous_vat_status: c.vatStatus,
+          trn_changed: trn !== c.trn,
+        },
         requestId: meta.requestId,
         ip: meta.ip,
       });

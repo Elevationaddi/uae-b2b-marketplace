@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
-import { bpsOf, priceForQuantity, type CartLine } from '@app/contracts';
+import { bpsOf, priceForQuantity, type CartLine, type OrderTaxCode } from '@app/contracts';
 import type { Address, Emirate, Tx } from '@app/db';
 import { addressSnapshot } from './address.service';
+import { supplierVat, taxRuleFor, type SupplierVat, type TaxSettings } from './tax';
 
 /** One priced cart line with the internal ids checkout needs. */
 export interface PricedLine extends CartLine {
@@ -14,6 +15,7 @@ export interface SellerGroup {
   seller: { workspace_id: string; company_name: string; storefront_id: string | null };
   seller_company_id: string;
   delivery: { fee_fils: string | null; emirates: Emirate[]; days: number | null };
+  vat: SupplierVat;
   lines: PricedLine[];
   merchandise: bigint;
 }
@@ -70,6 +72,7 @@ export async function loadCart(tx: Tx, buyerWorkspaceId: string): Promise<Seller
           emirates: sf?.deliveryEmirates ?? [],
           days: sf?.deliveryDays ?? null,
         },
+        vat: supplierVat(w.company),
         lines: [],
         merchandise: 0n,
       };
@@ -138,24 +141,40 @@ export interface PreviewGroup {
   group: SellerGroup;
   shipping: bigint;
   tax: bigint;
+  taxBps: number;
+  taxCode: OrderTaxCode;
+  provisional: boolean;
   total: bigint;
-  issue: 'no_delivery_terms' | 'emirate_not_served' | null;
+  issue: 'no_delivery_terms' | 'emirate_not_served' | 'supplier_vat_unconfirmed' | null;
 }
 
 /**
- * Checkout totals per seller (P4-1, P4-2): flat seller delivery fee per order, STANDARD tax on
- * merchandise plus shipping, half-up per order. The hash covers every priced input, so checkout
- * creation can refuse with 409 when anything changed after the buyer reviewed it (T12).
+ * Checkout totals per seller (P4-1, P4-2, F05): flat seller delivery fee per order, VAT on
+ * merchandise plus shipping at the supplier's rule (see tax.ts), half-up per order. The hash covers
+ * every priced input, so checkout creation can refuse with 409 when anything changed after the
+ * buyer reviewed it (T12).
  */
-export function buildPreview(groups: SellerGroup[], address: Address, taxBps: number) {
+export function buildPreview(groups: SellerGroup[], address: Address, settings: TaxSettings) {
   const out: PreviewGroup[] = groups.map((g) => {
     let issue: PreviewGroup['issue'] = null;
     if (g.delivery.fee_fils === null || g.delivery.emirates.length === 0)
       issue = 'no_delivery_terms';
     else if (!g.delivery.emirates.includes(address.emirate)) issue = 'emirate_not_served';
+    const rule = taxRuleFor(settings, g.vat);
+    if (!rule.ok && issue === null) issue = rule.reason;
+    const taxBps = rule.ok ? rule.bps : 0;
     const shipping = g.delivery.fee_fils === null ? 0n : BigInt(g.delivery.fee_fils);
     const tax = bpsOf(g.merchandise + shipping, taxBps);
-    return { group: g, shipping, tax, total: g.merchandise + shipping + tax, issue };
+    return {
+      group: g,
+      shipping,
+      tax,
+      taxBps,
+      taxCode: rule.ok ? rule.code : 'STANDARD',
+      provisional: rule.ok ? rule.provisional : false,
+      total: g.merchandise + shipping + tax,
+      issue,
+    };
   });
   const sum = (f: (p: PreviewGroup) => bigint) => out.reduce((a, p) => a + f(p), 0n);
   const blocked =
@@ -165,9 +184,10 @@ export function buildPreview(groups: SellerGroup[], address: Address, taxBps: nu
     .update(
       JSON.stringify({
         a: [address.id, address.emirate, address.updatedAt.toISOString()],
-        t: taxBps,
+        t: settings.treatment,
         g: out.map((p) => ({
           s: p.group.seller.workspace_id,
+          x: [p.taxCode, p.taxBps, p.issue],
           f: p.shipping.toString(),
           l: p.group.lines.map((l) => [l.sku_id, l.quantity, l.unit_price_fils, l.issue]),
         })),
@@ -182,6 +202,8 @@ export function buildPreview(groups: SellerGroup[], address: Address, taxBps: nu
     total: sum((p) => p.total),
     blocked,
     hash,
+    taxBps: out.length > 0 && out.every((p) => p.taxBps === out[0]!.taxBps) ? out[0]!.taxBps : null,
+    provisional: settings.treatment === 'provisional_standard',
     address: addressSnapshot(address),
   };
 }

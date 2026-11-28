@@ -21,6 +21,7 @@ import { COMMERCE_ROUTES } from './openapi-commerce';
 import { FULFILMENT_ROUTES } from './openapi-fulfilment';
 import { OPERATIONS_ROUTES } from './openapi-operations';
 import * as team from './team';
+import * as tax from './tax';
 
 extendZodWithOpenApi(z);
 
@@ -543,6 +544,17 @@ const ROUTES: Route[] = [
     body: admin.reasonRequest,
     response: admin.adminCompanyDetail,
     errors: [404, 409, 422],
+  },
+  {
+    method: 'post',
+    path: '/admin/companies/{id}/vat-status',
+    summary: 'Confirm (or correct and confirm) a company VAT registration status (F05), audited',
+    tag: 'Admin',
+    security: 'admin',
+    capability: 'admin.verification.review',
+    body: tax.adminVatStatusRequest,
+    response: admin.adminCompanyDetail,
+    errors: [404, 422],
   },
   {
     method: 'post',

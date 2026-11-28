@@ -7,13 +7,17 @@ import { useApp, useT } from '@/components/app-context';
 import { Resource } from '@/components/resource';
 import {
   Alert,
+  ApiErrorAlert,
   Button,
   ConfirmDialog,
   DefinitionList,
   Empty,
+  Field,
   PageHeader,
+  SelectField,
   StatusBadge,
   TextArea,
+  useFieldError,
 } from '@/components/ui';
 import { formatDate, formatDubaiTime, type MessageKey } from '@/i18n/messages';
 import { useMutation, useResource } from '@/lib/use-resource';
@@ -31,6 +35,8 @@ type CompanyDetail = {
   kinds: string[];
   activity: string;
   trn: string | null;
+  vat_status: 'UNKNOWN' | 'REGISTERED' | 'NOT_REGISTERED';
+  vat_status_confirmed_at: string | null;
   contact_email: string;
   contact_phone: string;
   created_at: string;
@@ -48,6 +54,96 @@ type CompanyDetail = {
     submitted_at: string | null;
   }[];
 };
+
+/** F05: compliance confirms (or corrects and confirms) the company's VAT registration. */
+function VatStatus({ c, onDone }: { c: CompanyDetail; onDone: (c: CompanyDetail) => void }) {
+  const t = useT();
+  const { locale } = useApp();
+  const me = useAdmin();
+  const m = useMutation();
+  const fe = useFieldError(m.error);
+  const [status, setStatus] = useState(
+    c.vat_status === 'NOT_REGISTERED' ? 'NOT_REGISTERED' : 'REGISTERED',
+  );
+  const [trn, setTrn] = useState(c.trn ?? '');
+  const [reason, setReason] = useState('');
+  const [ok, setOk] = useState(false);
+  const canConfirm = me.capabilities.includes('admin.verification.review');
+  return (
+    <section className="card" aria-labelledby="vat-heading" data-testid="admin-vat">
+      <h2 id="vat-heading" className="h3">
+        {t('admin.vat.title')}
+      </h2>
+      <p>
+        {t(`vat.${c.vat_status}` as MessageKey)}{' '}
+        <span className="muted small">
+          {c.vat_status_confirmed_at
+            ? t('company.vat_confirmed', {
+                date: formatDubaiTime(c.vat_status_confirmed_at, locale),
+              })
+            : t('company.vat_unconfirmed')}
+        </span>
+      </p>
+      {canConfirm ? (
+        <form
+          noValidate
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setOk(false);
+            const r = await m.run<CompanyDetail>(`/admin/companies/${c.id}/vat-status`, {
+              method: 'POST',
+              body: {
+                vat_status: status,
+                ...(status === 'REGISTERED' && trn.trim() ? { trn: trn.trim() } : {}),
+                reason,
+              },
+            });
+            if (r.ok) {
+              setOk(true);
+              setReason('');
+              onDone(r.data);
+            }
+          }}
+        >
+          {ok ? <Alert kind="success">{t('admin.vat.confirmed')}</Alert> : null}
+          {m.error && Object.keys(m.error.fieldErrors).length === 0 ? (
+            <ApiErrorAlert error={m.error} />
+          ) : null}
+          <SelectField
+            label={t('company.vat_status')}
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            options={(['REGISTERED', 'NOT_REGISTERED'] as const).map((s) => ({
+              value: s,
+              label: t(`vat.${s}`),
+            }))}
+          />
+          {status === 'REGISTERED' ? (
+            <Field
+              label={t('company.trn')}
+              inputMode="numeric"
+              dir="ltr"
+              value={trn}
+              onChange={(e) => setTrn(e.target.value)}
+              error={fe('trn')}
+            />
+          ) : null}
+          <TextArea
+            label={t('admin.vat.reason')}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            required
+            rows={2}
+            error={fe('reason')}
+          />
+          <Button type="submit" busy={m.busy}>
+            {t('admin.vat.confirm')}
+          </Button>
+        </form>
+      ) : null}
+    </section>
+  );
+}
 
 function Body({ companyId }: { companyId: string }) {
   const { locale } = useApp();
@@ -99,6 +195,7 @@ function Body({ companyId }: { companyId: string }) {
               ]}
             />
           </section>
+          <VatStatus c={c} onDone={setData} />
           <section className="card" aria-labelledby="members-heading">
             <h2 id="members-heading">{t('admin.members')}</h2>
             {c.members.length === 0 ? (

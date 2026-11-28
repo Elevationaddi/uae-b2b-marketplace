@@ -114,6 +114,8 @@ export const adminCompaniesQuery = z.object({
 export const adminCompanyDetail = adminCompanySummary.extend({
   activity: z.string(),
   trn: z.string().nullable(),
+  vat_status: z.enum(['UNKNOWN', 'REGISTERED', 'NOT_REGISTERED']),
+  vat_status_confirmed_at: isoDateTime.nullable(),
   contact_email: z.string(),
   contact_phone: z.string(),
   members: z.array(

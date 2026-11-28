@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type {
+  InvoiceDraft,
+  TaxTreatment,
+  VatStatus,
   AdminFinanceSummary,
   adminPaymentQuery,
   orderListQuery,
@@ -20,6 +23,7 @@ import {
   mapOrderSummary,
   mapPayment,
 } from './commerce-common';
+import { orderTaxRule } from './tax';
 
 const PAGE = 20;
 type ListQuery = z.infer<typeof orderListQuery>;
@@ -67,6 +71,94 @@ export class OrderService {
     if (!o) throw new ApiError('NOT_FOUND', 'common.not_found');
     const names = await companyNames(this.prisma, [o.buyerCompanyId, o.sellerCompanyId]);
     return mapOrderDetail(o, names, side, buildFulfilment(o, side, ctx));
+  }
+
+  /**
+   * Non-binding invoice draft (F05, C-09): what an invoice would show, for review by tax advisers.
+   * It has no invoice number or issue date and says it is not a tax invoice. Binding invoices stay
+   * disabled until the tax rules are professionally approved.
+   */
+  private async invoiceDraft(
+    where: Prisma.OrderWhereInput,
+    side: 'buyer' | 'seller' | 'admin',
+  ): Promise<InvoiceDraft> {
+    const o = await this.prisma.order.findFirst({
+      where,
+      include: { checkout: true, lines: true },
+    });
+    if (!o) throw new ApiError('NOT_FOUND', 'common.not_found');
+    const companies = await this.prisma.company.findMany({
+      where: { id: { in: [o.buyerCompanyId, o.sellerCompanyId] } },
+    });
+    const buyer = companies.find((c) => c.id === o.buyerCompanyId)!;
+    const seller = companies.find((c) => c.id === o.sellerCompanyId)!;
+    const tax = orderTaxRule(o.snapshot, o.checkout.taxRule);
+    const snap = (
+      o.snapshot as {
+        tax?: {
+          supplier_vat_status?: VatStatus;
+          supplier_trn?: string | null;
+          treatment?: TaxTreatment;
+        };
+      } | null
+    )?.tax;
+    return {
+      order_id: o.id,
+      order_number: o.number,
+      binding: false,
+      status: 'draft_not_tax_invoice',
+      tax_treatment: snap?.treatment ?? 'provisional_standard',
+      tax_code: tax.code,
+      tax_bps: tax.bps,
+      provisional: tax.provisional,
+      supplier: {
+        legal_name: seller.legalName,
+        trn: snap?.supplier_trn !== undefined ? snap.supplier_trn : seller.trn,
+        vat_status: snap?.supplier_vat_status ?? seller.vatStatus,
+        vat_confirmed: seller.vatStatusConfirmedAt !== null,
+      },
+      buyer: { legal_name: buyer.legalName, trn: buyer.trn },
+      lines: o.lines
+        .sort((a, b) => a.position - b.position)
+        .map((l) => ({
+          title: l.title,
+          quantity: l.quantity,
+          unit_price_fils: l.unitPriceFils.toString(),
+          line_total_fils: l.lineTotalFils.toString(),
+        })),
+      merchandise_fils: o.merchandiseFils.toString(),
+      shipping_fils: o.shippingFils.toString(),
+      tax_fils: o.taxFils.toString(),
+      total_fils: o.totalFils.toString(),
+      commission:
+        side === 'buyer'
+          ? null
+          : {
+              commission_fils: o.commissionFils.toString(),
+              commission_bps: o.commissionBps,
+              vat: 'pending_professional_advice',
+            },
+      created_at: o.createdAt.toISOString(),
+    };
+  }
+
+  async buyerInvoiceDraft(user: User, ws: string, id: string) {
+    const ctx = await loadWorkspaceContext(this.prisma, user.id, ws, 'BUYER');
+    requireCap(ctx, 'buyer.orders.read');
+    assertUuid(id);
+    return this.invoiceDraft({ id, buyerWorkspaceId: ctx.workspace.id }, 'buyer');
+  }
+
+  async sellerInvoiceDraft(user: User, ws: string, id: string) {
+    const ctx = await loadWorkspaceContext(this.prisma, user.id, ws, 'SELLER');
+    requireCap(ctx, 'seller.orders.read');
+    assertUuid(id);
+    return this.invoiceDraft({ id, sellerWorkspaceId: ctx.workspace.id }, 'seller');
+  }
+
+  adminInvoiceDraft(id: string) {
+    assertUuid(id);
+    return this.invoiceDraft({ id }, 'admin');
   }
 
   async buyerList(user: User, ws: string, q: ListQuery) {

@@ -187,6 +187,19 @@ function Details({
             [t('company.activity'), c.activity],
             [t('company.emirate'), t(`emirate.${c.emirate}`)],
             [t('company.trn'), c.trn ? <bdi key="trn">{c.trn}</bdi> : t('common.none')],
+            [
+              t('company.vat_status'),
+              <span key="vat">
+                {t(`vat.${c.vat_status}`)}
+                <span className="muted small block">
+                  {c.vat_status_confirmed_at
+                    ? t('company.vat_confirmed', {
+                        date: formatDubaiTime(c.vat_status_confirmed_at, locale),
+                      })
+                    : t('company.vat_unconfirmed')}
+                </span>
+              </span>,
+            ],
             [t('company.contact_email'), <bdi key="em">{c.contact_email}</bdi>],
             [t('company.contact_phone'), <bdi key="ph">{c.contact_phone}</bdi>],
           ]}

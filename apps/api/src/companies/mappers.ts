@@ -29,6 +29,8 @@ export function mapCompany(c: Company & { workspaces: Workspace[] }): CompanyRes
     activity: c.activity,
     emirate: c.emirate,
     trn: c.trn,
+    vat_status: c.vatStatus,
+    vat_status_confirmed_at: c.vatStatusConfirmedAt?.toISOString() ?? null,
     contact_email: c.contactEmail,
     contact_phone: c.contactPhone,
     status: c.status,

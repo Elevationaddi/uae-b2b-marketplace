@@ -244,10 +244,13 @@ export function OrderDetailView({
   o,
   side,
   checkoutHref,
+  invoiceDraft,
 }: {
   o: OrderDetail;
   side: 'buyer' | 'seller' | 'admin';
   checkoutHref?: string;
+  /** Rendered after the totals: the non-binding invoice draft card (F05). */
+  invoiceDraft?: React.ReactNode;
 }) {
   const t = useT();
   const { locale } = useApp();
@@ -274,7 +277,12 @@ export function OrderDetailView({
                 : undefined
             }
           />
+          <p className="muted small" data-testid="order-tax-code">
+            {t('tax.code')}: {t(`taxcode.${o.tax_code}`)}
+            {o.tax_provisional ? ` · ${t('tax.provisional_note')}` : ''}
+          </p>
         </section>
+        {invoiceDraft}
         <section className="card" aria-labelledby="ord-tl">
           <h2 id="ord-tl" className="h3">
             {t('order.timeline')}

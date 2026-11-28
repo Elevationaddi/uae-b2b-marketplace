@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { companyStatus, workspaceStatus } from './auth';
 import { email, emirate, isoDate, isoDateTime, phone, uuid } from './common';
 import { WORKSPACE_KINDS } from './permissions';
+import { vatStatus } from './tax';
 
 const companyFields = {
   legal_name: z.string().trim().min(2, 'min').max(200, 'max'),
@@ -20,15 +21,23 @@ const companyFields = {
     .or(z.literal('').transform(() => null)),
   contact_email: email,
   contact_phone: phone,
+  /** Declared VAT registration (F05). REGISTERED needs a TRN; compliance confirms it. */
+  vat_status: z.enum(['UNKNOWN', 'REGISTERED', 'NOT_REGISTERED']),
 };
 
-export const companyCreateRequest = z.object({
-  ...companyFields,
-  kinds: z
-    .array(z.enum(WORKSPACE_KINDS))
-    .min(1, 'min')
-    .refine((k) => new Set(k).size === k.length, 'duplicate'),
-});
+const registeredNeedsTrn = (v: { vat_status?: string; trn?: string | null }) =>
+  v.vat_status !== 'REGISTERED' || !!v.trn;
+
+export const companyCreateRequest = z
+  .object({
+    ...companyFields,
+    vat_status: companyFields.vat_status.optional(),
+    kinds: z
+      .array(z.enum(WORKSPACE_KINDS))
+      .min(1, 'min')
+      .refine((k) => new Set(k).size === k.length, 'duplicate'),
+  })
+  .refine(registeredNeedsTrn, { message: 'trn_required', path: ['trn'] });
 
 export const companyUpdateRequest = z
   .object({
@@ -40,6 +49,7 @@ export const companyUpdateRequest = z
     activity: companyFields.activity.optional(),
     emirate: companyFields.emirate.optional(),
     trn: companyFields.trn.optional(),
+    vat_status: companyFields.vat_status.optional(),
     contact_email: companyFields.contact_email.optional(),
     contact_phone: companyFields.contact_phone.optional(),
     expected_version: z.number().int().positive(),
@@ -57,6 +67,9 @@ export const companyResponse = z.object({
   activity: z.string(),
   emirate,
   trn: z.string().nullable(),
+  vat_status: vatStatus,
+  /** Set when compliance confirmed the VAT status; cleared when the company changes it. */
+  vat_status_confirmed_at: isoDateTime.nullable(),
   contact_email: z.string(),
   contact_phone: z.string(),
   status: companyStatus,
