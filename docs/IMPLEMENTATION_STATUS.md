@@ -1,5 +1,5 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is built with the sandbox provider adapter only. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7 and P5-1 to P5-7 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is merged as 4575a7f (PR #7), sandbox provider adapter only. Phase 6 (support, operations overview, scoped exports, accessibility) is built. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7, P5-1 to P5-7 and P6-1 to P6-6 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
@@ -8,14 +8,101 @@ Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is mer
 | 2 | DONE | Merged to `main` as a0f0126; CI run 46081580836 green (110 passed, 2 skipped incl. WebKit) | None |
 | 3 | DONE | Merged to `main` as 8517725 (PR #5); CI run 46087385321 green (E2E 120 passed, 4 skipped) | Provisional decisions P3-1…P3-7 need confirmation |
 | 4 | DONE (sandbox only) | Merged to `main` as 5f543bb (PR #6); CI green | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
-| 5 | DONE (sandbox only) | Branch `phase-5-fulfilment`; see Phase 5 section | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
-| 6–7 | NOT_STARTED | None | See Phase 5 decisions |
+| 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
+| 6 | DONE | Branch `phase-6-operations`; see Phase 6 section | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
+| 7 | NOT_STARTED | None | Live providers and production deployment need D01–D15 approvals |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 6: support, operations overview, scoped exports, accessibility
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-6-operations`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T33–T36, T41; role-specific UAT.
+
+### Delivered
+- **Customer support:** buyer and seller workspaces open tickets (topic, subject, message, optional link to one of their own orders, for example from an order page), follow the conversation, reply, reopen a resolved ticket and close it. Viewers read only. Tickets are workspace-wide; other companies get 404.
+- **Admin support queue:** SUPPORT agents filter by state and assignment, take or take over a ticket, reply (customer is notified in-app and by email), resolve with an optional note, reopen. Agents see only the order number, state and total. Every state change is audited; messages are append-only.
+- **Operations overview:** the admin overview now adds live queues (open and unassigned tickets and disputes, refunds and payouts awaiting approval, open reconciliation cases, quarantined webhooks) and, for finance roles only, commerce figures for a chosen Dubai date range (paid orders, gross value, refunds, net, platform fees, owed to sellers now, paid out), computed from orders, refunds, payouts and the ledger, labelled as sandbox data.
+- **Reports:** CSV exports of orders, refunds, payouts, disputes and support tickets with a reason and a fresh authenticator code; role-scoped (T41), audited when created, denied or downloaded, creator-only download, deleted after 24 hours by the worker. Formula injection is neutralised and amounts are exact AED from integer fils.
+- **Marketing consent (T36):** a separate, default-off marketing email preference with recorded consent time; critical notices stay on.
+- **Licence expiry (T35):** verified that an expired seller licence blocks new trades while existing orders stay readable and shippable.
+- **Accessibility:** automated axe-core WCAG 2.1 A/AA checks on public, buyer, seller and admin pages in English and Arabic: no serious or critical findings. Mixed Arabic/English message threads now isolate names, times and bodies (`bdi`, `dir="auto"`).
+- **Worker:** `export.cleanup` every 10 minutes.
+
+### Routes, schema, permissions
+- 16 new API operations, documented in `docs/api/README.md` (Phase 6 sections) and `docs/api/openapi.json`.
+- Migration `20261202000000_phase6_support_exports`, additive only: `docs/db/phase-6-schema.md`.
+- New admin capabilities: `admin.support.read` and `admin.support.manage` (SUPPORT), `admin.reports.export` (SUPPORT, FINANCE, FINANCE_APPROVER; scope rules in P6-4).
+
+| Action | Any member | Members except VIEWER | SUPPORT | FINANCE / FINANCE_APPROVER | COMPLIANCE | SUPER_ADMIN |
+|---|---|---|---|---|---|---|
+| Read own workspace's tickets | Y | Y | — | — | — | — |
+| Open, reply, reopen, close own workspace's ticket | — | Y | — | — | — | — |
+| Support queue and ticket detail | — | — | Y | — | — | — |
+| Take, reply, resolve, reopen tickets | — | — | Y (reply/resolve only when assigned) | — | — | — |
+| Operations queues | — | — | Y | Y | Y | Y |
+| Commerce figures | — | — | — | Y | — | — |
+| Export orders, refunds, payouts, all disputes | — | — | — | Y | — | — |
+| Export disputes and tickets assigned to me | — | — | Y | — | — | — |
+
+### Commands actually run
+| Command | Result |
+|---|---|
+| `pnpm lint` | pass (0 warnings) |
+| `pnpm format` (prettier check) | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` (worker server stopped) | pass: 218 tests, 0 failed (config 21, contracts 62, api 121 incl. 8 new operations integration tests and 4 export unit tests, web 10, worker 4) |
+| `pnpm build` (production) | pass |
+| `pnpm --filter @app/contracts openapi` | regenerated |
+| `pnpm test:e2e --project=chromium --project=mobile-360` | 76 passed, 8 skipped, 0 failed (includes `operations.spec.ts`, `accessibility.spec.ts` and the T33 checks in `checkout.spec.ts`) |
+| Screenshots (`operations.screenshots.spec.ts`, deviceScaleFactor 2) | pass: 44 screenshots (EN/AR, desktop/phone) in `phase-6/screenshots` |
+| WebKit / mobile Safari | not available in this environment; run in CI |
+
+Fixed during verification: commerce money figures clipped on overview cards (now wrap), Arabic threads reordered English punctuation and mixed the author name with the date (bidi isolation added, also in dispute threads), a stale preferences assertion in the Phase 3 test, and a parallel-test race that closed another test's ticket.
+
+### Acceptance tests
+| Test | Covered by | Result |
+|---|---|---|
+| T33 Arabic/mobile checkout: RTL, no clipping, totals identical | `checkout.spec.ts` (EN desktop vs AR 360 px totals, no horizontal overflow, totals inside viewport) | pass |
+| T34 network failure on form submission: recoverable error, fields kept, retry safe | `operations.spec.ts` (aborted request, fields kept, retry creates exactly one ticket) | pass |
+| T35 seller licence expires: new trades restricted, existing orders accessible | `operations.int.test.ts`; `companies.int.test.ts` (Phase 1) | pass |
+| T36 user opts out of marketing: marketing suppressed, critical notices kept | `operations.int.test.ts` (no marketing sending exists; consent stored; support notice still in-app and emailed) | pass |
+| T41 CSV export by support outside assigned scope: denied and audited | `operations.int.test.ts`, `export.test.ts`, `operations.spec.ts` | pass |
+| Support lifecycle, assignment, isolation, append-only history, notifications, audit | `operations.int.test.ts`, `operations.spec.ts` | pass |
+| Overview commerce figures from data, finance-only | `operations.int.test.ts`, `operations.spec.ts` | pass |
+| Accessibility (automated) | `accessibility.spec.ts` (axe-core 4.10.2) | pass |
+| Role-specific UAT with real staff | not done (needs people) | open |
+
+### Security review
+| Area | Control |
+|---|---|
+| Tenant isolation | Ticket routes resolve workspace membership; other workspaces' tickets return 404; linked orders/RFQs must belong to the workspace |
+| Least privilege | Support sees only order number, state and total; commerce figures need `admin.finance.read`; exports scoped by role (T41) |
+| Bulk data exfiltration | Exports need a reason and TOTP step-up (replay-protected), are rate limited (10/hour), audited on create, deny and download, creator-only, and deleted after 24 h |
+| CSV injection | Formula-leading cells prefixed with an apostrophe; RFC 4180 quoting |
+| Staff privacy | Customers never see the agent's name or email |
+| Immutability | Support messages append-only by trigger; audit events append-only (Phase 1) |
+| CSRF / rate limits | All state changes need the CSRF token; ticket creation 10/hour per user; replies share the message limit |
+
+### Known issues and limitations
+- No marketing campaigns exist; only consent is stored.
+- Resolved tickets do not auto-close; no SLA timers or agent workload balancing.
+- Tickets have no attachments (customers describe the issue in text).
+- Exports are synchronous (fine up to 50,000 rows); larger reports would need a background job.
+- Automated accessibility checks do not replace manual keyboard and screen-reader testing.
+- Arabic copy needs native-speaker review.
+- Tests add fictional tickets and exports to the development database.
+
+### Decisions needed before Phase 7 (production readiness)
+1. Confirm or change P6-1 to P6-6 (and P3/P4/P5 sets).
+2. Whether resolved tickets should auto-close after N days, and support SLAs.
+3. Who may export all support tickets, if anyone, and the export retention period.
+4. Production decisions D01–D15 (hosting, PSP, email provider, backups) before any live integration.
+
+### Next gate
+Merged under the standing instruction once CI is green; Phase 7 covers only sandbox-safe hardening.
+
 ## Phase 5: fulfilment, receipt, disputes, refunds, payouts, reviews
-**Date:** 2026-11-28 (UTC). **Branch:** `phase-5-fulfilment`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T24–T32, T39; no manual paid flags.
+**Date:** 2026-11-28 (UTC). **Merged:** 4575a7f (PR #7). **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T24–T32, T39; no manual paid flags.
 
 ### Delivered
 - **Fulfilment:** supplier starts processing, records dispatch (carrier, tracking, expected date; one full shipment per order) and reports delivery with an optional malware-scanned proof file. Only paid orders can move (T24). Shipping works by role even while the company is restricted, so paid goods are never stranded.

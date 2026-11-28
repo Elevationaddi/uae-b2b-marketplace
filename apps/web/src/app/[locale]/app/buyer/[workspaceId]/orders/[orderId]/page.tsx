@@ -48,6 +48,11 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
               onUpdated={setData}
             />
           ) : null}
+          {ws.role !== 'VIEWER' ? (
+            <p>
+              <Link href={`${base}/support/new?order=${o.id}`}>{t('support.contact')}</Link>
+            </p>
+          ) : null}
           <OrderDetailView o={o} side="buyer" checkoutHref={`${base}/checkouts/${o.checkout_id}`} />
         </>
       )}

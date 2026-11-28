@@ -76,6 +76,7 @@ function List() {
                         n.payload.order_number ??
                         n.payload.dispute_number ??
                         n.payload.payout_number ??
+                        n.payload.ticket_number ??
                         '',
                     ),
                     title: String(n.payload.title ?? ''),

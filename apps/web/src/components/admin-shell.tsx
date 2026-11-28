@@ -114,6 +114,7 @@ export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode
     { href: `${base}/catalog/featured`, label: t('admin.nav.featured'), cap: 'admin.catalog.read' },
     { href: `${base}/rfqs`, label: t('admin.nav.rfqs'), cap: 'admin.rfqs.read' },
     { href: `${base}/orders`, label: t('admin.nav.orders'), cap: 'admin.orders.read' },
+    { href: `${base}/support`, label: t('admin.nav.support'), cap: 'admin.support.read' },
     { href: `${base}/disputes`, label: t('admin.nav.disputes'), cap: 'admin.disputes.read' },
     { href: `${base}/finance`, label: t('admin.nav.finance'), cap: 'admin.finance.read' },
     { href: `${base}/refunds`, label: t('admin.nav.refunds'), cap: 'admin.finance.read' },
@@ -123,6 +124,7 @@ export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode
       label: t('admin.nav.supplier_reviews'),
       cap: 'admin.reviews.moderate',
     },
+    { href: `${base}/reports`, label: t('admin.nav.reports'), cap: 'admin.reports.export' },
     { href: `${base}/audit`, label: t('admin.nav.audit'), cap: 'admin.audit.read' },
     { href: `${base}/staff`, label: t('admin.nav.staff'), cap: 'admin.staff.manage' },
   ].filter((n) => caps.includes(n.cap as AdminCapability));

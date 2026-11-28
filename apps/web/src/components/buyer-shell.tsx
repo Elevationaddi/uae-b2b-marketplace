@@ -22,6 +22,7 @@ function BuyerFrame({ children }: { children: (ws: Workspace, base: string) => R
     ...(purchase ? ([[`${base}/cart`, 'buyer.nav.cart']] as [string, MessageKey][]) : []),
     [`${base}/orders`, 'buyer.nav.orders'],
     [`${base}/disputes`, 'buyer.nav.disputes'],
+    [`${base}/support`, 'buyer.nav.support'],
     [`${base}/rfqs`, 'buyer.nav.rfqs'],
     ...(purchase ? ([[`${base}/rfqs/new`, 'buyer.nav.new_rfq']] as [string, MessageKey][]) : []),
     [`${base}/addresses`, 'buyer.nav.addresses'],
@@ -35,7 +36,7 @@ function BuyerFrame({ children }: { children: (ws: Workspace, base: string) => R
       ? pathname === href || /\/rfqs\/[0-9a-f-]{36}/.test(pathname)
       : href === `${base}/orders`
         ? pathname === href || pathname.startsWith(`${href}/`) || pathname.includes('/checkouts/')
-        : href === `${base}/disputes`
+        : href === `${base}/disputes` || href === `${base}/support`
           ? pathname.startsWith(href)
           : pathname === href || (href === `${base}/cart` && pathname === `${base}/checkout`);
   return (

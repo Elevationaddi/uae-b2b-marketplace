@@ -418,6 +418,37 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | `POST` | `/api/v1/admin/reviews/{id}/hide` | Hide a review (reason recorded) | admin | yes | admin.reviews.moderate | 403, 404, 409, 422 |
 | `POST` | `/api/v1/admin/reviews/{id}/unhide` | Publish a hidden review again | admin | yes | admin.reviews.moderate | 403, 404, 409, 422 |
 
+## Phase 6 conventions
+- Customer support routes (`/workspaces/{ws}/support`) work for buyer and seller workspaces. Any member can read the workspace's tickets; every role except VIEWER can open, reply, close and reopen. Another workspace's ticket returns 404. A linked order or RFQ must belong to the workspace (422 `order_id`/`rfq_id: not_found` otherwise).
+- Admin support needs `admin.support.read` (queue, detail) and `admin.support.manage` (take, reply, resolve, reopen; SUPPORT role). Only the assigned agent can reply or resolve (403 `support.not_assigned`); taking over another agent's ticket is allowed and audited. Customers see agent messages as "Support".
+- `GET /admin/operations/overview` returns queue counts to any admin with `admin.companies.read`; the `commerce` block (from orders, refunds, payouts and the ledger) is null unless the admin holds `admin.finance.read`. Ranges are Dubai calendar dates, at most 366 days.
+- Exports (`POST /admin/exports`) need a reason and a current TOTP code (step-up; replays refused). Finance reports (orders, refunds, payouts, disputes with scope `all`) need `admin.finance.read`; SUPPORT may export only disputes and support tickets assigned to them (scope `assigned`). Anything else is 403 `export.scope_forbidden` and is audited as `export.denied` (T41). CSV cells that a spreadsheet would treat as formulas are prefixed with an apostrophe. Downloads are creator-only (others get 404), audited, and refused (409 `export.expired`) after 24 hours, when the worker deletes the file content.
+## Support (Phase 6)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/workspaces/{ws}/support` | Support tickets of this workspace | company | no | any workspace member (buyer or seller) | 404, 422, 429 |
+| `POST` | `/api/v1/workspaces/{ws}/support` | Open a ticket (optionally linked to an own order or RFQ) | company | yes | any workspace member except VIEWER | 403, 404, 409, 422, 429 |
+| `GET` | `/api/v1/workspaces/{ws}/support/{id}` | Ticket detail with messages | company | no | any workspace member (buyer or seller) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/workspaces/{ws}/support/{id}/messages` | Reply on a live ticket | company | yes | any workspace member except VIEWER | 403, 404, 409, 422, 429 |
+| `POST` | `/api/v1/workspaces/{ws}/support/{id}/close` | Close the ticket | company | yes | any workspace member except VIEWER | 403, 404, 409, 422 |
+| `POST` | `/api/v1/workspaces/{ws}/support/{id}/reopen` | Reopen a resolved ticket | company | yes | any workspace member except VIEWER | 403, 404, 409, 422 |
+
+## Admin support, overview and exports (Phase 6)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/admin/operations/overview` | Operations overview (commerce figures need admin.finance.read) | admin | no | admin.companies.read | 403, 422 |
+| `GET` | `/api/v1/admin/support` | Support queue | admin | no | admin.support.read | 403, 422 |
+| `GET` | `/api/v1/admin/support/{id}` | Ticket detail (limited order details only) | admin | no | admin.support.read | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/support/{id}/assign` | Take (or take over) a ticket | admin | yes | admin.support.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/support/{id}/messages` | Reply as the assigned agent | admin | yes | admin.support.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/support/{id}/resolve` | Resolve with an optional note | admin | yes | admin.support.manage | 403, 404, 409, 422 |
+| `POST` | `/api/v1/admin/support/{id}/reopen` | Reopen a resolved ticket and take it | admin | yes | admin.support.manage | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/exports` | The caller's own report exports | admin | no | admin.reports.export | 403, 422 |
+| `POST` | `/api/v1/admin/exports` | Create a scoped CSV export (reason and TOTP step-up; denied attempts are audited) | admin | yes | admin.reports.export (finance types need admin.finance.read; support may export only assigned disputes and tickets) | 403, 422, 429 |
+| `GET` | `/api/v1/admin/exports/{id}/download` | Download an export (creator only, before expiry; audited) | admin | no | admin.reports.export | 403, 404, 409, 422 |
+
 ## Rate limits (per policy; `RATE_LIMIT_SCALE` multiplies them outside production only)
 
 | Policy | Limit |
@@ -436,3 +467,5 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | messages sent per user (Phase 3) | 60 per minute |
 | checkout create and pay per user (Phase 4) | 30 per minute |
 | payment webhooks per IP (Phase 4) | 600 per minute |
+| support tickets opened per user (Phase 6) | 10 per hour |
+| report exports per admin (Phase 6) | 10 per hour |
