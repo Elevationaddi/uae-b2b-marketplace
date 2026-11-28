@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useT } from '@/components/app-context';
 import { buyerApi, BuyerShell } from '@/components/buyer-shell';
 import { OrderDetailView, OrderState } from '@/components/commerce-ui';
+import { FulfilmentCard } from '@/components/fulfilment-ui';
 import { Resource } from '@/components/resource';
 import type { Workspace } from '@/components/session';
 import { Alert, PageHeader } from '@/components/ui';
@@ -13,7 +14,7 @@ import { useResource } from '@/lib/use-resource';
 function Detail({ ws, base }: { ws: Workspace; base: string }) {
   const t = useT();
   const { orderId } = useParams<{ orderId: string }>();
-  const { state, reload } = useResource<OrderDetail>(`${buyerApi(ws)}/orders/${orderId}`);
+  const { state, reload, setData } = useResource<OrderDetail>(`${buyerApi(ws)}/orders/${orderId}`);
   return (
     <Resource state={state} reload={reload} backHref={`${base}/orders`}>
       {(o) => (
@@ -37,6 +38,15 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
           </p>
           {o.state === 'CONFIRMED' ? (
             <Alert kind="info">{t('order.confirmed_next_buyer')}</Alert>
+          ) : null}
+          {o.state !== 'AWAITING_PAYMENT' && o.state !== 'CANCELLED' ? (
+            <FulfilmentCard
+              o={o}
+              side="buyer"
+              apiBase={buyerApi(ws)}
+              disputesBase={`${base}/disputes`}
+              onUpdated={setData}
+            />
           ) : null}
           <OrderDetailView o={o} side="buyer" checkoutHref={`${base}/checkouts/${o.checkout_id}`} />
         </>

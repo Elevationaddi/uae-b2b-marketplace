@@ -435,16 +435,10 @@ export async function deliverSandboxWebhooks(
   log: Logger,
 ): Promise<number> {
   if (env.PAYMENT_MODE !== 'mock' || env.isProduction) return 0;
-  const sessions = await prisma.mockPspSession.findMany({
-    where: { NOT: { outbox: { equals: [] } } },
-    take: 20,
-    orderBy: { updatedAt: 'asc' },
-  });
   const secret = webhookSecret(env);
-  let delivered = 0;
-  for (const s of sessions) {
-    const events = (Array.isArray(s.outbox) ? s.outbox : []) as unknown as PspEvent[];
+  const post = async (events: PspEvent[]): Promise<{ sent: number; remaining: PspEvent[] }> => {
     const remaining: PspEvent[] = [];
+    let sent = 0;
     for (const e of events) {
       const body = JSON.stringify(e);
       try {
@@ -456,7 +450,7 @@ export async function deliverSandboxWebhooks(
           },
           body,
         });
-        if (res.ok) delivered++;
+        if (res.ok) sent++;
         else {
           log.warn({ status: res.status, event: e.id }, 'sandbox webhook rejected');
           remaining.push(e);
@@ -466,9 +460,35 @@ export async function deliverSandboxWebhooks(
         remaining.push(e);
       }
     }
+    return { sent, remaining };
+  };
+  const asEvents = (v: Prisma.JsonValue) => (Array.isArray(v) ? v : []) as unknown as PspEvent[];
+  let delivered = 0;
+  const sessions = await prisma.mockPspSession.findMany({
+    where: { NOT: { outbox: { equals: [] } } },
+    take: 20,
+    orderBy: { updatedAt: 'asc' },
+  });
+  for (const s of sessions) {
+    const r = await post(asEvents(s.outbox));
+    delivered += r.sent;
     await prisma.mockPspSession.update({
       where: { id: s.id },
-      data: { outbox: remaining as unknown as Prisma.InputJsonValue },
+      data: { outbox: r.remaining as unknown as Prisma.InputJsonValue },
+    });
+  }
+  // Refund and payout operations (Phase 5) use the same signed webhook path.
+  const ops = await prisma.mockPspOperation.findMany({
+    where: { NOT: { outbox: { equals: [] } } },
+    take: 20,
+    orderBy: { updatedAt: 'asc' },
+  });
+  for (const o of ops) {
+    const r = await post(asEvents(o.outbox));
+    delivered += r.sent;
+    await prisma.mockPspOperation.update({
+      where: { id: o.id },
+      data: { outbox: r.remaining as unknown as Prisma.InputJsonValue },
     });
   }
   return delivered;

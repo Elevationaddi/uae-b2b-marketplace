@@ -714,6 +714,18 @@ export class MarketplaceService {
     };
   }
 
+  /** Seller workspace behind a publicly visible storefront; 404 otherwise. */
+  async publicStorefrontWorkspace(id: string): Promise<string> {
+    assertUuid(id);
+    const [card] = await this.supplierCards([id]);
+    if (!card) throw new ApiError('NOT_FOUND', 'common.not_found');
+    const s = await this.prisma.storefront.findUniqueOrThrow({
+      where: { id },
+      select: { sellerWorkspaceId: true },
+    });
+    return s.sellerWorkspaceId;
+  }
+
   async supplier(id: string, viewer: Viewer): Promise<SupplierDetail> {
     assertUuid(id);
     const [card] = await this.supplierCards([id]);

@@ -348,6 +348,15 @@ export const NOTIFICATION_TYPES = [
   'order.received',
   'order.cancelled',
   'order.payment_due',
+  /** Phase 5 fulfilment, disputes and settlement. */
+  'order.dispatched',
+  'order.delivered',
+  'order.completed',
+  'order.refunded',
+  'dispute.opened',
+  'dispute.updated',
+  'payout.paid',
+  'payout.failed',
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

@@ -156,6 +156,14 @@ export const ADMIN_CAPABILITIES = [
   /** Phase 4: order details (support cases) and read-only payments, ledger and reconciliation. */
   'admin.orders.read',
   'admin.finance.read',
+  /** Phase 5: disputes (support), refunds and payouts with dual control, review moderation. */
+  'admin.disputes.read',
+  'admin.disputes.manage',
+  'admin.refunds.request',
+  'admin.refunds.approve',
+  'admin.payouts.request',
+  'admin.payouts.approve',
+  'admin.reviews.moderate',
 ] as const;
 export type AdminCapability = (typeof ADMIN_CAPABILITIES)[number];
 
@@ -175,6 +183,7 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.featured.manage',
     'admin.rfqs.read',
     'admin.rfqs.moderate',
+    'admin.reviews.moderate',
   ],
   SUPPORT: [
     'admin.companies.read',
@@ -182,9 +191,26 @@ const ADMIN_MATRIX: Record<AdminRole, readonly AdminCapability[]> = {
     'admin.catalog.read',
     'admin.rfqs.read',
     'admin.orders.read',
+    'admin.disputes.read',
+    'admin.disputes.manage',
   ],
-  FINANCE: ['admin.companies.read', 'admin.orders.read', 'admin.finance.read'],
-  FINANCE_APPROVER: ['admin.companies.read', 'admin.orders.read', 'admin.finance.read'],
+  FINANCE: [
+    'admin.companies.read',
+    'admin.orders.read',
+    'admin.finance.read',
+    'admin.disputes.read',
+    'admin.refunds.request',
+    'admin.payouts.request',
+  ],
+  // Independent approver (dual control): never the requester of the same refund or payout.
+  FINANCE_APPROVER: [
+    'admin.companies.read',
+    'admin.orders.read',
+    'admin.finance.read',
+    'admin.disputes.read',
+    'admin.refunds.approve',
+    'admin.payouts.approve',
+  ],
   // Super-admin manages roles/config/system; no implicit compliance or financial approval.
   SUPER_ADMIN: [
     'admin.companies.read',

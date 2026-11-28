@@ -1,5 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { Prisma, type PrismaClient } from '@prisma/client';
+import { BUYER_ROLES, notifyWorkspace, openCase, SELLER_ORDER_ROLES } from './commerce-shared';
+import { processSettlementEvent } from './settlement';
 
 /**
  * Phase 4 payment processing shared by the API (webhook intake, checkout) and the worker
@@ -65,7 +67,13 @@ export function verifyWebhook(
 /** Event body the sandbox provider posts (and the shape a live adapter must normalise to). */
 export interface PspEvent {
   id: string;
-  type: 'payment.captured' | 'payment.failed';
+  type:
+    | 'payment.captured'
+    | 'payment.failed'
+    | 'refund.succeeded'
+    | 'refund.failed'
+    | 'payout.paid'
+    | 'payout.failed';
   created: string;
   data: {
     session_id: string;
@@ -94,6 +102,14 @@ export interface PspAdapter {
   getSessionState(sessionId: string): Promise<PspSessionState>;
   /** Cancel an open session. Returns the final state (CAPTURED if the capture won the race). */
   cancelSession(sessionId: string): Promise<PspSessionState>;
+  /** Submit a refund or payout (Phase 5). Idempotent by key; the outcome arrives by webhook. */
+  submitOperation(input: {
+    kind: 'REFUND' | 'PAYOUT';
+    amountFils: bigint;
+    currency: string;
+    reference: string;
+    idempotencyKey: string;
+  }): Promise<{ providerRef: string }>;
 }
 
 /**
@@ -138,6 +154,34 @@ export function createSandboxPsp(prisma: PrismaClient, env: { NODE_ENV: string }
     async getSessionState(sessionId) {
       const s = await prisma.mockPspSession.findUnique({ where: { id: sessionId } });
       return s ? s.state : 'UNKNOWN';
+    },
+    async submitOperation(input) {
+      const existing = await prisma.mockPspOperation.findUnique({
+        where: { idempotencyKey: input.idempotencyKey },
+      });
+      if (existing) return { providerRef: existing.id };
+      const id = `${input.kind === 'REFUND' ? 'rf' : 'po'}_${randomUUID().replace(/-/g, '')}`;
+      try {
+        await prisma.mockPspOperation.create({
+          data: {
+            id,
+            kind: input.kind,
+            amountFils: input.amountFils,
+            currency: input.currency,
+            reference: input.reference,
+            idempotencyKey: input.idempotencyKey,
+          },
+        });
+        return { providerRef: id };
+      } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+          const op = await prisma.mockPspOperation.findUniqueOrThrow({
+            where: { idempotencyKey: input.idempotencyKey },
+          });
+          return { providerRef: op.id };
+        }
+        throw e;
+      }
     },
     async cancelSession(sessionId) {
       await prisma.mockPspSession.updateMany({
@@ -260,32 +304,6 @@ async function consumeReservations(tx: TxClient, checkoutId: string) {
 
 // ------------------------------------------------------------------ notifications (in-app)
 
-const BUYER_ROLES = ['OWNER', 'PROCUREMENT'] as const;
-const SELLER_ORDER_ROLES = ['OWNER', 'SALES', 'WAREHOUSE', 'FINANCE'] as const;
-
-async function notifyWorkspace(
-  tx: TxClient,
-  workspaceId: string,
-  roles: readonly string[],
-  type: string,
-  payload: Record<string, string>,
-) {
-  const members = await tx.membership.findMany({
-    where: {
-      workspaceId,
-      status: 'ACTIVE',
-      role: { in: roles as Prisma.EnumMembershipRoleFilter['in'] },
-      user: { status: 'ACTIVE' },
-    },
-    select: { userId: true },
-  });
-  const ids = [...new Set(members.map((m) => m.userId))];
-  if (ids.length === 0) return;
-  await tx.notification.createMany({
-    data: ids.map((userId) => ({ userId, type, payload: payload as Prisma.InputJsonValue })),
-  });
-}
-
 async function lockCheckout(tx: TxClient, id: string) {
   await tx.$queryRaw`SELECT id FROM checkouts WHERE id = ${id}::uuid FOR UPDATE`;
   return tx.checkout.findUniqueOrThrow({ where: { id }, include: { orders: true } });
@@ -350,23 +368,6 @@ export async function closeUnpaidCheckout(
 
 type Outcome = 'PROCESSED' | 'IGNORED' | 'QUARANTINED' | 'SKIPPED';
 
-async function openCase(
-  tx: TxClient,
-  kind: 'LATE_CAPTURE' | 'AMOUNT_MISMATCH' | 'UNKNOWN_REFERENCE' | 'INVALID_SIGNATURE',
-  ids: { checkoutId?: string; paymentId?: string; paymentEventId?: string },
-  details: Record<string, string | null>,
-) {
-  await tx.reconciliationCase.create({
-    data: {
-      kind,
-      checkoutId: ids.checkoutId ?? null,
-      paymentId: ids.paymentId ?? null,
-      paymentEventId: ids.paymentEventId ?? null,
-      details: details as Prisma.InputJsonValue,
-    },
-  });
-}
-
 /**
  * Process one stored webhook event exactly once (T15): the event row is locked and must still be
  * RECEIVED; the payment and checkout rows are locked; the capture journal has a unique dedupe key.
@@ -386,6 +387,10 @@ export async function processPaymentEvent(prisma: PrismaClient, eventRowId: stri
         });
         return status;
       };
+      if (ev.type.startsWith('refund.') || ev.type.startsWith('payout.')) {
+        const r = await processSettlementEvent(tx, ev);
+        return finish(r.status, r.error);
+      }
       if (!ev.providerRef) return finish('QUARANTINED', 'missing_reference');
       await tx.$queryRaw`SELECT id FROM payments WHERE provider = ${ev.provider} AND provider_ref = ${ev.providerRef} FOR UPDATE`;
       const payment = await tx.payment.findFirst({

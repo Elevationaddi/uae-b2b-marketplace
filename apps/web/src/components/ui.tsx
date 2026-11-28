@@ -289,6 +289,28 @@ const TONE: Record<string, 'ok' | 'warn' | 'bad' | 'neutral' | 'info'> = {
   AWARDED: 'ok',
   CANCELLED: 'neutral',
   DECLINED: 'bad',
+  // Phase 4–5 order, payment and settlement states.
+  AWAITING_PAYMENT: 'warn',
+  CONFIRMED: 'ok',
+  PROCESSING: 'info',
+  DISPATCHED: 'info',
+  DELIVERED: 'info',
+  COMPLETED: 'ok',
+  NOT_ELIGIBLE: 'neutral',
+  ELIGIBLE: 'ok',
+  HELD: 'warn',
+  IN_PAYOUT: 'info',
+  PAID_OUT: 'ok',
+  AWAITING_EVIDENCE: 'warn',
+  RESOLUTION_PROPOSED: 'info',
+  RESOLVING: 'info',
+  REQUESTED: 'warn',
+  SUCCEEDED: 'ok',
+  PAID: 'ok',
+  FAILED: 'bad',
+  HIDDEN: 'neutral',
+  PARTIALLY_REFUNDED: 'warn',
+  REFUNDED: 'neutral',
 };
 
 /** Status shown as text plus colour, never colour alone (docs/05-ui.md). */

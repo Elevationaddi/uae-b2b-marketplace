@@ -5,7 +5,13 @@ type Payload = Record<string, string | number | null>;
 
 /** Which email opt-in governs a notification type (in-app is always on). */
 function emailCategory(type: NotificationType): 'rfqs' | 'quotes' | 'messages' {
-  if (type.startsWith('quote.') || type.startsWith('order.')) return 'quotes';
+  if (
+    type.startsWith('quote.') ||
+    type.startsWith('order.') ||
+    type.startsWith('dispute.') ||
+    type.startsWith('payout.')
+  )
+    return 'quotes';
   if (type.startsWith('message.')) return 'messages';
   return 'rfqs';
 }
@@ -85,6 +91,38 @@ const SUMMARY: Record<
   'order.payment_due': {
     en: (p) => `Payment is due for ${p.order_number}`,
     ar: (p) => `الدفع مستحق للطلب ${p.order_number}`,
+  },
+  'order.dispatched': {
+    en: (p) => `${p.order_number} has been dispatched`,
+    ar: (p) => `تم شحن الطلب ${p.order_number}`,
+  },
+  'order.delivered': {
+    en: (p) => `The supplier reported ${p.order_number} as delivered`,
+    ar: (p) => `أبلغ المورد بتسليم الطلب ${p.order_number}`,
+  },
+  'order.completed': {
+    en: (p) => `The buyer confirmed receipt of ${p.order_number}`,
+    ar: (p) => `أكد المشتري استلام الطلب ${p.order_number}`,
+  },
+  'order.refunded': {
+    en: (p) => `A refund was confirmed for ${p.order_number}`,
+    ar: (p) => `تم تأكيد استرداد مبلغ للطلب ${p.order_number}`,
+  },
+  'dispute.opened': {
+    en: (p) => `A dispute was opened on ${p.order_number}`,
+    ar: (p) => `تم فتح نزاع على الطلب ${p.order_number}`,
+  },
+  'dispute.updated': {
+    en: (p) => `Dispute ${p.dispute_number} was updated`,
+    ar: (p) => `تم تحديث النزاع ${p.dispute_number}`,
+  },
+  'payout.paid': {
+    en: (p) => `Payout ${p.payout_number} was paid by the provider`,
+    ar: (p) => `دفع مزود الدفع التحويل ${p.payout_number}`,
+  },
+  'payout.failed': {
+    en: (p) => `Payout ${p.payout_number} failed at the provider`,
+    ar: (p) => `فشل التحويل ${p.payout_number} لدى مزود الدفع`,
   },
 };
 

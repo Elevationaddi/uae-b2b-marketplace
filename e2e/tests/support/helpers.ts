@@ -60,7 +60,7 @@ export async function signIn(page: Page, email: string, password = PASSWORD) {
 
 /** Creates a platform admin through the operator CLI (the only way to provision admins, A03). */
 export function createAdmin(
-  role: 'COMPLIANCE' | 'SUPPORT' | 'SUPER_ADMIN' | 'FINANCE' = 'COMPLIANCE',
+  role: 'COMPLIANCE' | 'SUPPORT' | 'SUPER_ADMIN' | 'FINANCE' | 'FINANCE_APPROVER' = 'COMPLIANCE',
 ): string {
   const email = uniqueEmail(`admin-${role.toLowerCase()}`);
   execFileSync(

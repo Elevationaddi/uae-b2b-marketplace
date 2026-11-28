@@ -27,6 +27,7 @@ import { cookieName } from '../auth/cookies';
 import { SessionService } from '../auth/session.service';
 import { RateLimitService } from '../common/rate-limit.service';
 import { parse } from '../common/validation';
+import { FulfilmentService } from '../fulfilment/fulfilment.service';
 import { BuyerListsService } from './buyer-lists.service';
 import { MarketplaceService, type Viewer } from './marketplace.service';
 import { MediaAccessService } from './media-access.service';
@@ -44,6 +45,7 @@ export class MarketplaceController {
     private readonly market: MarketplaceService,
     private readonly sessions: SessionService,
     private readonly limits: RateLimitService,
+    private readonly fulfilment: FulfilmentService,
   ) {}
 
   private async viewer(req: Request, res: Response): Promise<Viewer> {
@@ -146,6 +148,18 @@ export class MarketplaceController {
     @Res({ passthrough: true }) res: Response,
   ) {
     return ok(await this.market.supplier(id, await this.viewer(req, res)));
+  }
+
+  /** Published reviews for a public storefront (anonymised buyers). */
+  @Get('suppliers/:id/reviews')
+  async supplierReviews(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.viewer(req, res);
+    const sellerWorkspaceId = await this.market.publicStorefrontWorkspace(id);
+    return ok(await this.fulfilment.storefrontReviews(sellerWorkspaceId));
   }
 }
 

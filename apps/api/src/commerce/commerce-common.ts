@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AppEnv } from '@app/config';
+import type { OrderFulfilment } from '@app/contracts';
 import {
   createSandboxPsp,
   type Checkout,
@@ -97,6 +98,7 @@ export function mapOrderDetail(
   o: OrderWithParties & { lines: OrderLine[]; events: OrderEvent[] },
   names: Names,
   side: 'buyer' | 'seller' | 'admin',
+  fulfilment: OrderFulfilment,
 ) {
   const taxRule = o.checkout.taxRule as { bps?: number } | null;
   return {
@@ -137,6 +139,7 @@ export function mapOrderDetail(
         reason: e.reason,
         created_at: e.createdAt.toISOString(),
       })),
+    fulfilment,
   };
 }
 

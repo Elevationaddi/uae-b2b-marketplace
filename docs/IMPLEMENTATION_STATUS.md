@@ -1,5 +1,5 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is built with the sandbox payment adapter only. Both were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7 and P4-1 to P4-7 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is built with the sandbox provider adapter only. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7 and P5-1 to P5-7 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
@@ -7,11 +7,104 @@ Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is mer
 | 1 | DONE | Approved by the founder 2026-11-28; merged to `main` as 7cddb66 (PR #2); GitHub Actions green including WebKit | None |
 | 2 | DONE | Merged to `main` as a0f0126; CI run 46081580836 green (110 passed, 2 skipped incl. WebKit) | None |
 | 3 | DONE | Merged to `main` as 8517725 (PR #5); CI run 46087385321 green (E2E 120 passed, 4 skipped) | Provisional decisions P3-1…P3-7 need confirmation |
-| 4 | DONE (sandbox only) | Branch `phase-4-orders-checkout`; see Phase 4 section | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
-| 5–7 | NOT_STARTED | None | See Phase 4 decisions |
+| 4 | DONE (sandbox only) | Merged to `main` as 5f543bb (PR #6); CI green | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
+| 5 | DONE (sandbox only) | Branch `phase-5-fulfilment`; see Phase 5 section | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
+| 6–7 | NOT_STARTED | None | See Phase 5 decisions |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 5: fulfilment, receipt, disputes, refunds, payouts, reviews
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-5-fulfilment`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T24–T32, T39; no manual paid flags.
+
+### Delivered
+- **Fulfilment:** supplier starts processing, records dispatch (carrier, tracking, expected date; one full shipment per order) and reports delivery with an optional malware-scanned proof file. Only paid orders can move (T24). Shipping works by role even while the company is restricted, so paid goods are never stranded.
+- **Receipt:** the buyer confirms receipt (confirmation dialog); the order completes and becomes eligible for payout. Nothing completes or pays automatically (T25). The seller and buyer viewers cannot confirm (T26).
+- **Reviews:** one rating and comment per completed order (T39); immutable content; compliance hides or republishes with a reason; public storefront shows average and recent reviews as "Verified buyer".
+- **Disputes:** either party opens one active dispute per paid order (until 14 days after receipt, never after payout); payout eligibility is held (T27); append-only messages with evidence files; support assigns, requests evidence, proposes no action (and closes) or a refund (finance executes; the dispute closes on provider confirmation).
+- **Refunds:** finance requests, a different finance approver decides (T28); cumulative refunds capped at the order total (T29); worker submits to the sandbox provider with an idempotency key; ledger reversal posted once on the signed webhook; duplicates and out-of-order events ignored (T30); failures open a reconciliation case; a full refund of an unshipped order cancels it.
+- **Payouts:** finance requests a payout of a supplier's eligible, undisputed orders; a different approver approves; the worker submits it; orders are marked paid out only on the provider's paid event; a failure releases them and opens a reconciliation case with no paid label (T31).
+- **Seller finance:** gross, commission, refunds, net payable and not-yet-eligible, eligible, held, in-payout and paid-out amounts with payout history.
+- **Admin:** disputes queue and case page (SUPPORT manages; FINANCE and FINANCE_APPROVER read), refunds and payouts with labelled sandbox completion buttons, supplier review moderation (COMPLIANCE). Order detail shows shipment, settlement and dispute links.
+- **Notifications:** dispatched, delivered, completed, refunded, dispute opened/updated, payout paid/failed (in-app and email through the outbox).
+- **Worker:** `settlement.submit` (2 s); `sandbox.webhooks` also delivers refund and payout events (mock mode only).
+
+### Routes, schema, permissions
+- 40 new API operations, documented in `docs/api/README.md` (Phase 5 sections) and `docs/api/openapi.json`.
+- Migration `20261201000000_phase5_fulfilment_settlement`, additive only: `docs/db/phase-5-schema.md`.
+- New admin capabilities: `admin.disputes.read` (SUPPORT, FINANCE, FINANCE_APPROVER), `admin.disputes.manage` (SUPPORT), `admin.refunds.request` and `admin.payouts.request` (FINANCE), `admin.refunds.approve` and `admin.payouts.approve` (FINANCE_APPROVER), `admin.reviews.moderate` (COMPLIANCE).
+
+| Action | Buyer owner | Procurement | Buyer viewer | Seller owner | Sales | Warehouse | Finance | Seller viewer | Admin |
+|---|---|---|---|---|---|---|---|---|---|
+| Process, dispatch, report delivery | — | — | — | Y | — | Y | — | — | — |
+| Confirm receipt, review | Y | Y | — | — | — | — | — | — | — |
+| Open dispute, post messages | Y | Y | — | Y | Y | Y | — | — | — |
+| View disputes, proof, evidence | Y | Y | Y | Y | Y | Y | Y | Y | SUPPORT, FINANCE, FINANCE_APPROVER |
+| Seller finance summary | — | — | — | Y | — | — | Y | — | — |
+| Manage disputes | — | — | — | — | — | — | — | — | SUPPORT |
+| Request refund / payout | — | — | — | — | — | — | — | — | FINANCE |
+| Approve refund / payout (never own request) | — | — | — | — | — | — | — | — | FINANCE_APPROVER |
+| Moderate reviews | — | — | — | — | — | — | — | — | COMPLIANCE |
+
+### Commands actually run
+| Command | Result |
+|---|---|
+| `pnpm lint` | pass (0 warnings) |
+| `pnpm format` | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` (worker server stopped) | pass: 206 tests, 0 failed (config 21, contracts 62, api integration 109 incl. 10 new fulfilment tests, web 10, worker 4) |
+| `pnpm build` (production) | pass |
+| `pnpm --filter @app/contracts openapi` | regenerated |
+| `pnpm test:e2e --project=chromium --project=mobile-360` | 68 passed, 4 skipped, 0 failed |
+| Screenshots (`fulfilment.screenshots.spec.ts`, deviceScaleFactor 2) | pass: 3 tests, 55 screenshots (EN/AR, desktop/phone) in `phase-5/screenshots` |
+| WebKit / mobile Safari | not available in this environment; run in CI |
+
+Fixed during verification: the first browser run showed the seeded sales user cannot dispatch (correct per the role matrix; the journey now uses the seller owner), a test race on the dispute close form, and stale "shipping arrives in the next phase" copy on confirmed orders (EN and AR).
+
+### Acceptance tests
+| Test | Covered by | Result |
+|---|---|---|
+| T24 ship attempt on an unpaid order → rejected, no shipment | `fulfilment.int.test.ts` | pass |
+| T25 seller ships with proof, buyer confirms; timeline correct; eligible but not paid automatically | `fulfilment.int.test.ts`, `checkout.spec.ts` (Phase 5 journey) | pass |
+| T26 seller (or buyer viewer) tries to confirm receipt → 403/404, state unchanged | `fulfilment.int.test.ts` | pass |
+| T27 dispute before settlement holds eligibility, visible to both parties, blocks payout | `fulfilment.int.test.ts` | pass |
+| T28 refund requester self-approves → 403, no provider request | `fulfilment.int.test.ts` | pass |
+| T29 refund exceeds remaining capture → 409, no ledger change | `fulfilment.int.test.ts` | pass |
+| T30 refund webhook duplicate and out of order → provider-consistent state, one reversal | `fulfilment.int.test.ts` | pass |
+| T31 payout failure → no paid label, reconciliation case; retry pays | `fulfilment.int.test.ts`, browser journey | pass |
+| T32 audit log edit attempt → prohibited (database triggers) | `admin-security.int.test.ts` (Phase 1); dispute messages, payout allocations and review content also immutable | pass |
+| T39 review before completion or duplicate → rejected | `fulfilment.int.test.ts` | pass |
+| Dispute resolved by a dual-approved full refund closes the dispute and cancels the order | `fulfilment.int.test.ts` | pass |
+| Browser: dispatch → delivery proof → receipt → review → dispute with evidence → support closes → partial refund (dual approval, sandbox) → payout (dual approval, sandbox) → supplier sees payout; Arabic RTL; negative access | `checkout.spec.ts`, `fulfilment.spec.ts` | pass |
+
+### Security review
+| Area | Control |
+|---|---|
+| Tenant isolation | Every route resolves workspace membership; other workspaces' orders, disputes, proof and evidence files return 404; public reviews never name the buyer |
+| Dual control | Requester ≠ approver enforced in the API (403) and by database CHECKs on `refunds` and `payouts` |
+| Money integrity | Refunds capped by order total under a row lock; commission share half-up and never above the order commission; ledger journals balanced, append-only and deduplicated by key |
+| Provider authenticity | Refund and payout events use the same HMAC-signed webhook intake as payments; stored once per event id; amount and currency checked; duplicates and out-of-order events ignored |
+| No manual paid flags | No route sets paid, refunded or paid-out states; only provider events do. The sandbox completion route exists only in mock mode and is labelled |
+| Files | Proof and evidence go through the existing scanner; infected files rejected; downloads audited and scoped |
+| Immutability | Dispute messages and payout allocations append-only; review content immutable, no delete |
+| CSRF | All state changes require the CSRF token |
+
+### Known issues and limitations
+- Sandbox only: no live refunds, payouts or bank details; D05 stays open.
+- One full shipment per order; no partial shipments, returns logistics or carrier integration.
+- A dispute can still be opened while a payout is already at the provider; the refund is then refused (`refund.order_settled`) and support must resolve it outside the platform.
+- Refund requests take a raw order ID on the admin page (no order search yet).
+- Arabic copy needs native-speaker review.
+- Integration and E2E tests add fictional orders, disputes, refunds and payouts to the development database.
+
+### Decisions needed before Phase 6 (admin reports, support, audit)
+1. Confirm or change P5-1 to P5-7 (and the earlier P3/P4 sets).
+2. Whether orders should auto-complete after N days without buyer confirmation.
+3. Payout schedule, minimum amount and supplier bank-detail verification (D05).
+4. Whether public reviews may show the buyer company name with consent.
+
+### Next gate
+Merged under the standing instruction once CI is green; Phase 6 proceeds.
 
 ## Phase 4: cart, checkout, reservations, orders, sandbox payments, ledger
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-4-orders-checkout`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T11–T18, T40, T42.
