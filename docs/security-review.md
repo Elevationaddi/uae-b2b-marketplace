@@ -25,8 +25,8 @@ No open critical or high findings in the application code. Two items need action
 ## Findings
 | ID | Severity | Finding | Status |
 |---|---|---|---|
-| SR-1 | Medium (dev only) | `pnpm audit` (all dependencies) reports 2 critical and 3 moderate advisories in the test runner chain (vitest 3.2.7 → tinypool, @vitest/mocker). They are not in production dependencies (`pnpm audit --prod`: no known vulnerabilities) and are only reachable when running tests locally. Fix requires vitest 4.x. | Open: upgrade the test runner in a separate change (major version) |
-| SR-2 | Low | Web CSP allows `'unsafe-inline'` scripts because Next.js injects inline bootstrap scripts. | Open: move to a nonce-based CSP before launch |
+| SR-1 | Medium (dev only) | `pnpm audit` (all dependencies) reports 2 critical and 3 moderate advisories in the test runner chain (vitest 3.2.7 → tinypool, @vitest/mocker). They are not in production dependencies (`pnpm audit --prod`: no known vulnerabilities) and are only reachable when running tests locally. Fix requires vitest 4.x. | **Fixed 2026-11-28 (Phase 8):** vitest 4.1.12 in every package; `pnpm audit` (all dependencies) reports no known vulnerabilities; all suites re-run. |
+| SR-2 | Low | Web CSP allows `'unsafe-inline'` scripts because Next.js injects inline bootstrap scripts. | **Fixed 2026-11-28 (Phase 8):** per-request nonce with `'strict-dynamic'` set in `apps/web/src/middleware.ts` (`src/lib/csp.ts`); no `'unsafe-inline'` or `'unsafe-eval'` for scripts in production. Zod runs without `Function` in the browser. Styles keep `'unsafe-inline'` (React style attributes). Checked in a production build: no CSP violations on login, register and home. |
 | SR-3 | Low | Web origin did not send HSTS. | Fixed in Phase 7 (production builds only) |
 | SR-4 | Info | Marketplace home made sequential queries (slow under load, p95 509 ms). | Fixed in Phase 7 (p95 242 ms) |
 | SR-5 | Info | Restore drill flagged a failed-then-resolved Prisma migration attempt in the development database history. | Expected history; the check now distinguishes resolved attempts from blocking ones |
