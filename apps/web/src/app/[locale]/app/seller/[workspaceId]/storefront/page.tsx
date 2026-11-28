@@ -1,6 +1,12 @@
 'use client';
 import type { StorefrontResponse } from '@app/contracts';
-import { BUSINESS_TYPES, STOREFRONT_MEDIA_KINDS } from '@app/contracts';
+import {
+  BUSINESS_TYPES,
+  EMIRATES,
+  filsToDecimal,
+  parseAedToFils,
+  STOREFRONT_MEDIA_KINDS,
+} from '@app/contracts';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { fieldText, useApp, useT } from '@/components/app-context';
@@ -30,6 +36,9 @@ function Storefront({ ws }: { ws: Workspace }) {
   const save = useMutation();
   const act = useMutation();
   const media = useMutation();
+  const delivery = useMutation();
+  const [deliverySaved, setDeliverySaved] = useState(false);
+  const [feeError, setFeeError] = useState<string | undefined>();
   const [saved, setSaved] = useState(false);
   const [confirm, setConfirm] = useState<'publish' | 'unpublish' | null>(null);
   const fe = (k: string) => fieldText(locale, save.error?.fieldErrors[k]);
@@ -69,6 +78,32 @@ function Storefront({ ws }: { ws: Workspace }) {
           if (r.ok) {
             setData(r.data);
             setSaved(true);
+          }
+        };
+        const saveDelivery = async (e: FormEvent<HTMLFormElement>) => {
+          e.preventDefault();
+          setDeliverySaved(false);
+          const fd = new FormData(e.currentTarget);
+          const fee = String(fd.get('delivery_fee') ?? '').trim();
+          const feeFils = fee ? parseAedToFils(fee) : null;
+          if (fee && feeFils === null) {
+            setFeeError(fieldText(locale, 'money'));
+            return;
+          }
+          setFeeError(undefined);
+          const days = String(fd.get('delivery_days') ?? '').trim();
+          const r = await delivery.run<StorefrontResponse>(path, {
+            method: 'PATCH',
+            body: {
+              ...(exists ? { expected_version: s.version } : {}),
+              delivery_fee_fils: feeFils === null ? null : feeFils.toString(),
+              delivery_emirates: fd.getAll('delivery_emirates').map(String),
+              delivery_days: days ? Number(days) : null,
+            },
+          });
+          if (r.ok) {
+            setData(r.data);
+            setDeliverySaved(true);
           }
         };
         const upload = async (e: FormEvent<HTMLFormElement>) => {
@@ -258,6 +293,60 @@ function Storefront({ ws }: { ws: Workspace }) {
               {saved ? <Alert kind="success">{t('seller.saved')}</Alert> : null}
               <Button type="submit" busy={save.busy}>
                 {t('common.save')}
+              </Button>
+            </form>
+            <form
+              className="card"
+              onSubmit={saveDelivery}
+              noValidate
+              aria-labelledby="sf-delivery"
+              data-testid="delivery-terms"
+            >
+              <h2 id="sf-delivery" className="h3">
+                {t('delivery.title')}
+              </h2>
+              <p className="muted small">{t('delivery.hint')}</p>
+              <div className="grid-2">
+                <Field
+                  label={t('delivery.fee_aed')}
+                  name="delivery_fee"
+                  inputMode="decimal"
+                  defaultValue={s.delivery_fee_fils ? filsToDecimal(s.delivery_fee_fils) : ''}
+                  error={
+                    feeError ?? fieldText(locale, delivery.error?.fieldErrors.delivery_fee_fils)
+                  }
+                />
+                <Field
+                  label={t('delivery.days')}
+                  name="delivery_days"
+                  type="number"
+                  min={0}
+                  max={90}
+                  optional
+                  defaultValue={s.delivery_days ?? ''}
+                  error={fieldText(locale, delivery.error?.fieldErrors.delivery_days)}
+                />
+              </div>
+              <fieldset>
+                <legend>{t('delivery.emirates')}</legend>
+                <div className="check-grid">
+                  {EMIRATES.map((em) => (
+                    <label key={em} className="check">
+                      <input
+                        type="checkbox"
+                        name="delivery_emirates"
+                        value={em}
+                        defaultChecked={s.delivery_emirates.includes(em)}
+                      />
+                      {t(`emirate.${em}` as MessageKey)}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              {delivery.error ? <ApiErrorAlert error={delivery.error} /> : null}
+              {deliverySaved ? <Alert kind="success">{t('seller.saved')}</Alert> : null}
+              <Button type="submit" busy={delivery.busy}>
+                {t('delivery.save')}
               </Button>
             </form>
             <section className="card" aria-labelledby="sf-media">

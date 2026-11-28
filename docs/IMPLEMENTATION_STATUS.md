@@ -1,5 +1,5 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green), under the founder's standing instruction to continue without per-phase approval. Phase 3 business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is built with the sandbox payment adapter only. Both were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7 and P4-1 to P4-7 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
@@ -7,10 +7,99 @@ Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is mer
 | 1 | DONE | Approved by the founder 2026-11-28; merged to `main` as 7cddb66 (PR #2); GitHub Actions green including WebKit | None |
 | 2 | DONE | Merged to `main` as a0f0126; CI run 46081580836 green (110 passed, 2 skipped incl. WebKit) | None |
 | 3 | DONE | Merged to `main` as 8517725 (PR #5); CI run 46087385321 green (E2E 120 passed, 4 skipped) | Provisional decisions P3-1…P3-7 need confirmation |
-| 4–7 | NOT_STARTED | None | Decisions listed under Phase 3 |
+| 4 | DONE (sandbox only) | Branch `phase-4-orders-checkout`; see Phase 4 section | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
+| 5–7 | NOT_STARTED | None | See Phase 4 decisions |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
+
+## Phase 4: cart, checkout, reservations, orders, sandbox payments, ledger
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-4-orders-checkout`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T11–T18, T40, T42.
+
+### Delivered
+- **Addresses:** UAE delivery addresses per buyer workspace (add, edit, make default, archive); checkouts keep an immutable snapshot.
+- **Cart:** add ready-stock SKUs from the product page (MOQ, increment and stock checked by the server), cart grouped by supplier with delivery terms, live prices and line issues (out of stock, below MOQ, supplier no longer trading), quantity edit and remove. Self-trade refused (T42).
+- **Checkout:** per-supplier preview (delivery fee, standard tax, totals) with a preview hash; terms confirmation; optional PO reference; creation re-prices and refuses any change (T12), reserves stock for 15 minutes with conditional updates (T11), creates one order per supplier (T13). Buyer can cancel an unpaid cart checkout (stock released).
+- **Sandbox payments:** labelled sandbox hosted page (simulate success or decline, or return without paying). Payment is confirmed only by a signed webhook processed by the worker (T14, T15, T16); declined attempts keep the checkout payable; retries are capped at 5 attempts. `PAYMENT_MODE=live` is refused at startup because no live adapter exists.
+- **Quote orders:** accepting a quote now creates a QUOTE checkout and its order from the accepted version (no stock reservation; 72-hour payment window, A05); the buyer chooses the delivery address when paying.
+- **Orders:** buyer and supplier order lists and detail (lines, totals, timeline, address, checkout link); suppliers see commission and payable, buyers never do. Notifications for paid, received, cancelled and payment due.
+- **Ledger and reconciliation:** double-entry journal per capture (PSP clearing, seller payable, platform fee revenue), balanced and append-only at the database level (T40); late captures go to unallocated receipts with a reconciliation case and no fulfilment (T18); expiry asks the provider before releasing stock (T17).
+- **Admin:** orders (SUPPORT, FINANCE) and finance (ledger balances, payment attempts, reconciliation cases; FINANCE, FINANCE_APPROVER). Super admin has no finance access by design.
+- **Worker:** `payments.process` (2 s), `checkout.expiry` (30 s), `sandbox.webhooks` (mock mode only).
+- **Supplier storefront:** delivery terms form (flat fee per order, emirates served, typical days); the dev seed now includes terms for the three seeded storefronts.
+
+### Routes, schema, permissions
+- 25 new API operations, documented in `docs/api/README.md` (Phase 4 sections) and `docs/api/openapi.json`.
+- Migrations `20261130000000_phase4_checkout_orders`, `…0001_phase4_stock_movement_kinds`, `…0002_phase4_ledger_no_truncate`, additive only: `docs/db/phase-4-schema.md`.
+- Config: `COMMISSION_BPS` (required in production), `RESERVATION_MINUTES` (default 15), existing `TAX_STANDARD_BPS`, `PAYMENT_MODE` (mock only), `PSP_WEBHOOK_SECRET`.
+
+| Action | Buyer owner | Procurement | Buyer viewer | Seller owner | Sales | Warehouse | Finance | Seller viewer | Admin |
+|---|---|---|---|---|---|---|---|---|---|
+| View addresses, checkouts, orders | Y | Y | Y | — | — | — | — | — | — |
+| Manage addresses and cart, check out, pay, cancel | Y | Y | — | — | — | — | — | — | — |
+| View supplier orders (with payable) | — | — | — | Y | Y | Y | Y | Y | — |
+| Edit storefront delivery terms | — | — | — | Y | Y | — | — | — | — |
+| All orders | — | — | — | — | — | — | — | — | SUPPORT, FINANCE, FINANCE_APPROVER |
+| Ledger, payments, reconciliation | — | — | — | — | — | — | — | — | FINANCE, FINANCE_APPROVER |
+
+### Commands actually run
+| Command | Result |
+|---|---|
+| `pnpm lint` | pass (0 warnings) |
+| `pnpm format` | pass |
+| `pnpm typecheck` | pass |
+| `pnpm test` (worker server stopped) | pass: 196 tests, 0 failed (config 21, contracts 62, api integration 99 incl. 14 commerce, web 10, worker 4) |
+| `pnpm build` (production) | pass |
+| `pnpm --filter @app/contracts openapi` | regenerated |
+| `pnpm test:e2e --project=chromium --project=mobile-360` | 65 passed, 3 skipped, 0 failed after a rerun: the first run had 9 failures, 8 of them HTTP 429 on registration because local integration runs share the Redis rate-limit counters (cleared, then passed), and 1 the Phase 3 RFQ spec expecting the old "no payment" copy (updated) |
+| Screenshots (`checkout.screenshots.spec.ts`, deviceScaleFactor 2) | pass: 3 tests, 42 screenshots (EN/AR, desktop/phone) in `phase-4/screenshots` |
+| WebKit / mobile Safari | not available in this environment; run in CI |
+
+Fixed during verification: a stale Phase 3 assertion that awards create no order, and a Phase 3 integration test that counted all outbox emails globally (flaky under parallel files; now scoped to the buyer's members).
+
+### Acceptance tests
+| Test | Covered by | Result |
+|---|---|---|
+| T11 two buyers race for the last stock: one reservation, stock never negative | `commerce.int.test.ts` | pass |
+| T12 price change after preview → 409, no charge | `commerce.int.test.ts` | pass |
+| T13 multi-seller checkout: one order per seller, sums match the payment, isolated visibility | `commerce.int.test.ts` | pass |
+| T14 return from the provider without webhook stays pending; seller cannot fulfil | `commerce.int.test.ts` | pass |
+| T15 capture webhook replayed 3 times: one capture, journal, stock deduction, notice | `commerce.int.test.ts` | pass |
+| T16 invalid signature or amount mismatch: rejected or quarantined, no paid order | `commerce.int.test.ts` | pass |
+| T17 expired reservation with unresolved provider session: retained, no oversell | `commerce.int.test.ts` | pass |
+| T18 late capture after reservation cleared: reconciliation case, no fulfilment | `commerce.int.test.ts` | pass |
+| T40 ledger fixture: exact totals, balanced and append-only journals | `commerce.int.test.ts` | pass |
+| T42 buyer and seller same company: self-trade rejected (API and DB CHECK) | `commerce.int.test.ts` | pass |
+| Browser: cart → checkout → sandbox decline → retry → paid → order confirmed → supplier sees it → second checkout cancelled; Arabic RTL; negative access | `checkout.spec.ts` | pass |
+
+### Security review
+| Area | Control |
+|---|---|
+| Tenant isolation | Every route resolves workspace membership; other workspaces' checkouts, orders, addresses and sandbox sessions return 404; buyer views never include commission or payable |
+| Price integrity | Server re-prices at checkout and compares a preview hash; totals are integer fils with DB CHECKs (`total = merchandise + shipping + tax`, `payable = total − commission`) |
+| Stock | Conditional updates in SKU order under a workspace lock; reservations released only after asking the provider |
+| Payment authenticity | HMAC-SHA256 (node:crypto, `timingSafeEqual`), 5-minute window, raw body, stored once per event id; the browser redirect never confirms payment; invalid signatures quarantined |
+| Idempotency | `Idempotency-Key` on checkout creation and payment start; journal dedupe key per capture |
+| Ledger | Append-only (UPDATE, DELETE and TRUNCATE rejected) and balanced by a deferred constraint trigger |
+| Live money | No live adapter; `PAYMENT_MODE=live` refused by API and worker; sandbox routes 404 outside mock mode; every sandbox screen is labelled |
+| CSRF | All state changes require the CSRF token except the signed webhook path |
+
+### Known issues and limitations
+- Fulfilment after CONFIRMED (dispatch, delivery, receipt), disputes, refunds and payouts are Phase 5.
+- Sandbox only: no live PSP, payout or refund; D05 and D06 stay open.
+- Delivery is a flat fee per supplier order (P4-1); no weight- or distance-based pricing or carrier integration.
+- Seeded data has one approved buyer company, so the long browser journey runs on one browser project to avoid racing the shared cart.
+- Arabic copy needs native-speaker review.
+- Integration and E2E tests add fictional checkouts and orders to the development database.
+
+### Decisions needed before Phase 5 (fulfilment, disputes, refunds, reviews)
+1. Confirm or change provisional rules P4-1 to P4-7 (and P3-1 to P3-7).
+2. Payout model and timing to suppliers, and who may trigger a refund (D05).
+3. Dispute window and evidence rules; whether the buyer must confirm receipt or it auto-completes after N days.
+4. Review eligibility (only completed orders?) and moderation.
+
+### Next gate
+Merged under the standing instruction once CI is green; Phase 5 proceeds with sandbox adapters only.
 
 ## Phase 3: RFQs, quotes, award, messaging, notifications
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-3-rfq-quotes`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T19–T23.

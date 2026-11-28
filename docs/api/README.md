@@ -292,6 +292,65 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | `POST` | `/api/v1/admin/rfqs/{id}/hide` | Hide an abusive RFQ (sellers lose access; audited) | admin | yes | admin.rfqs.moderate | 403, 404, 409, 422 |
 | `POST` | `/api/v1/admin/rfqs/{id}/unhide` | Restore a hidden RFQ (audited) | admin | yes | admin.rfqs.moderate | 403, 404, 409, 422 |
 
+## Phase 4 conventions
+- Buyer cart, checkout and order routes are scoped by the buyer workspace; seller order routes by the seller workspace. Another workspace's checkout, order, address or payment session returns 404 (T42).
+- Prices, delivery fees, tax, commission and totals are computed by the server from live catalogue data. The checkout preview returns a `preview_hash`; creating the checkout re-prices and returns 409 `checkout.changed` if anything differs, so the buyer never pays a total they have not seen.
+- Stock is reserved for `RESERVATION_MINUTES` (15) with conditional updates in SKU order; concurrent checkouts for the last units produce exactly one success and 409 `checkout.insufficient_stock` for the rest (T11).
+- `POST …/checkouts` and `POST …/checkouts/{id}/pay` require an `Idempotency-Key` header.
+- Payment is confirmed only by a verified provider webhook: HMAC-SHA256 header `x-sandbox-signature: t=<unix>,v1=<hex>` over `"<t>.<raw body>"`, 5-minute tolerance, constant-time compare. Events are stored once per provider event id and processed by the worker. The redirect back from the hosted page never marks anything paid (T14); invalid signatures and amount mismatches are quarantined (T16).
+- Only the labelled sandbox adapter exists. `PAYMENT_MODE=live` is refused at API and worker startup; the sandbox routes return 404 unless `PAYMENT_MODE=mock`.
+- Buyers never see commission or seller payable; sellers and finance admins do.
+
+## Buyer orders and checkout (Phase 4)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/buyer/workspaces/{ws}/addresses` | Delivery addresses (UAE only) | company | no | buyer.orders.read (any buyer workspace member) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/addresses` | Add a delivery address | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/buyer/workspaces/{ws}/addresses/{id}` | Replace a delivery address | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `DELETE` | `/api/v1/buyer/workspaces/{ws}/addresses/{id}` | Archive an address (checkouts keep their snapshot) | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/cart` | Cart grouped by seller, priced from live data with line issues | company | no | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/cart/items` | Add a ready-stock SKU (MOQ, increment, stock, no self-trade) | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `PATCH` | `/api/v1/buyer/workspaces/{ws}/cart/items/{id}` | Change a cart line quantity | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `DELETE` | `/api/v1/buyer/workspaces/{ws}/cart/items/{id}` | Remove a cart line | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/checkout/preview` | Per-seller delivery, tax and totals with a preview hash | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/checkouts` | Create checkout: re-price, 409 checkout.changed if anything differs from the preview, reserve stock (409 checkout.insufficient_stock), one order per seller. Header Idempotency-Key required. | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422, 429 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/checkouts/{id}` | Checkout with orders and payment attempts | company | no | buyer.orders.read (any buyer workspace member) | 403, 404, 409, 422 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/checkouts/{id}/pay` | Start or resume a payment session (sandbox adapter only). Returns the hosted page URL; payment is confirmed only by a verified webhook. Header Idempotency-Key required. | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422, 429 |
+| `POST` | `/api/v1/buyer/workspaces/{ws}/checkouts/{id}/cancel` | Cancel an unpaid cart checkout and release stock | company | yes | buyer.purchase (OWNER, PROCUREMENT; approved trading workspace, A12) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/orders` | Buyer orders (offset cursor) | company | no | buyer.orders.read (any buyer workspace member) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/buyer/workspaces/{ws}/orders/{id}` | Buyer order detail (no commission figures) | company | no | buyer.orders.read (any buyer workspace member) | 403, 404, 409, 422 |
+
+## Seller orders (Phase 4)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/seller/workspaces/{ws}/orders` | Seller orders (offset cursor) | company | no | seller.orders.read (any seller workspace member) | 403, 404, 409, 422 |
+| `GET` | `/api/v1/seller/workspaces/{ws}/orders/{id}` | Seller order detail with payable | company | no | seller.orders.read (any seller workspace member) | 403, 404, 409, 422 |
+
+## Payments (Phase 4)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `POST` | `/api/v1/payments/webhooks/{provider}` | Provider webhook intake (sandbox provider only). Verified, stored once per event id, processed by the worker. Invalid signature: 422 payment.invalid_signature and quarantined. | signature | no (signed) | — | 404, 422, 429 |
+
+## Sandbox payments (Phase 4)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/sandbox/psp/sessions/{id}` | Sandbox hosted page session (PAYMENT_MODE=mock only) | company | no | owner/procurement member of the paying buyer workspace | 403, 404, 409, 422 |
+| `POST` | `/api/v1/sandbox/psp/sessions/{id}/complete` | Simulate the customer completing or failing the sandbox payment; queues a signed webhook (no money moves) | company | yes | owner/procurement member of the paying buyer workspace | 403, 404, 409, 422 |
+
+## Admin orders and finance (Phase 4)
+
+| Method | Path | Purpose | Auth | CSRF | Requires | Errors |
+|---|---|---|---|---|---|---|
+| `GET` | `/api/v1/admin/orders` | All orders (support) | admin | no | admin.orders.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/orders/{id}` | Order detail | admin | no | admin.orders.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/finance/summary` | Ledger balances, payment states, open cases | admin | no | admin.finance.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/finance/payments` | Payment attempts | admin | no | admin.finance.read | 403, 404, 409, 422 |
+| `GET` | `/api/v1/admin/finance/reconciliation` | Reconciliation cases | admin | no | admin.finance.read | 403, 404, 409, 422 |
+
 ## Rate limits (per policy; `RATE_LIMIT_SCALE` multiplies them outside production only)
 
 | Policy | Limit |
@@ -308,3 +367,5 @@ Columns: **Auth** = session required; **CSRF** = token and origin checked; **Req
 | marketplace reads per IP | 600 per minute |
 | buyer list changes per user | 300 per minute |
 | messages sent per user (Phase 3) | 60 per minute |
+| checkout create and pay per user (Phase 4) | 30 per minute |
+| payment webhooks per IP (Phase 4) | 600 per minute |

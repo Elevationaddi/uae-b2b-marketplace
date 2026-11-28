@@ -455,7 +455,8 @@ describe('T22 concurrent award, idempotency and T23 immutability', () => {
     const winner = r1.status === 200 ? { q: qa, s: a, res: r1 } : { q: qb, s: s2, res: r2 };
     const loser = r1.status === 200 ? { q: qb, s: s2 } : { q: qa, s: a };
     expect(winner.res.body.data.state).toBe('AWARDED');
-    expect(winner.res.body.data.order_id).toBeNull();
+    expect(winner.res.body.data.order_id).toEqual(expect.any(String));
+    expect(winner.res.body.data.checkout_id).toEqual(expect.any(String));
     const dueMs =
       new Date(winner.res.body.data.payment_due_at).getTime() -
       new Date(winner.res.body.data.awarded_at).getTime();
@@ -662,10 +663,19 @@ describe('scoped messaging and notifications', () => {
       await b.client.patch('/notifications/preferences', { email_quotes: false }).expect(200)
     ).body.data;
     expect(prefs).toEqual({ email_rfqs: true, email_quotes: false, email_messages: false });
-    const before = await prisma.outboxEvent.count({ where: { eventType: 'email.activity' } });
+    // Scoped to this buyer's members: other test files enqueue emails concurrently.
+    const members = await prisma.user.findMany({
+      where: { memberships: { some: { workspaceId: b.ws } } },
+      select: { email: true },
+    });
+    const buyerEmails = {
+      eventType: 'email.activity',
+      OR: members.map((mm) => ({ payload: { path: ['to'], equals: mm.email } })),
+    };
+    const before = await prisma.outboxEvent.count({ where: buyerEmails });
     await submittedQuote(a, rfq.id);
     // Buyer opted out of quote emails: in-app notification only.
-    expect(await prisma.outboxEvent.count({ where: { eventType: 'email.activity' } })).toBe(before);
+    expect(await prisma.outboxEvent.count({ where: buyerEmails })).toBe(before);
     const n2 = (await b.client.get('/notifications?unread=true').expect(200)).body.data;
     expect(n2.some((n: { type: string }) => n.type === 'quote.submitted')).toBe(true);
   }, 120_000);

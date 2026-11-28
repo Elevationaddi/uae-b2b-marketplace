@@ -110,7 +110,29 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
                   due: d.payment_due_at ? formatDubaiTime(d.payment_due_at, locale) : '',
                 })}
               </p>
-              <p className="muted small">{t('rfq.order_later_phase')}</p>
+              {d.award_order ? (
+                <p>
+                  <Link
+                    className={
+                      d.award_order.checkout_state === 'PENDING_PAYMENT'
+                        ? 'btn btn-primary'
+                        : 'btn btn-secondary'
+                    }
+                    href={
+                      d.award_order.checkout_state === 'PENDING_PAYMENT'
+                        ? `${base}/checkouts/${d.award_order.checkout_id}`
+                        : `${base}/orders/${d.award_order.order_id}`
+                    }
+                    data-testid="award-order-link"
+                  >
+                    {d.award_order.checkout_state === 'PENDING_PAYMENT'
+                      ? t('rfq.pay_order')
+                      : t('rfq.view_order')}
+                  </Link>
+                </p>
+              ) : (
+                <p className="muted small">{t('rfq.order_unavailable')}</p>
+              )}
               {award ? (
                 <p className="muted small">
                   {t('rfq.award_total')} <Money fils={award.total_fils} />

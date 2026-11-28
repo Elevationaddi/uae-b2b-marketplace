@@ -4,7 +4,7 @@ import { press, signIn, unique } from './support/helpers';
 /**
  * Phase 3 journey against the real stack and dev seed (fictional companies only):
  * buyer requests a quotation from a supplier storefront → supplier drafts and submits a quote →
- * buyer compares and accepts (award recorded; orders and payment arrive in Phase 4).
+ * buyer compares and accepts (award recorded; a quote checkout and order await payment).
  */
 async function openSupplier(page: Page, name: string) {
   await page.goto('/en/suppliers');
@@ -86,7 +86,7 @@ test('buyer requests a quotation, supplier quotes, buyer accepts', async ({ page
   await press(dialog.getByRole('button', { name: 'Accept quote' }));
   await expect(page.locator('.alert-title', { hasText: 'Quote accepted' })).toBeVisible();
   await expect(page.locator('[data-status="AWARDED"]').first()).toBeVisible();
-  await expect(page.getByText('no payment has been taken')).toBeVisible();
+  await expect(page.getByTestId('award-order-link')).toHaveText('Pay for this order');
 
   // Supplier sees the win; the accepted version can no longer be revised.
   await sp.reload();

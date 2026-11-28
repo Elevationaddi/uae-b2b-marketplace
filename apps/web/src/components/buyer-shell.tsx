@@ -17,21 +17,24 @@ function BuyerFrame({ children }: { children: (ws: Workspace, base: string) => R
   // Not a member of this buyer workspace: same response as a missing resource (no enumeration).
   if (!ws) return <NotFound backHref={`/${locale}/app`} />;
   const base = `/${locale}/app/buyer/${ws.id}`;
+  const purchase = ws.capabilities.includes('buyer.purchase');
   const links: [string, MessageKey][] = [
+    ...(purchase ? ([[`${base}/cart`, 'buyer.nav.cart']] as [string, MessageKey][]) : []),
+    [`${base}/orders`, 'buyer.nav.orders'],
     [`${base}/rfqs`, 'buyer.nav.rfqs'],
-    ...(ws.capabilities.includes('buyer.purchase')
-      ? ([[`${base}/rfqs/new`, 'buyer.nav.new_rfq']] as [string, MessageKey][])
-      : []),
+    ...(purchase ? ([[`${base}/rfqs/new`, 'buyer.nav.new_rfq']] as [string, MessageKey][]) : []),
+    [`${base}/addresses`, 'buyer.nav.addresses'],
     ...(ws.role !== 'VIEWER'
       ? ([[`/${locale}/app/messages/${ws.id}`, 'nav.messages']] as [string, MessageKey][])
       : []),
     [`/${locale}`, 'mkt.title_short'],
   ];
-  const later: MessageKey[] = ['buyer.nav.cart', 'buyer.nav.orders'];
   const active = (href: string) =>
     href === `${base}/rfqs`
       ? pathname === href || /\/rfqs\/[0-9a-f-]{36}/.test(pathname)
-      : pathname === href;
+      : href === `${base}/orders`
+        ? pathname === href || pathname.startsWith(`${href}/`) || pathname.includes('/checkouts/')
+        : pathname === href || (href === `${base}/cart` && pathname === `${base}/checkout`);
   return (
     <div className="seller-layout">
       <nav className="seller-nav" aria-label={t('buyer.title')}>
@@ -47,16 +50,6 @@ function BuyerFrame({ children }: { children: (ws: Workspace, base: string) => R
           <li>
             <Link href={`/${locale}/app/company/${ws.company.id}`}>{t('seller.nav.company')}</Link>
           </li>
-        </ul>
-        <ul className="seller-nav-later" aria-label={t('seller.later_phase')}>
-          {later.map((k) => (
-            <li key={k}>
-              <span aria-disabled="true" className="disabled-link">
-                {t(k)}
-                <span className="muted small"> · {t('seller.later_phase')}</span>
-              </span>
-            </li>
-          ))}
         </ul>
       </nav>
       <div className="seller-main">{children(ws, base)}</div>

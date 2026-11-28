@@ -71,7 +71,7 @@ function List() {
                 {items.map((n) => {
                   const path = safePath(n.payload.path);
                   const label = t(`notif.type.${n.type}` as MessageKey, {
-                    number: String(n.payload.rfq_number ?? ''),
+                    number: String(n.payload.rfq_number ?? n.payload.order_number ?? ''),
                     title: String(n.payload.title ?? ''),
                     company: String(n.payload.company ?? ''),
                   });

@@ -1,5 +1,5 @@
 'use client';
-import type { ProductCard, PublicProductDetail } from '@app/contracts';
+import type { CartView, MeResponse, ProductCard, PublicProductDetail } from '@app/contracts';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -188,6 +188,86 @@ function BuyerActions({
   );
 }
 
+/** Add to cart (P4-6): ready-stock priced listings for approved trading buyers. */
+function AddToCart({ d }: { d: PublicProductDetail }) {
+  const t = useT();
+  const { locale } = useApp();
+  const me = useResource<MeResponse>('/me');
+  const buyers =
+    me.state.status === 'ready'
+      ? me.state.data.workspaces.filter(
+          (w) => w.kind === 'BUYER' && w.capabilities.includes('buyer.purchase'),
+        )
+      : [];
+  const skus = d.skus.filter((s) => s.availability === 'IN_STOCK');
+  const [skuId, setSkuId] = useState(skus[0]?.id ?? '');
+  const sku = skus.find((s) => s.id === skuId);
+  const [qty, setQty] = useState(String(sku?.moq ?? 1));
+  const [added, setAdded] = useState<string | null>(null);
+  const m = useMutation();
+  if (!sku) return <p className="muted small">{t('pd.out_of_stock_cart')}</p>;
+  const ws = buyers[0];
+  if (!ws) return null;
+  const add = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setAdded(null);
+    const r = await m.run<CartView>(`/buyer/workspaces/${ws.id}/cart/items`, {
+      method: 'POST',
+      body: { sku_id: sku.id, quantity: Number(qty) },
+    });
+    if (r.ok) setAdded(`/${locale}/app/buyer/${ws.id}/cart`);
+  };
+  return (
+    <form className="add-to-cart" onSubmit={add} noValidate data-testid="add-to-cart">
+      {skus.length > 1 ? (
+        <label className="field">
+          <span>{t('pd.variant')}</span>
+          <select
+            value={skuId}
+            onChange={(e) => {
+              setSkuId(e.target.value);
+              const n = skus.find((x) => x.id === e.target.value);
+              if (n) setQty(String(n.moq));
+            }}
+          >
+            {skus.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.code}
+                {Object.values(s.variant_attributes).length
+                  ? ` · ${Object.values(s.variant_attributes).join(' / ')}`
+                  : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      <label className="field">
+        <span>
+          {t('order.quantity')} ({t(`unit.${sku.unit}` as MessageKey)})
+        </span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={sku.moq}
+          step={sku.order_increment}
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+        />
+      </label>
+      <p className="muted small">{t('cart.moq', { moq: sku.moq, step: sku.order_increment })}</p>
+      <Button type="submit" busy={m.busy}>
+        {t('pd.add_to_cart')}
+      </Button>
+      {m.error ? <ApiErrorAlert error={m.error} /> : null}
+      {added ? (
+        <p className="alert alert-success" role="status">
+          {t('pd.added_to_cart')} <Link href={added}>{t('pd.view_cart')}</Link>
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
 function TradingActions({ d }: { d: PublicProductDetail }) {
   const t = useT();
   const { locale } = useApp();
@@ -209,14 +289,18 @@ function TradingActions({ d }: { d: PublicProductDetail }) {
           {t('pd.request_quote')}
         </Button>
       )}
-      {d.price_type !== 'QUOTE_ONLY' ? (
+      {d.viewer.trading.available ? (
+        <AddToCart d={d} />
+      ) : d.price_type !== 'QUOTE_ONLY' ? (
         <Button type="button" variant="secondary" disabled aria-describedby={reasonId}>
           {t('pd.buy')}
         </Button>
       ) : null}
-      <p id={reasonId} className="muted small">
-        {t(`pd.trading.${d.viewer.trading.reason}` as MessageKey)}
-      </p>
+      {d.viewer.trading.reason ? (
+        <p id={reasonId} className="muted small">
+          {t(`pd.trading.${d.viewer.trading.reason}` as MessageKey)}
+        </p>
+      ) : null}
     </div>
   );
 }
