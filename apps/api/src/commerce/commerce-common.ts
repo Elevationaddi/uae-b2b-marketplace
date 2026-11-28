@@ -130,6 +130,13 @@ export function mapOrderDetail(
     tax_bps: tax.bps,
     tax_code: tax.code,
     tax_provisional: tax.provisional,
+    return_policy:
+      (o.snapshot as { return_policy?: { en: string | null; ar: string | null } | null } | null)
+        ?.return_policy ?? null,
+    seller_cancel:
+      o.sellerCancelRequestedAt && o.sellerCancelReason
+        ? { requested_at: o.sellerCancelRequestedAt.toISOString(), reason: o.sellerCancelReason }
+        : null,
     commission_fils: side === 'buyer' ? null : o.commissionFils.toString(),
     seller_payable_fils: side === 'buyer' ? null : o.sellerPayableFils.toString(),
     address: (o.checkout.addressSnapshot ?? null) as never,

@@ -3,6 +3,27 @@
  * window, settlement holds, the weekly payout run, the commission policy and refund splits.
  */
 export const financialPolicyEn = {
+  'order.reason.cancelled_by_supplier': 'Cancelled by the supplier (refunded in full)',
+  'order.reason.refunded_in_full': 'Refunded in full',
+  'order.event.order.seller_cancel_requested': 'Supplier asked to cancel; full refund requested',
+  'order.event.order.seller_cancel_rejected': 'Finance refused the supplier’s cancellation',
+  'notif.type.order.supplier_cancelled':
+    'The supplier asked to cancel {number}; a full refund is awaiting approval',
+  'order.cancel': 'Cancel order',
+  'order.cancel_title': 'Cancel order {number}?',
+  'order.cancel_body':
+    'The buyer is refunded in full to the original payment method once finance approves. You can no longer process or dispatch this order while the cancellation is pending.',
+  'order.cancel_reason': 'Reason for the buyer',
+  'order.cancel_pending':
+    'Cancellation requested on {date}: {reason}. A full refund is awaiting finance approval.',
+  'error.order.cancellation_pending': 'A cancellation is pending for this order.',
+  'storefront.return_policy_en': 'Return policy (English)',
+  'storefront.return_policy_ar': 'Return policy (Arabic)',
+  'storefront.return_policy_hint':
+    'Shown to buyers before they pay. Say whether change-of-mind returns are accepted, the time limit and the condition required. Customised goods are generally excluded.',
+  'checkout.return_policy': 'Returns',
+  'checkout.no_return_policy':
+    'This supplier has not stated a return policy. Change-of-mind returns may not be accepted; disputes still cover damaged, wrong, short or missing goods.',
   'admin.nav.holds': 'Settlement holds',
   'admin.nav.commission': 'Commission',
 
@@ -94,6 +115,27 @@ export const financialPolicyEn = {
 } as const;
 
 export const financialPolicyAr: Record<keyof typeof financialPolicyEn, string> = {
+  'order.reason.cancelled_by_supplier': 'ألغاه المورد (استرداد كامل)',
+  'order.reason.refunded_in_full': 'تم الاسترداد بالكامل',
+  'order.event.order.seller_cancel_requested': 'طلب المورد الإلغاء؛ وطُلب استرداد كامل',
+  'order.event.order.seller_cancel_rejected': 'رفضت المالية إلغاء المورد',
+  'notif.type.order.supplier_cancelled':
+    'طلب المورد إلغاء الطلب {number}؛ والاسترداد الكامل بانتظار الموافقة',
+  'order.cancel': 'إلغاء الطلب',
+  'order.cancel_title': 'إلغاء الطلب {number}؟',
+  'order.cancel_body':
+    'يُسترد المبلغ كاملاً للمشتري إلى وسيلة الدفع الأصلية بعد موافقة المالية. لا يمكنك تجهيز الطلب أو شحنه أثناء انتظار الإلغاء.',
+  'order.cancel_reason': 'السبب للمشتري',
+  'order.cancel_pending':
+    'طُلب الإلغاء في {date}: {reason}. الاسترداد الكامل بانتظار موافقة المالية.',
+  'error.order.cancellation_pending': 'يوجد طلب إلغاء قيد الانتظار لهذا الطلب.',
+  'storefront.return_policy_en': 'سياسة الإرجاع (بالإنجليزية)',
+  'storefront.return_policy_ar': 'سياسة الإرجاع (بالعربية)',
+  'storefront.return_policy_hint':
+    'تظهر للمشترين قبل الدفع. وضّح هل تقبل الإرجاع لتغيير الرأي، والمدة، وحالة البضاعة المطلوبة. تُستثنى البضائع المخصصة عادةً.',
+  'checkout.return_policy': 'الإرجاع',
+  'checkout.no_return_policy':
+    'لم يحدد هذا المورد سياسة إرجاع. قد لا يُقبل الإرجاع لتغيير الرأي، لكن النزاعات تشمل البضائع التالفة أو الخاطئة أو الناقصة أو المفقودة.',
   'admin.nav.holds': 'تعليق التسويات',
   'admin.nav.commission': 'العمولة',
 

@@ -74,6 +74,7 @@ export class CheckoutService {
         delivery_days: g.group.delivery.days,
         tax_bps: g.taxBps,
         tax_code: g.taxCode,
+        return_policy: g.group.returnPolicy,
         issue: g.issue,
       })),
       merchandise_fils: p.merchandise.toString(),
@@ -207,6 +208,8 @@ export class CheckoutService {
                 supplier_vat_status: g.group.vat.status,
                 supplier_trn: g.group.vat.trn,
               },
+              // C-11: the return policy the buyer saw before paying.
+              return_policy: g.group.returnPolicy,
             },
             lines: {
               create: g.group.lines.map((l, i) => ({

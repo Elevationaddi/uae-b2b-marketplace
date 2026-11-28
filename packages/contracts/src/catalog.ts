@@ -698,6 +698,9 @@ const storefrontFields = {
   delivery_fee_fils: filsString.nullish(),
   delivery_emirates: z.array(emirate).max(7, 'max'),
   delivery_days: z.number().int().min(0).max(90).nullish(),
+  /** Disclosed change-of-mind return policy (C-11); shown to buyers before payment. */
+  return_policy_en: optText(2000),
+  return_policy_ar: optText(2000),
 };
 export const storefrontUpdateRequest = z
   .object({
@@ -758,6 +761,8 @@ export const storefrontResponse = z.object({
   delivery_fee_fils: filsString.nullable(),
   delivery_emirates: z.array(emirate),
   delivery_days: z.number().int().nullable(),
+  return_policy_en: z.string().nullable(),
+  return_policy_ar: z.string().nullable(),
   version: z.number().int(),
   published_at: isoDateTime.nullable(),
 });

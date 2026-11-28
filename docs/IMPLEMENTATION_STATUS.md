@@ -27,6 +27,18 @@ For each completed phase record date, commit, implemented routes, migrations, te
 - `pnpm audit` (all dependencies): no known vulnerabilities.
 - Vitest 4: API 154 passed, worker 10, web 12 (2 new CSP tests), contracts 62, config 23.
 
+## Phase 8: supplier cancellation and return policy (C-07, C-11)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-8-order-policies`.
+
+**Delivered**
+- Migration `20261207000000_phase8_cancellation_returns` (additive): `orders.seller_cancel_requested_at` and `seller_cancel_reason` (set together), `refunds.seller_cancellation`, `storefronts.return_policy_en` and `return_policy_ar`.
+- Seller route `POST /seller/workspaces/{ws}/orders/{id}/cancel` with a reason: requests a full refund for finance approval, blocks processing and dispatch while pending, notifies the buyer (`order.supplier_cancelled`) and is audited. Finance rejection withdraws it; provider success cancels the order with reason `cancelled_by_supplier` (P8-14).
+- Seller order page: Cancel order with a confirmation and reason, and a pending-cancellation notice for both parties.
+- Storefront return policy (EN/AR), shown in the checkout preview and recorded on each order; the order page shows the policy the buyer accepted.
+
+**Tests actually run locally (2026-11-28)**
+- New `order-policies.int.test.ts` (4 tests): cancel, refusal while pending, finance approval and provider success, rejection then dispatch, refusal after dispatch and for unpaid orders, cross-tenant 404; return policy in preview, hash and order snapshot. Full counts are in the PR description.
+
 ## Phase 8: support limits, ticket auto-close, quote validity and review label (C-12, C-13, C-16, C-17)
 **Date:** 2026-11-28 (UTC). **Branch:** `phase-8-support-quote-review`.
 

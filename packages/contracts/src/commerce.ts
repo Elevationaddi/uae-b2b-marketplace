@@ -168,6 +168,8 @@ export const checkoutPreviewGroup = z.object({
   /** VAT rule for this supplier's order (F05): rate and how it was decided. */
   tax_bps: z.number().int(),
   tax_code: orderTaxCode,
+  /** The supplier's disclosed return policy (C-11); null when the supplier has not stated one. */
+  return_policy: z.object({ en: z.string().nullable(), ar: z.string().nullable() }).nullable(),
   issue: z.enum(DELIVERY_ISSUES).nullable(),
 });
 export const checkoutPreview = z.object({
@@ -258,6 +260,10 @@ export const orderDetail = orderSummary.extend({
   tax_bps: z.number().int(),
   tax_code: orderTaxCode,
   tax_provisional: z.boolean(),
+  /** Return policy disclosed at checkout (C-11); null when none was stated. */
+  return_policy: z.object({ en: z.string().nullable(), ar: z.string().nullable() }).nullable(),
+  /** C-07: the supplier asked to cancel; null otherwise. */
+  seller_cancel: z.object({ requested_at: isoDateTime, reason: z.string() }).nullable(),
   /** Seller and admin only: the buyer never sees the platform commission. */
   commission_fils: filsString.nullable(),
   seller_payable_fils: filsString.nullable(),

@@ -212,7 +212,12 @@ export function OrdersTable({
   );
 }
 
-const KNOWN_REASONS = new Set(['payment_window_expired', 'cancelled_by_buyer']);
+const KNOWN_REASONS = new Set([
+  'payment_window_expired',
+  'cancelled_by_buyer',
+  'cancelled_by_supplier',
+  'refunded_in_full',
+]);
 
 export function OrderTimeline({ events }: { events: OrderDetail['events'] }) {
   const t = useT();
@@ -282,6 +287,18 @@ export function OrderDetailView({
             {o.tax_provisional ? ` · ${t('tax.provisional_note')}` : ''}
           </p>
         </section>
+        {o.return_policy ? (
+          <section className="card" aria-labelledby="ord-returns">
+            <h2 id="ord-returns" className="h3">
+              {t('checkout.return_policy')}
+            </h2>
+            <p className="pre-wrap">
+              {locale === 'ar' && o.return_policy.ar
+                ? o.return_policy.ar
+                : (o.return_policy.en ?? o.return_policy.ar)}
+            </p>
+          </section>
+        ) : null}
         {invoiceDraft}
         <section className="card" aria-labelledby="ord-tl">
           <h2 id="ord-tl" className="h3">
