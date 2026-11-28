@@ -29,6 +29,7 @@ function SellerFrame({ children }: { children: (ws: Workspace, base: string) => 
     [`${base}/orders`, 'seller.nav.orders'],
     [`${base}/disputes`, 'seller.nav.disputes'],
     [`${base}/finance`, 'seller.nav.finance'],
+    [`${base}/support`, 'seller.nav.support'],
     [`/${locale}/app/messages/${ws.id}`, 'seller.nav.messages'],
   ];
   const active = (href: string) =>

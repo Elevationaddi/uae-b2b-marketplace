@@ -33,6 +33,29 @@ test('buyer pays through the labelled sandbox (decline, retry, success), supplie
   await press(page.getByRole('link', { name: 'Continue to checkout' }));
   await page.waitForURL(/\/checkout$/);
 
+  // T33: the Arabic phone layout shows the same server totals, right-to-left, without clipping.
+  const digits = (s: string) =>
+    s.replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660)).replace(/[^0-9]/g, '');
+  const totalsEn = page.getByTestId('checkout-summary').getByTestId('totals');
+  await expect(totalsEn).toContainText('AED');
+  const en = (await totalsEn.locator('dd').allInnerTexts()).map(digits);
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto(`${base.replace(/^\/en\//, '/ar/')}/checkout`);
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  const totalsAr = page.getByTestId('checkout-summary').getByTestId('totals');
+  await expect(totalsAr.locator('dd').first()).toBeVisible();
+  expect((await totalsAr.locator('dd').allInnerTexts()).map(digits)).toEqual(en);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1),
+  ).toBe(true);
+  for (const dd of await totalsAr.locator('dd').all()) {
+    const box = (await dd.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(361);
+  }
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto(`${base}/checkout`);
+
   // Declined first attempt: the checkout stays payable.
   await placeOrder(page, base);
   await press(page.getByRole('button', { name: 'Simulate declined payment' }));

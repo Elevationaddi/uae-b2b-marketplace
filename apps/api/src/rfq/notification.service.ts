@@ -83,6 +83,7 @@ export class NotificationService {
       email_rfqs: p?.emailRfqs ?? true,
       email_quotes: p?.emailQuotes ?? true,
       email_messages: p?.emailMessages ?? false,
+      email_marketing: p?.emailMarketing ?? false,
     };
   }
 
@@ -91,6 +92,11 @@ export class NotificationService {
       ...(b.email_rfqs !== undefined && { emailRfqs: b.email_rfqs }),
       ...(b.email_quotes !== undefined && { emailQuotes: b.email_quotes }),
       ...(b.email_messages !== undefined && { emailMessages: b.email_messages }),
+      // Marketing is opt-in (T36): consent time is recorded; withdrawing clears it.
+      ...(b.email_marketing !== undefined && {
+        emailMarketing: b.email_marketing,
+        marketingConsentAt: b.email_marketing ? new Date() : null,
+      }),
     };
     await this.prisma.notificationPreference.upsert({
       where: { userId: user.id },

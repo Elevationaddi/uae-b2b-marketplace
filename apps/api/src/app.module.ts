@@ -78,6 +78,10 @@ import {
 } from './fulfilment/fulfilment.controller';
 import { FulfilmentService } from './fulfilment/fulfilment.service';
 import { SettlementService } from './fulfilment/settlement.service';
+import { ExportService } from './operations/export.service';
+import { AdminOperationsController, SupportController } from './operations/operations.controller';
+import { OverviewService } from './operations/overview.service';
+import { SupportService } from './operations/support.service';
 
 /** Paths redacted from every log line (docs/10-security.md: no credentials or tokens in logs). */
 export const LOG_REDACT_PATHS = [
@@ -147,6 +151,8 @@ export class AppModule implements NestModule {
         SellerFulfilmentController,
         BuyerFulfilmentController,
         AdminFulfilmentController,
+        SupportController,
+        AdminOperationsController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
@@ -187,6 +193,9 @@ export class AppModule implements NestModule {
         FulfilmentService,
         DisputeService,
         SettlementService,
+        SupportService,
+        OverviewService,
+        ExportService,
       ],
     };
   }

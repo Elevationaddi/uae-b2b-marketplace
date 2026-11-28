@@ -32,3 +32,4 @@ export function isLicenceExpired(expiry: Date, now: Date = new Date()): boolean 
 }
 export * from './settlement';
 export * from './commerce-shared';
+export * from './operations';

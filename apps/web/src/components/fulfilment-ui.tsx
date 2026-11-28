@@ -493,10 +493,20 @@ export function DisputeView({
                 <li key={msg.id} className={`thread-msg thread-${msg.author_side.toLowerCase()}`}>
                   <p className="small">
                     <strong>{t(`dispute.author.${msg.author_side}`)}</strong>
-                    {msg.author_name ? ` · ${msg.author_name}` : ''} ·{' '}
-                    <time dateTime={msg.created_at}>{formatDubaiTime(msg.created_at, locale)}</time>
+                    {msg.author_name ? (
+                      <>
+                        {' · '}
+                        <bdi>{msg.author_name}</bdi>
+                      </>
+                    ) : null}
+                    {' · '}
+                    <time dateTime={msg.created_at}>
+                      <bdi>{formatDubaiTime(msg.created_at, locale)}</bdi>
+                    </time>
                   </p>
-                  <p className="pre-wrap">{msg.body}</p>
+                  <p className="pre-wrap" dir="auto">
+                    {msg.body}
+                  </p>
                   {msg.file ? (
                     <p className="small">
                       <a href={`/api/v1${fileHref(msg.file.id)}`}>{msg.file.name}</a>

@@ -6,6 +6,7 @@ import { catalogAr, catalogEn } from './catalog-messages';
 import { rfqAr, rfqEn } from './rfq-messages';
 import { commerceAr, commerceEn } from './commerce-messages';
 import { fulfilmentAr, fulfilmentEn } from './fulfilment-messages';
+import { operationsAr, operationsEn } from './operations-messages';
 
 export const LOCALES = ['en', 'ar'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -21,6 +22,7 @@ const en = {
   ...rfqEn,
   ...commerceEn,
   ...fulfilmentEn,
+  ...operationsEn,
   'company.uploaded': 'Document uploaded and scanned clean.',
   'company.upload_blocked':
     'The malware scan blocked this file. Remove it and upload a clean copy.',
@@ -468,6 +470,7 @@ const ar: Messages = {
   ...rfqAr,
   ...commerceAr,
   ...fulfilmentAr,
+  ...operationsAr,
   'company.uploaded': 'تم رفع المستند وفحصه وهو سليم.',
   'company.upload_blocked': 'حظر فحص البرمجيات الخبيثة هذا الملف. احذفه وارفع نسخة سليمة.',
   'admin.record_decision': 'تسجيل القرار',

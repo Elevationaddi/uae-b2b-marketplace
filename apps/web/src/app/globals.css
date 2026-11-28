@@ -1945,3 +1945,12 @@ textarea {
   padding: 0;
   margin: 0;
 }
+
+/* Phase 6: money figures on KPI cards wrap instead of clipping. */
+.kpis-money {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+.kpi-value.kpi-money {
+  font-size: 1.35rem;
+  overflow-wrap: anywhere;
+}

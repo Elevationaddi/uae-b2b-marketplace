@@ -1235,11 +1235,14 @@ model Notification {
 
 /// Email opt-ins per user. In-app notifications and critical notices cannot be turned off.
 model NotificationPreference {
-  userId        String   @id @map("user_id") @db.Uuid
-  emailRfqs     Boolean  @default(true) @map("email_rfqs")
-  emailQuotes   Boolean  @default(true) @map("email_quotes")
-  emailMessages Boolean  @default(false) @map("email_messages")
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  userId             String    @id @map("user_id") @db.Uuid
+  emailRfqs          Boolean   @default(true) @map("email_rfqs")
+  emailQuotes        Boolean   @default(true) @map("email_quotes")
+  emailMessages      Boolean   @default(false) @map("email_messages")
+  /// Marketing email is opt-in only (T36); transactional and security notices ignore it.
+  emailMarketing     Boolean   @default(false) @map("email_marketing")
+  marketingConsentAt DateTime? @map("marketing_consent_at") @db.Timestamptz(3)
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("notification_preferences")
 }
@@ -1861,4 +1864,94 @@ model MockPspOperation {
   updatedAt      DateTime              @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("mock_psp_operations")
+}
+
+// ------------------------------------------------------------------ Phase 6: support and exports
+
+enum SupportTicketState {
+  OPEN
+  ASSIGNED
+  WAITING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum SupportCategory {
+  ACCOUNT
+  VERIFICATION
+  ORDER
+  PAYMENT
+  RFQ
+  CATALOG
+  OTHER
+}
+
+enum ExportState {
+  READY
+  EXPIRED
+}
+
+/// Customer support case for one company workspace (docs/09-workflows.md support ticket).
+model SupportTicket {
+  id              String             @id @default(uuid()) @db.Uuid
+  number          String             @unique
+  workspaceId     String             @map("workspace_id") @db.Uuid
+  companyId       String             @map("company_id") @db.Uuid
+  openedById      String             @map("opened_by_id") @db.Uuid
+  category        SupportCategory
+  subject         String
+  state           SupportTicketState @default(OPEN)
+  orderId         String?            @map("order_id") @db.Uuid
+  rfqId           String?            @map("rfq_id") @db.Uuid
+  assignedAdminId String?            @map("assigned_admin_id") @db.Uuid
+  version         Int                @default(1)
+  lastCustomerAt  DateTime?          @map("last_customer_at") @db.Timestamptz(3)
+  lastAdminAt     DateTime?          @map("last_admin_at") @db.Timestamptz(3)
+  resolvedAt      DateTime?          @map("resolved_at") @db.Timestamptz(3)
+  closedAt        DateTime?          @map("closed_at") @db.Timestamptz(3)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  messages SupportMessage[]
+
+  @@index([workspaceId, createdAt])
+  @@index([state, createdAt])
+  @@index([assignedAdminId, state])
+  @@map("support_tickets")
+}
+
+/// Append-only support conversation (database trigger rejects UPDATE/DELETE/TRUNCATE).
+model SupportMessage {
+  id         String   @id @default(uuid()) @db.Uuid
+  ticketId   String   @map("ticket_id") @db.Uuid
+  authorId   String   @map("author_id") @db.Uuid
+  authorSide String   @map("author_side")
+  body       String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+
+  @@index([ticketId, createdAt])
+  @@map("support_messages")
+}
+
+/// Scoped admin CSV export with an expiring download (docs/04-admin.md /reports, T41).
+model ExportJob {
+  id            String      @id @default(uuid()) @db.Uuid
+  requestedById String      @map("requested_by_id") @db.Uuid
+  reportType    String      @map("report_type")
+  scope         String
+  filters       Json        @default("{}")
+  reason        String
+  rowCount      Int         @map("row_count")
+  content       Bytes?
+  sha256        String
+  state         ExportState @default(READY)
+  expiresAt     DateTime    @map("expires_at") @db.Timestamptz(3)
+  downloadedAt  DateTime?   @map("downloaded_at") @db.Timestamptz(3)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([requestedById, createdAt])
+  @@index([state, expiresAt])
+  @@map("export_jobs")
 }

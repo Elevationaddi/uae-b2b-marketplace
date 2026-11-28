@@ -662,7 +662,12 @@ describe('scoped messaging and notifications', () => {
     const prefs = (
       await b.client.patch('/notifications/preferences', { email_quotes: false }).expect(200)
     ).body.data;
-    expect(prefs).toEqual({ email_rfqs: true, email_quotes: false, email_messages: false });
+    expect(prefs).toEqual({
+      email_rfqs: true,
+      email_quotes: false,
+      email_messages: false,
+      email_marketing: false,
+    });
     // Scoped to this buyer's members: other test files enqueue emails concurrently.
     const members = await prisma.user.findMany({
       where: { memberships: { some: { workspaceId: b.ws } } },

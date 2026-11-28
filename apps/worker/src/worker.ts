@@ -5,6 +5,7 @@ import {
   createSandboxPsp,
   submitApprovedSettlements,
   expireCheckouts,
+  expireExports,
   pingDatabase,
   processPendingPaymentEvents,
   type PrismaClient,
@@ -36,6 +37,8 @@ import {
  * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
  * - settlement.submit: sends dual-approved refunds and payouts to the provider adapter (every
  *   2 s; idempotency key per refund/payout, so a retry never pays twice).
+ * - export.cleanup: deletes the bytes of report exports past their 24 h retention (every 10 min;
+ *   the audit row stays).
  */
 export const SYSTEM_QUEUE = 'system';
 export const HEARTBEAT_JOB = 'system.heartbeat';
@@ -47,6 +50,7 @@ export const PAYMENTS_JOB = 'payments.process';
 export const CHECKOUT_EXPIRY_JOB = 'checkout.expiry';
 export const SANDBOX_WEBHOOK_JOB = 'sandbox.webhooks';
 export const SETTLEMENT_SUBMIT_JOB = 'settlement.submit';
+export const EXPORT_CLEANUP_JOB = 'export.cleanup';
 const HEARTBEAT_EVERY_MS = 60_000;
 const HEARTBEAT_STALE_MS = 3 * HEARTBEAT_EVERY_MS;
 
@@ -144,6 +148,11 @@ export async function startWorker(
           if (res.refunds || res.payouts) log.info(res, 'settlements submitted');
           return res;
         }
+        case EXPORT_CLEANUP_JOB: {
+          const expired = await expireExports(prisma);
+          if (expired) log.info({ expired }, 'report exports expired');
+          return { expired };
+        }
         case SANDBOX_WEBHOOK_JOB:
           return { delivered: await deliverSandboxWebhooks(prisma, env, log) };
         default:
@@ -188,6 +197,11 @@ export async function startWorker(
     'settlement-submit',
     { every: opts.outboxEveryMs ?? 2_000 },
     { name: SETTLEMENT_SUBMIT_JOB, opts: oneShot },
+  );
+  await queue.upsertJobScheduler(
+    'export-cleanup',
+    { every: 10 * 60_000 },
+    { name: EXPORT_CLEANUP_JOB, opts: oneShot },
   );
   if (psp)
     await queue.upsertJobScheduler(

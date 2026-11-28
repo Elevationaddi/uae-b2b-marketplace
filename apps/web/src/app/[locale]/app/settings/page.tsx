@@ -223,7 +223,7 @@ function Sessions({ tick }: { tick: number }) {
   );
 }
 
-const PREF_KEYS = ['email_rfqs', 'email_quotes', 'email_messages'] as const;
+const PREF_KEYS = ['email_rfqs', 'email_quotes', 'email_messages', 'email_marketing'] as const;
 
 /** Activity email preferences. In-app notifications are always kept. */
 function EmailPreferences() {
@@ -235,6 +235,7 @@ function EmailPreferences() {
     <section className="card" aria-labelledby="prefs-heading">
       <h2 id="prefs-heading">{t('settings.email_prefs')}</h2>
       <p className="muted small">{t('settings.email_prefs_hint')}</p>
+      <p className="muted small">{t('settings.marketing_hint')}</p>
       {saved ? <Alert kind="success">{t('common.saved')}</Alert> : null}
       {m.error ? <ApiErrorAlert error={m.error} /> : null}
       <Resource state={prefs.state} reload={prefs.reload}>

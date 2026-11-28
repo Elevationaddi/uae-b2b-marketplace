@@ -311,6 +311,11 @@ const TONE: Record<string, 'ok' | 'warn' | 'bad' | 'neutral' | 'info'> = {
   HIDDEN: 'neutral',
   PARTIALLY_REFUNDED: 'warn',
   REFUNDED: 'neutral',
+  // Phase 6 support tickets and exports.
+  ASSIGNED: 'info',
+  WAITING_CUSTOMER: 'warn',
+  RESOLVED: 'ok',
+  READY: 'ok',
 };
 
 /** Status shown as text plus colour, never colour alone (docs/05-ui.md). */
