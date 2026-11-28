@@ -66,6 +66,8 @@ export class AuthController {
       app_name: this.env.APP_NAME,
       sandbox: this.env.sandbox,
       upload_max_bytes: this.env.UPLOAD_MAX_BYTES,
+      staging: this.env.isStaging,
+      staging_email_domains: this.env.stagingEmailDomains,
     });
   }
 

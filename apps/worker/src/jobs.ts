@@ -21,18 +21,40 @@ import { TEMPLATES } from './email-templates';
 const MAX_ATTEMPTS = 8;
 
 export interface Mailer {
-  send(to: string, subject: string, text: string): Promise<void>;
+  send(
+    to: string,
+    subject: string,
+    text: string,
+    meta?: { template: string; locale: string },
+  ): Promise<void>;
 }
 
 /**
  * Email adapter. smtp-dev sends to the local Mailpit catcher (nothing leaves the machine).
  * live has no adapter in Phase 1 and refuses to start; disabled marks messages undeliverable.
  */
-export function createMailer(env: AppEnv): Mailer | null {
+export function createMailer(env: AppEnv, prisma?: PrismaClient): Mailer | null {
   if (env.EMAIL_PROVIDER === 'live') {
     throw new Error(
       'EMAIL_PROVIDER=live has no adapter yet (provider not selected). Refusing to start.',
     );
+  }
+  if (env.EMAIL_PROVIDER === 'catcher') {
+    if (!prisma) throw new Error('EMAIL_PROVIDER=catcher needs the database client');
+    // Staging mail catcher (C-20): store the rendered email for admins; nothing is sent.
+    return {
+      async send(to, subject, text, meta) {
+        await prisma.caughtEmail.create({
+          data: {
+            toAddress: to,
+            subject: `[STAGING] ${subject}`,
+            body: text,
+            template: meta?.template ?? 'unknown',
+            locale: meta?.locale ?? 'en',
+          },
+        });
+      },
+    };
   }
   if (env.EMAIL_PROVIDER !== 'smtp-dev' || !env.SMTP_URL) return null;
   const transport: Transporter = nodemailer.createTransport(env.SMTP_URL);
@@ -96,7 +118,7 @@ export async function dispatchOutbox(
         }
         const p = row.payload;
         const msg = TEMPLATES[p.template][p.locale](p.vars, env.APP_NAME);
-        await mailer.send(p.to, msg.subject, msg.text);
+        await mailer.send(p.to, msg.subject, msg.text, { template: p.template, locale: p.locale });
         await tx.outboxEvent.update({
           where: { id },
           data: {
@@ -434,7 +456,7 @@ export async function deliverSandboxWebhooks(
   env: AppEnv,
   log: Logger,
 ): Promise<number> {
-  if (env.PAYMENT_MODE !== 'mock' || env.isProduction) return 0;
+  if (env.PAYMENT_MODE !== 'mock' || env.appEnv === 'production') return 0;
   const secret = webhookSecret(env);
   const post = async (events: PspEvent[]): Promise<{ sent: number; remaining: PspEvent[] }> => {
     const remaining: PspEvent[] = [];

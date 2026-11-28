@@ -77,7 +77,7 @@ export function AdminShell({
 }
 
 export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode }) {
-  const { locale, appName } = useApp();
+  const { locale, appName, staging } = useApp();
   const t = useT();
   const router = useRouter();
   const pathname = usePathname() ?? '';
@@ -129,6 +129,15 @@ export function AdminFrame({ me, children }: { me?: AdminMe; children: ReactNode
     { href: `${base}/reports`, label: t('admin.nav.reports'), cap: 'admin.reports.export' },
     { href: `${base}/audit`, label: t('admin.nav.audit'), cap: 'admin.audit.read' },
     { href: `${base}/staff`, label: t('admin.nav.staff'), cap: 'admin.staff.manage' },
+    ...(staging
+      ? [
+          {
+            href: `${base}/staging-mailbox`,
+            label: t('admin.nav.mailbox'),
+            cap: 'admin.support.read',
+          },
+        ]
+      : []),
   ].filter((n) => caps.includes(n.cap as AdminCapability));
   const isActive = (href: string) =>
     href === base || href === `${base}/catalog`

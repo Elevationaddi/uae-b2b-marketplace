@@ -31,6 +31,12 @@ export class AuthService {
     meta: RequestMeta,
   ): Promise<void> {
     await this.limits.consume('register_ip', meta.ip ?? 'unknown');
+    // Staging (C-20): public registration stays off; only fictional test domains may register.
+    if (this.env.isStaging) {
+      const domain = input.email.split('@').pop()?.toLowerCase() ?? '';
+      if (!this.env.stagingEmailDomains.includes(domain))
+        throw new ApiError('VALIDATION_FAILED', 'auth.staging_domain', { email: 'staging_domain' });
+    }
     const existing = await this.prisma.user.findUnique({ where: { email: input.email } });
     if (existing) {
       // Tell the real owner instead of the requester. Rate limited per account to avoid mail bombing.

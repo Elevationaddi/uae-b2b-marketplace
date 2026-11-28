@@ -43,7 +43,11 @@ export default async function LocaleLayout({
         <a className="skip-link" href="#main">
           {t(locale, 'app.skip_to_content')}
         </a>
-        {cfg.sandbox ? (
+        {cfg.staging ? (
+          <div className="sandbox-banner" role="note" data-testid="staging-banner">
+            {t(locale, 'app.staging_banner')}
+          </div>
+        ) : cfg.sandbox ? (
           <div className="sandbox-banner" role="note">
             {t(locale, 'app.sandbox_banner')}
           </div>
@@ -54,6 +58,8 @@ export default async function LocaleLayout({
             appName: cfg.appName,
             sandbox: cfg.sandbox,
             uploadMaxBytes: cfg.uploadMaxBytes,
+            staging: cfg.staging,
+            stagingEmailDomains: cfg.stagingEmailDomains,
           }}
         >
           {children}

@@ -8,6 +8,8 @@ export type AppConfig = {
   appName: string;
   sandbox: boolean;
   uploadMaxBytes: number;
+  staging?: boolean;
+  stagingEmailDomains?: string[];
 };
 
 const AppCtx = createContext<AppConfig | null>(null);

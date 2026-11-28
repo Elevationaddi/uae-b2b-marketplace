@@ -245,7 +245,7 @@ describe('rate limiting', () => {
     const strict = await makeApp({ RATE_LIMIT_SCALE: '1' });
     // Counters are shared in Redis with the relaxed test app; start this policy from zero.
     const Redis = (await import('ioredis')).default;
-    const redis = new Redis(strict.env.REDIS_URL);
+    const redis = new Redis(strict.env.REDIS_URL!);
     const keys = await redis.keys('rl:login_*');
     if (keys.length) await redis.del(...keys);
     await redis.quit();

@@ -5,6 +5,9 @@ export type ServerConfig = {
   sandbox: boolean;
   uploadMaxBytes: number;
   reachable: boolean;
+  /** Protected staging profile (C-20): fictional data only. */
+  staging: boolean;
+  stagingEmailDomains: string[];
 };
 
 const FALLBACK_NAME = 'B2B Marketplace (working name)';
@@ -28,6 +31,8 @@ export async function loadServerConfig(): Promise<ServerConfig> {
         sandbox: parsed.data.data.sandbox,
         uploadMaxBytes: parsed.data.data.upload_max_bytes,
         reachable: true,
+        staging: parsed.data.data.staging,
+        stagingEmailDomains: parsed.data.data.staging_email_domains,
       };
     }
   } catch {
@@ -38,5 +43,7 @@ export async function loadServerConfig(): Promise<ServerConfig> {
     sandbox: false,
     uploadMaxBytes: 10 * 1024 * 1024,
     reachable: false,
+    staging: process.env.APP_ENV === 'staging',
+    stagingEmailDomains: [],
   };
 }

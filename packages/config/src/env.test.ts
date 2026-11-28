@@ -70,7 +70,10 @@ describe('parseEnv (development)', () => {
   it('rejects missing required variables with a list of issues', () => {
     const issues = issuesOf({ NODE_ENV: 'development' });
     expect(issues.some((i) => i.startsWith('DATABASE_URL'))).toBe(true);
-    expect(issues.some((i) => i.startsWith('REDIS_URL'))).toBe(true);
+    // Redis is optional since Phase 8 (PostgreSQL rate limits), but must be valid when set.
+    expect(issues.some((i) => i.startsWith('REDIS_URL'))).toBe(false);
+    expect(issuesOf({ ...dev, REDIS_URL: 'http://x' }).join()).toMatch(/REDIS_URL/);
+    expect(parseEnv({ ...dev, REDIS_URL: '' }).REDIS_URL).toBeUndefined();
     expect(issues.some((i) => i.startsWith('SESSION_SECRET'))).toBe(true);
   });
 
@@ -220,5 +223,65 @@ describe('tax treatment (F05)', () => {
     );
     const { TAX_APPROVAL_REFERENCE: _omit, ...noApproval } = prod;
     expect(issuesOf(noApproval).join()).toMatch(/TAX_APPROVAL_REFERENCE/);
+  });
+});
+
+const staging = {
+  ...prod,
+  APP_ENV: 'staging',
+  PAYMENT_MODE: 'mock',
+  PSP_WEBHOOK_SECRET: undefined as unknown as string,
+  EMAIL_PROVIDER: 'catcher',
+  EMAIL_API_KEY: undefined as unknown as string,
+  FILE_SCANNER: 'sandbox-eicar',
+  TAX_TREATMENT: 'provisional_standard',
+  TAX_APPROVAL_REFERENCE: undefined as unknown as string,
+  COMMISSION_BPS: undefined as unknown as string,
+  REDIS_URL: '',
+  STORAGE_DRIVER: 'vercel-blob',
+  BLOB_READ_WRITE_TOKEN: 'vercel_blob_rw_abcdefghijklmnop',
+  CRON_SECRET: 'c'.repeat(8) + 'Q7v2LmX9pR4sT1uW6yZ3aB8dE5fG0hJ',
+  STAGING_ACCESS_PASSWORD: 'Fictional-Staging-Pass-91',
+  STAGING_ALLOWED_EMAIL_DOMAINS: 'example.test, Staging.Example',
+};
+const clean = (o: Record<string, string | undefined>) =>
+  Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Record<
+    string,
+    string
+  >;
+
+describe('parseEnv (staging profile, C-20)', () => {
+  it('accepts a production build with sandbox payments, the mail catcher and Vercel Blob', () => {
+    const env = parseEnv(clean(staging));
+    expect(env.appEnv).toBe('staging');
+    expect(env.isStaging).toBe(true);
+    expect(env.isProduction).toBe(true);
+    expect(env.sandbox).toBe(true);
+    expect(env.stagingEmailDomains).toEqual(['example.test', 'staging.example']);
+    expect(env.REDIS_URL).toBeUndefined();
+  });
+
+  it('refuses live payments, real email, missing protection and weak secrets', () => {
+    const issues = (o: Record<string, string | undefined>) =>
+      issuesOf(clean({ ...staging, ...o })).join('\n');
+    expect(issues({ EMAIL_PROVIDER: 'live', EMAIL_FROM: 'x@app.invalid' })).toMatch(
+      /never sends email/,
+    );
+    expect(issues({ FEATURE_REAL_PAYMENTS: 'true' })).toMatch(/live payments/);
+    expect(issues({ STAGING_ACCESS_PASSWORD: 'short' })).toMatch(/STAGING_ACCESS_PASSWORD/);
+    expect(issues({ STAGING_ALLOWED_EMAIL_DOMAINS: undefined })).toMatch(
+      /STAGING_ALLOWED_EMAIL_DOMAINS/,
+    );
+    expect(issues({ CRON_SECRET: undefined })).toMatch(/CRON_SECRET/);
+    expect(issues({ NODE_ENV: 'development' })).toMatch(/NODE_ENV=production/);
+    expect(issues({ SESSION_SECRET: 'dev-only-session-secret-change-me' })).toMatch(
+      /SESSION_SECRET/,
+    );
+    expect(issues({ WEB_ORIGIN: 'http://app.invalid' })).toMatch(/https/);
+    expect(issues({ BLOB_READ_WRITE_TOKEN: undefined })).toMatch(/BLOB_READ_WRITE_TOKEN/);
+  });
+
+  it('never allows the mail catcher in production', () => {
+    expect(issuesOf({ ...prod, EMAIL_PROVIDER: 'catcher' }).join()).toMatch(/mail catcher/);
   });
 });

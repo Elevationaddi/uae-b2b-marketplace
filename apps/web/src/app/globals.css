@@ -1973,3 +1973,11 @@ textarea {
   border: 0;
   padding: 0;
 }
+
+/* Staging mail catcher */
+.mail-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  margin-block-start: var(--space-2);
+}
