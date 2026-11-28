@@ -1,5 +1,5 @@
 # Implementation status
-Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is merged as 4575a7f (PR #7), sandbox provider adapter only. Phase 6 (support, operations overview, scoped exports, accessibility) is built. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7, P5-1 to P5-7 and P6-1 to P6-6 in `docs/00-decisions.md`) and need founder confirmation.
+Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is merged as 8517725 (PR #5, CI green). Phase 4 (cart, checkout, sandbox payments, orders, ledger) is merged as 5f543bb (PR #6). Phase 5 (fulfilment, receipt, disputes, refunds, payouts, reviews) is merged as 4575a7f (PR #7), sandbox provider adapter only. Phase 6 (support, operations overview, scoped exports, accessibility) is merged as 2154837 (PR #8). Phase 7 covers only the sandbox-safe part (restore drill, production refusal, performance check, security review); live integrations and deployment stay blocked on the production decisions. All were built under the founder's standing instruction to continue without per-phase approval. Business rules not covered by approved decisions are recorded as provisional (P3-1 to P3-7, P4-1 to P4-7, P5-1 to P5-7 and P6-1 to P6-6 in `docs/00-decisions.md`) and need founder confirmation.
 
 | Phase | Status | Evidence | Blockers |
 |---|---|---|---|
@@ -9,14 +9,92 @@ Phases 0–2 are merged. Phase 3 (RFQs, quotes, messaging, notifications) is mer
 | 3 | DONE | Merged to `main` as 8517725 (PR #5); CI run 46087385321 green (E2E 120 passed, 4 skipped) | Provisional decisions P3-1…P3-7 need confirmation |
 | 4 | DONE (sandbox only) | Merged to `main` as 5f543bb (PR #6); CI green | Provisional decisions P4-1…P4-7; D05/D06 for live payments |
 | 5 | DONE (sandbox only) | Merged to `main` as 4575a7f (PR #7); CI green | Provisional decisions P5-1…P5-7; D05 for live refunds and payouts |
-| 6 | DONE | Branch `phase-6-operations`; see Phase 6 section | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
-| 7 | NOT_STARTED | None | Live providers and production deployment need D01–D15 approvals |
+| 6 | DONE | Merged to `main` as 2154837 (PR #8); CI green | Provisional decisions P6-1…P6-6; role-specific UAT with real staff not done |
+| 7 | PARTIAL (sandbox-safe part only) | Branch `phase-7-hardening`; see Phase 7 section | Live provider integration and deployment blocked on D01–D15; penetration test not done |
 | 8 | OUT_OF_SCOPE | None | Separate approval |
 
 For each completed phase record date, commit, implemented routes, migrations, tests actually executed with pass/fail counts, commands, known bugs, security review, decisions changed, and next gate. Do not mark DONE if an acceptance test is missing or failing. Keep this file current.
 
+## Phase 7: production readiness (sandbox-safe part only)
+**Date:** 2026-11-28 (UTC). **Branch:** `phase-7-hardening`. **Exit gate (docs/13-roadmap.md):** T37–T38 plus all regressions; D01–D15 production gates approved. Only the parts that need no live service or production decision were built; the gate itself is **not met** because D01–D15 are open and no production environment exists.
+
+### Delivered
+- **T37 restore drill:** `pnpm db:restore-check` dumps the database, restores it into a temporary database and checks schema, migrations, row counts and transaction consistency (balanced journals, refund caps, order totals, payout allocations), then removes the copy.
+- **T38 production refusal:** `pnpm check:production-refusal` starts the built API and worker in production mode with five unsafe configurations; both refuse to start every time. Added to CI after the build. A new integration test shows that without a payment provider checkout is refused, the cart still works and there is no sandbox fallback.
+- **Performance:** `pnpm perf:check` load-tests marketplace reads with 50 concurrent clients. The marketplace home page hydrated sections one after another (p95 509 ms); it now loads them concurrently (p95 242 ms).
+- **Security review:** `docs/security-review.md` (controls, evidence, findings SR-1…SR-5, launch requirements). HSTS added for production web builds.
+- **Docs:** operational commands in `docs/DEVELOPMENT.md`.
+
+### Commands actually run
+| Command | Result |
+|---|---|
+| `pnpm db:restore-check` (development database) | pass (output below) |
+| `pnpm check:production-refusal` (local .env base, and again with the CI environment and no .env) | pass: 8 of 8 refusals (API and worker × 4 cases) |
+| `pnpm perf:check` (local production build, single machine) | pass (output below) |
+| `pnpm audit --prod` | no known vulnerabilities |
+| `pnpm audit` (incl. dev) | 2 critical, 3 moderate in the vitest test-runner chain (SR-1, dev only) |
+| Secret scan (`git ls-files`, key patterns) | no secrets tracked; only fictional seeded dev credentials |
+| `pnpm lint`, `pnpm format:check`, `pnpm typecheck` | pass |
+| `pnpm test` (worker stopped) | pass: 219 tests, 0 failed (config 21, contracts 62, api 122 incl. new T38 test, web 10, worker 4) |
+| `pnpm test:e2e --project=chromium --project=mobile-360` | 76 passed, 8 skipped, 0 failed (regression after the home-page and header changes) |
+
+Restore drill output:
+```
+dump 5.5 MiB, total 3.2 s
+expected migrations: 9
+PASS  migrations_applied           source=9  restored=9
+PASS  migrations_unfinished        source=0  restored=0
+PASS  migrations_rolled_back_attempts source=1  restored=1
+PASS  tables                       source=74  restored=74
+PASS  triggers                     source=31  restored=31
+PASS  constraints                  source=245  restored=245
+PASS  companies                    source=1574  restored=1574
+PASS  users                        source=2532  restored=2532
+PASS  orders                       source=244  restored=244
+PASS  payments                     source=210  restored=210
+PASS  ledger_entries               source=513  restored=513
+PASS  audit_events                 source=24054  restored=24054
+PASS  refunds                      source=28  restored=28
+PASS  payouts                      source=16  restored=16
+PASS  support_tickets              source=39  restored=39
+PASS  ledger_total_debit           source=13654584  restored=13654584
+PASS  ledger_total_credit          source=13654584  restored=13654584
+PASS  unbalanced_journals          source=0  restored=0
+PASS  over_refunded_orders         source=0  restored=0
+PASS  order_total_mismatch         source=0  restored=0
+PASS  payout_allocation_mismatch   source=0  restored=0
+All restore checks passed
+```
+
+Performance output (local, not production hardware):
+```
+API http://localhost:4000, 50 concurrent clients, 20 s
+endpoint            requests   p50     p95     p99   errors
+home                    609    174     242     298       0
+categories              609     73     112     139       0
+search                  609    186     256     315       0
+search_category         608    167     231     290       0
+suggest                 608     92     128     153       0
+product                 608    172     234     297       0
+related                 608    207     292     361       0
+suppliers               608    172     237     293       0
+supplier                608    166     230     284       0
+reviews                 608    206     285     363       0
+overall: 6083 requests, 304 req/s, p50 169 ms, p95 247 ms, p99 320 ms, errors 0
+PASS (p95 < 500 ms, no errors)
+```
+
+### Not done (needs founder decisions, real services or people)
+- Live PSP, payout rail, production email provider, live malware scanner (D05, email provider, A14): not connected, by instruction.
+- Hosting, region, TLS, secret manager, WAF, monitoring and alerting, backups and a timed restore drill on production infrastructure (D12).
+- Independent penetration test; manual accessibility and real-device testing; staff UAT; native-speaker Arabic review.
+- Legal, tax and policy approvals (D06, D08, D09, D14, D15) and the launch checklist in docs/13-roadmap.md.
+
+### Next gate
+Founder decisions on D01–D15 and the provisional P3–P6 rules; then a staging environment for live-provider sandbox testing.
+
 ## Phase 6: support, operations overview, scoped exports, accessibility
-**Date:** 2026-11-28 (UTC). **Branch:** `phase-6-operations`. **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T33–T36, T41; role-specific UAT.
+**Date:** 2026-11-28 (UTC). **Merged:** 2154837 (PR #8). **Exit gate (docs/13-roadmap.md, docs/12-testing.md):** T33–T36, T41; role-specific UAT.
 
 ### Delivered
 - **Customer support:** buyer and seller workspaces open tickets (topic, subject, message, optional link to one of their own orders, for example from an order page), follow the conversation, reply, reopen a resolved ticket and close it. Viewers read only. Tickets are workspace-wide; other companies get 404.

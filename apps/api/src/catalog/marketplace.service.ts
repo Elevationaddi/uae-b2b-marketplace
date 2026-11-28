@@ -799,30 +799,38 @@ export class MarketplaceService {
         ? this.prisma.marketplacePreference.findUnique({ where: { userId: viewer.userId } })
         : null,
     ]);
-    let forYou: ProductCard[] = [];
     const prefCats = Array.isArray(prefs?.categoryIds) ? (prefs!.categoryIds as string[]) : [];
-    if (prefCats.length) {
-      const ids = await this.prisma.$queryRaw<{ id: string }[]>`
-        SELECT id FROM marketplace_products
-         WHERE category_id IN (${Prisma.join(prefCats.map((i) => Prisma.sql`${i}::uuid`))})
-            OR parent_category_id IN (${Prisma.join(prefCats.map((i) => Prisma.sql`${i}::uuid`))})
-         ORDER BY published_at DESC NULLS LAST, id LIMIT 8`;
-      forYou = await this.cards(
-        ids.map((x) => x.id),
-        viewer,
-      );
-    }
+    // Card hydration for every section runs concurrently (Phase 7 read-path tuning).
+    const [forYou, featuredProducts, featuredSuppliers, manufacturers, newProducts] =
+      await Promise.all([
+        prefCats.length
+          ? this.prisma.$queryRaw<{ id: string }[]>`
+                SELECT id FROM marketplace_products
+                 WHERE category_id IN (${Prisma.join(prefCats.map((i) => Prisma.sql`${i}::uuid`))})
+                    OR parent_category_id IN (${Prisma.join(prefCats.map((i) => Prisma.sql`${i}::uuid`))})
+                 ORDER BY published_at DESC NULLS LAST, id LIMIT 8`.then((ids) =>
+              this.cards(
+                ids.map((x) => x.id),
+                viewer,
+              ),
+            )
+          : Promise.resolve([] as ProductCard[]),
+        this.cards(fp, viewer),
+        this.supplierCards(fs),
+        this.supplierCards(manuIds.map((x) => x.id)),
+        this.cards(
+          newIds.map((x) => x.id),
+          viewer,
+        ),
+      ]);
     return {
       totals: { products: totals[0]?.p ?? 0, suppliers: totals[0]?.s ?? 0 },
       priority_categories: cats.filter((c) => c.priority),
       categories: cats,
-      featured_products: (await this.cards(fp, viewer)).slice(0, 8),
-      featured_suppliers: (await this.supplierCards(fs)).slice(0, 8),
-      manufacturers: await this.supplierCards(manuIds.map((x) => x.id)),
-      new_products: await this.cards(
-        newIds.map((x) => x.id),
-        viewer,
-      ),
+      featured_products: featuredProducts.slice(0, 8),
+      featured_suppliers: featuredSuppliers.slice(0, 8),
+      manufacturers,
+      new_products: newProducts,
       for_you: forYou,
       price_visible: viewer.verified,
     };
