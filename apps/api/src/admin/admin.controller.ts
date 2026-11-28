@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   adminCompaniesQuery,
+  adminVatStatusRequest,
   adminUsersQuery,
   auditQuery,
   decisionRequest,
@@ -131,6 +132,26 @@ export class AdminController {
         a.user,
         parse(uuid, id),
         parse(reasonRequest, body).reason,
+        requestMeta(req),
+      ),
+    );
+  }
+
+  /** F05: compliance confirms the company's VAT registration status, with a reason (audited). */
+  @Post('companies/:id/vat-status')
+  @HttpCode(200)
+  @RequireAdmin('admin.verification.review')
+  async confirmVat(
+    @Auth() a: AuthContext,
+    @Param('id') id: string,
+    @Body() body: unknown,
+    @Req() req: Request,
+  ) {
+    return ok(
+      await this.admin.confirmVatStatus(
+        a.user,
+        parse(uuid, id),
+        parse(adminVatStatusRequest, body),
         requestMeta(req),
       ),
     );

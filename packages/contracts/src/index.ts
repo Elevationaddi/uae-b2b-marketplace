@@ -13,3 +13,4 @@ export * from './commerce';
 export * from './fulfilment';
 export * from './operations';
 export * from './financial-policy';
+export * from './tax';

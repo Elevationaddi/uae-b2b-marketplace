@@ -13,6 +13,7 @@ import {
   type Tx,
 } from '@app/db';
 import { APP_ENV, PRISMA } from '../infra/tokens';
+import { orderTaxRule, type TaxSettings } from './tax';
 
 /** Sandbox fixture commission when COMMISSION_BPS is unset outside production (P4-3, D05). */
 export const SANDBOX_COMMISSION_BPS = 1000;
@@ -40,6 +41,10 @@ export class CommerceConfig {
   }
   get taxBps(): number {
     return this.env.TAX_STANDARD_BPS ?? SANDBOX_TAX_BPS;
+  }
+  /** VAT treatment (F05): provisional standard rate in development, supplier status otherwise. */
+  get tax(): TaxSettings {
+    return { treatment: this.env.TAX_TREATMENT, standardBps: this.taxBps };
   }
   get reservationMinutes(): number {
     return this.env.RESERVATION_MINUTES;
@@ -100,7 +105,7 @@ export function mapOrderDetail(
   side: 'buyer' | 'seller' | 'admin',
   fulfilment: OrderFulfilment,
 ) {
-  const taxRule = o.checkout.taxRule as { bps?: number } | null;
+  const tax = orderTaxRule(o.snapshot, o.checkout.taxRule);
   return {
     ...mapOrderSummary(o, names),
     lines: o.lines
@@ -122,7 +127,9 @@ export function mapOrderDetail(
     merchandise_fils: o.merchandiseFils.toString(),
     shipping_fils: o.shippingFils.toString(),
     tax_fils: o.taxFils.toString(),
-    tax_bps: taxRule?.bps ?? 0,
+    tax_bps: tax.bps,
+    tax_code: tax.code,
+    tax_provisional: tax.provisional,
     commission_fils: side === 'buyer' ? null : o.commissionFils.toString(),
     seller_payable_fils: side === 'buyer' ? null : o.sellerPayableFils.toString(),
     address: (o.checkout.addressSnapshot ?? null) as never,

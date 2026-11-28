@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { AdminShell } from '@/components/admin-shell';
 import { useApp, useT } from '@/components/app-context';
 import { OrderDetailView, OrderState } from '@/components/commerce-ui';
+import { InvoiceDraftCard } from '@/components/invoice-draft';
 import { FulfilmentCard } from '@/components/fulfilment-ui';
 import { Resource } from '@/components/resource';
 import { PageHeader } from '@/components/ui';
@@ -33,7 +34,11 @@ function Detail() {
               onUpdated={setData}
             />
           ) : null}
-          <OrderDetailView o={o} side="admin" />
+          <OrderDetailView
+            o={o}
+            side="admin"
+            invoiceDraft={<InvoiceDraftCard url={`/admin/orders/${orderId}/invoice-draft`} />}
+          />
         </>
       )}
     </Resource>

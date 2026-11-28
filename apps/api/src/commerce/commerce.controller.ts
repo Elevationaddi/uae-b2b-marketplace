@@ -196,6 +196,11 @@ export class BuyerCommerceController {
   async order(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string) {
     return ok(await this.orders.buyerDetail(a.user, ws, id));
   }
+
+  @Get('orders/:id/invoice-draft')
+  async invoiceDraft(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string) {
+    return ok(await this.orders.buyerInvoiceDraft(a.user, ws, id));
+  }
 }
 
 /** Seller orders (view only in Phase 4; fulfilment arrives in Phase 5). */
@@ -213,6 +218,11 @@ export class SellerOrderController {
   @Get('orders/:id')
   async detail(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string) {
     return ok(await this.orders.sellerDetail(a.user, ws, id));
+  }
+
+  @Get('orders/:id/invoice-draft')
+  async invoiceDraft(@Auth() a: AuthContext, @Param('ws') ws: string, @Param('id') id: string) {
+    return ok(await this.orders.sellerInvoiceDraft(a.user, ws, id));
   }
 }
 
@@ -319,6 +329,12 @@ export class AdminCommerceController {
   @RequireAdmin('admin.orders.read')
   async detail(@Param('id') id: string) {
     return ok(await this.orders.adminDetail(id));
+  }
+
+  @Get('orders/:id/invoice-draft')
+  @RequireAdmin('admin.orders.read')
+  async invoiceDraft(@Param('id') id: string) {
+    return ok(await this.orders.adminInvoiceDraft(id));
   }
 
   @Get('finance/summary')

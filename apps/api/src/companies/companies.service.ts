@@ -93,6 +93,7 @@ export class CompaniesService {
             activity: input.activity,
             emirate: input.emirate,
             trn: input.trn ?? null,
+            vatStatus: input.vat_status ?? (input.trn ? 'REGISTERED' : 'UNKNOWN'),
             contactEmail: input.contact_email,
             contactPhone: input.contact_phone,
             createdById: user.id,
@@ -160,12 +161,27 @@ export class CompaniesService {
       ...(fields.activity !== undefined && { activity: fields.activity }),
       ...(fields.emirate !== undefined && { emirate: fields.emirate }),
       ...(fields.trn !== undefined && { trn: fields.trn ?? null }),
+      ...(fields.vat_status !== undefined && { vatStatus: fields.vat_status }),
       ...(fields.contact_email !== undefined && { contactEmail: fields.contact_email }),
       ...(fields.contact_phone !== undefined && { contactPhone: fields.contact_phone }),
       version: { increment: 1 },
     };
     try {
       return await this.prisma.$transaction(async (tx) => {
+        if (fields.trn !== undefined || fields.vat_status !== undefined) {
+          // F05: a registered supplier needs a TRN; any change needs compliance to confirm again.
+          const current = await tx.company.findUniqueOrThrow({ where: { id: companyId } });
+          const trn = fields.trn !== undefined ? (fields.trn ?? null) : current.trn;
+          const status = fields.vat_status ?? current.vatStatus;
+          if (status === 'REGISTERED' && !trn)
+            throw new ApiError('VALIDATION_FAILED', 'common.validation_failed', {
+              trn: 'trn_required',
+            });
+          if (trn !== current.trn || status !== current.vatStatus) {
+            data.vatStatusConfirmedAt = null;
+            data.vatStatusConfirmedById = null;
+          }
+        }
         // Conditional update: only editable statuses and only the expected version (stale -> 409).
         const res = await tx.company.updateMany({
           where: {

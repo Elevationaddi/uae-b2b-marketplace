@@ -8,6 +8,7 @@ import { filsString, QUANTITY_UNITS } from './catalog';
 import { emirate, isoDateTime, uuid } from './common';
 import { orderFulfilment } from './fulfilment';
 import { MAX_QUANTITY } from './money';
+import { orderTaxCode, TAX_TREATMENTS } from './tax';
 
 export const CHECKOUT_STATES = [
   'PENDING_PAYMENT',
@@ -51,7 +52,12 @@ export const CART_ISSUES = [
   'increment',
   'insufficient_stock',
 ] as const;
-export const DELIVERY_ISSUES = ['no_delivery_terms', 'emirate_not_served'] as const;
+export const DELIVERY_ISSUES = [
+  'no_delivery_terms',
+  'emirate_not_served',
+  /** TAX_TREATMENT=supplier_status and compliance has not confirmed the supplier's VAT status. */
+  'supplier_vat_unconfirmed',
+] as const;
 export type CheckoutState = (typeof CHECKOUT_STATES)[number];
 export type OrderState = (typeof ORDER_STATES)[number];
 
@@ -159,6 +165,9 @@ export const checkoutPreviewGroup = z.object({
   tax_fils: filsString,
   total_fils: filsString,
   delivery_days: z.number().int().nullable(),
+  /** VAT rule for this supplier's order (F05): rate and how it was decided. */
+  tax_bps: z.number().int(),
+  tax_code: orderTaxCode,
   issue: z.enum(DELIVERY_ISSUES).nullable(),
 });
 export const checkoutPreview = z.object({
@@ -168,7 +177,11 @@ export const checkoutPreview = z.object({
   shipping_fils: filsString,
   tax_fils: filsString,
   total_fils: filsString,
-  tax_bps: z.number().int(),
+  /** The rate when every supplier has the same rate; null when rates differ by supplier. */
+  tax_bps: z.number().int().nullable(),
+  tax_treatment: z.enum(TAX_TREATMENTS),
+  /** True while VAT is the provisional development rate, not a professionally approved rule. */
+  tax_provisional: z.boolean(),
   reservation_minutes: z.number().int(),
   /** Hash of the priced lines; checkout is refused (409) if anything changed since the preview. */
   preview_hash: z.string(),
@@ -243,6 +256,8 @@ export const orderDetail = orderSummary.extend({
   shipping_fils: filsString,
   tax_fils: filsString,
   tax_bps: z.number().int(),
+  tax_code: orderTaxCode,
+  tax_provisional: z.boolean(),
   /** Seller and admin only: the buyer never sees the platform commission. */
   commission_fils: filsString.nullable(),
   seller_payable_fils: filsString.nullable(),

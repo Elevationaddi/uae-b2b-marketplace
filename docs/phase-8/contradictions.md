@@ -18,6 +18,8 @@ Severity levels:
 | C-04 | **Fixed in code (sandbox)** | Weekly run, one live payout per supplier per week, approval re-checks orders and the balance (P8-5). Live provider balance check is a launch blocker until a live adapter exists. |
 | C-05 | **Fixed in code** | Versioned commission policy with step-up and audit (P8-6). |
 | C-06 | **Fixed in code** | Refund split and merchandise-only commission reversal (P8-7). |
+| C-08 | **Fixed in code (tax rules still need professional approval)** | `TAX_TREATMENT` setting; supplier VAT status declared by the company and confirmed by compliance; per-supplier VAT on checkout, recorded on each order; quotes checked against the status (P8-9, P8-10). Production refuses to start without `TAX_TREATMENT=supplier_status` and `TAX_APPROVAL_REFERENCE`. |
+| C-09 | **Partly fixed** | Non-binding invoice drafts (supplier and buyer TRN, tax rule, commission draft with VAT pending advice) for buyer, seller and admin (P8-11). Binding invoices, numbering, credit notes and statements stay disabled until the tax rules are approved. |
 | C-07 to C-24 | Open | Next pull requests. |
 
 ## Money, payouts and order completion

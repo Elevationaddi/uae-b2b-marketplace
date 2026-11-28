@@ -23,6 +23,7 @@ import {
   requireCap,
   type WorkspaceContext,
 } from './access';
+import { quoteTaxRefusal, supplierVat } from '../commerce/tax';
 import { AttachmentService, type Upload } from './attachments';
 import { notify, workspaceRecipients } from './notify';
 import {
@@ -62,6 +63,16 @@ export class QuoteService {
 
   private taxBps(code: TaxCodeValue): number {
     return code === 'STANDARD' ? (this.env.TAX_STANDARD_BPS ?? 500) : 0;
+  }
+
+  /** F05: in supplier_status mode the quote's tax code must fit the supplier's VAT status. */
+  private assertQuoteTax(ctx: WorkspaceContext, code: TaxCodeValue) {
+    const refusal = quoteTaxRefusal(
+      { treatment: this.env.TAX_TREATMENT, standardBps: this.env.TAX_STANDARD_BPS ?? 500 },
+      supplierVat(ctx.company),
+      code,
+    );
+    if (refusal) throw new ApiError('CONFLICT', refusal, { tax_code: refusal.split('.')[1]! });
   }
 
   private async visibleRfq(ctx: WorkspaceContext, id: string) {
@@ -423,6 +434,7 @@ export class QuoteService {
       terms: cur.terms,
     };
     this.validateFields(fields);
+    this.assertQuoteTax(ctx, fields.tax_code);
     if (cur.files.some((f) => f.file.scanState !== 'CLEAN'))
       throw new ApiError('CONFLICT', 'rfq.files_not_clean');
     await this.prisma.$transaction(async (tx) => {
@@ -494,6 +506,7 @@ export class QuoteService {
     const q = await this.ownQuote(ctx, id);
     const { expected_version, ...fields } = b;
     this.validateFields(fields);
+    this.assertQuoteTax(ctx, fields.tax_code);
     const events = await this.prisma.rfqEvent.findMany({
       where: { quoteId: q.id, kind: 'quote.revision_requested' },
     });

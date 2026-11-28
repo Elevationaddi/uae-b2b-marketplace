@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useT } from '@/components/app-context';
 import { buyerApi, BuyerShell } from '@/components/buyer-shell';
 import { OrderDetailView, OrderState } from '@/components/commerce-ui';
+import { InvoiceDraftCard } from '@/components/invoice-draft';
 import { FulfilmentCard } from '@/components/fulfilment-ui';
 import { Resource } from '@/components/resource';
 import type { Workspace } from '@/components/session';
@@ -53,7 +54,14 @@ function Detail({ ws, base }: { ws: Workspace; base: string }) {
               <Link href={`${base}/support/new?order=${o.id}`}>{t('support.contact')}</Link>
             </p>
           ) : null}
-          <OrderDetailView o={o} side="buyer" checkoutHref={`${base}/checkouts/${o.checkout_id}`} />
+          <OrderDetailView
+            o={o}
+            side="buyer"
+            invoiceDraft={
+              <InvoiceDraftCard url={`${buyerApi(ws)}/orders/${orderId}/invoice-draft`} />
+            }
+            checkoutHref={`${base}/checkouts/${o.checkout_id}`}
+          />
         </>
       )}
     </Resource>

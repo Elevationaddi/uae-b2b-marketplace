@@ -3619,6 +3619,21 @@
                               "null"
                             ]
                           },
+                          "vat_status": {
+                            "type": "string",
+                            "enum": [
+                              "UNKNOWN",
+                              "REGISTERED",
+                              "NOT_REGISTERED"
+                            ]
+                          },
+                          "vat_status_confirmed_at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
                           "contact_email": {
                             "type": "string"
                           },
@@ -3691,6 +3706,8 @@
                           "activity",
                           "emirate",
                           "trn",
+                          "vat_status",
+                          "vat_status_confirmed_at",
                           "contact_email",
                           "contact_phone",
                           "status",
@@ -3865,6 +3882,14 @@
                   "contact_phone": {
                     "type": "string"
                   },
+                  "vat_status": {
+                    "type": "string",
+                    "enum": [
+                      "UNKNOWN",
+                      "REGISTERED",
+                      "NOT_REGISTERED"
+                    ]
+                  },
                   "kinds": {
                     "type": "array",
                     "items": {
@@ -3948,6 +3973,21 @@
                             "null"
                           ]
                         },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
                         "contact_email": {
                           "type": "string"
                         },
@@ -4020,6 +4060,8 @@
                         "activity",
                         "emirate",
                         "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
                         "contact_email",
                         "contact_phone",
                         "status",
@@ -4392,6 +4434,21 @@
                             "null"
                           ]
                         },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
                         "contact_email": {
                           "type": "string"
                         },
@@ -4464,6 +4521,8 @@
                         "activity",
                         "emirate",
                         "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
                         "contact_email",
                         "contact_phone",
                         "status",
@@ -4693,6 +4752,14 @@
                       }
                     ]
                   },
+                  "vat_status": {
+                    "type": "string",
+                    "enum": [
+                      "UNKNOWN",
+                      "REGISTERED",
+                      "NOT_REGISTERED"
+                    ]
+                  },
                   "contact_email": {
                     "type": "string",
                     "maxLength": 254,
@@ -4769,6 +4836,21 @@
                             "null"
                           ]
                         },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
                         "contact_email": {
                           "type": "string"
                         },
@@ -4841,6 +4923,8 @@
                         "activity",
                         "emirate",
                         "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
                         "contact_email",
                         "contact_phone",
                         "status",
@@ -14401,6 +14485,21 @@
                             "null"
                           ]
                         },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
                         "contact_email": {
                           "type": "string"
                         },
@@ -14526,6 +14625,8 @@
                         "created_at",
                         "activity",
                         "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
                         "contact_email",
                         "contact_phone",
                         "members",
@@ -14787,6 +14888,21 @@
                             "null"
                           ]
                         },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
                         "contact_email": {
                           "type": "string"
                         },
@@ -14912,6 +15028,8 @@
                         "created_at",
                         "activity",
                         "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
                         "contact_email",
                         "contact_phone",
                         "members",
@@ -15204,10 +15322,10 @@
         }
       }
     },
-    "/api/v1/admin/companies/{id}/reactivate": {
+    "/api/v1/admin/companies/{id}/vat-status": {
       "post": {
-        "summary": "Reactivate a compliance-suspended company",
-        "description": "Requires: admin.companies.suspend.",
+        "summary": "Confirm (or correct and confirm) a company VAT registration status (F05), audited",
+        "description": "Requires: admin.verification.review.",
         "tags": [
           "Admin"
         ],
@@ -15235,6 +15353,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "vat_status": {
+                    "type": "string",
+                    "enum": [
+                      "REGISTERED",
+                      "NOT_REGISTERED"
+                    ]
+                  },
+                  "trn": {
+                    "type": "string",
+                    "pattern": "^\\d{15}$"
+                  },
                   "reason": {
                     "type": "string",
                     "minLength": 5,
@@ -15242,8 +15371,10 @@
                   }
                 },
                 "required": [
+                  "vat_status",
                   "reason"
-                ]
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -15328,6 +15459,21 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
                         },
                         "contact_email": {
                           "type": "string"
@@ -15454,6 +15600,515 @@
                         "created_at",
                         "activity",
                         "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
+                        "contact_email",
+                        "contact_phone",
+                        "members",
+                        "cases"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/companies/{id}/reactivate": {
+      "post": {
+        "summary": "Reactivate a compliance-suspended company",
+        "description": "Requires: admin.companies.suspend.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "adminSession": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "legal_name": {
+                          "type": "string"
+                        },
+                        "display_name": {
+                          "type": "string"
+                        },
+                        "licence_number": {
+                          "type": "string"
+                        },
+                        "licence_issuer": {
+                          "type": "string"
+                        },
+                        "licence_expiry": {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "licence_expired": {
+                          "type": "boolean"
+                        },
+                        "emirate": {
+                          "type": "string",
+                          "enum": [
+                            "ABU_DHABI",
+                            "DUBAI",
+                            "SHARJAH",
+                            "AJMAN",
+                            "UMM_AL_QUWAIN",
+                            "RAS_AL_KHAIMAH",
+                            "FUJAIRAH"
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "DRAFT",
+                            "SUBMITTED",
+                            "UNDER_REVIEW",
+                            "NEEDS_INFO",
+                            "REJECTED",
+                            "APPROVED",
+                            "SUSPENDED"
+                          ]
+                        },
+                        "kinds": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "BUYER",
+                              "SELLER"
+                            ]
+                          }
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "activity": {
+                          "type": "string"
+                        },
+                        "trn": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "vat_status": {
+                          "type": "string",
+                          "enum": [
+                            "UNKNOWN",
+                            "REGISTERED",
+                            "NOT_REGISTERED"
+                          ]
+                        },
+                        "vat_status_confirmed_at": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "contact_email": {
+                          "type": "string"
+                        },
+                        "contact_phone": {
+                          "type": "string"
+                        },
+                        "members": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "membership_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "workspace_kind": {
+                                "type": "string",
+                                "enum": [
+                                  "BUYER",
+                                  "SELLER"
+                                ]
+                              },
+                              "role": {
+                                "type": "string",
+                                "enum": [
+                                  "OWNER",
+                                  "PROCUREMENT",
+                                  "VIEWER",
+                                  "SALES",
+                                  "WAREHOUSE",
+                                  "FINANCE"
+                                ]
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "ACTIVE",
+                                  "REVOKED"
+                                ]
+                              },
+                              "user": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "email": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "email"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "membership_id",
+                              "workspace_kind",
+                              "role",
+                              "status",
+                              "user"
+                            ]
+                          }
+                        },
+                        "cases": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "case_id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "INITIAL",
+                                  "RENEWAL"
+                                ]
+                              },
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "DRAFT",
+                                  "SUBMITTED",
+                                  "UNDER_REVIEW",
+                                  "NEEDS_INFO",
+                                  "REJECTED",
+                                  "APPROVED",
+                                  "CLOSED"
+                                ]
+                              },
+                              "submitted_at": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "case_id",
+                              "kind",
+                              "state",
+                              "submitted_at"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "legal_name",
+                        "display_name",
+                        "licence_number",
+                        "licence_issuer",
+                        "licence_expiry",
+                        "licence_expired",
+                        "emirate",
+                        "status",
+                        "kinds",
+                        "created_at",
+                        "activity",
+                        "trn",
+                        "vat_status",
+                        "vat_status_confirmed_at",
                         "contact_email",
                         "contact_phone",
                         "members",
@@ -113215,6 +113870,19 @@
                                   "null"
                                 ]
                               },
+                              "tax_bps": {
+                                "type": "integer"
+                              },
+                              "tax_code": {
+                                "type": "string",
+                                "enum": [
+                                  "PROVISIONAL_STANDARD",
+                                  "STANDARD",
+                                  "NO_VAT_NOT_REGISTERED",
+                                  "ZERO_RATED",
+                                  "EXEMPT"
+                                ]
+                              },
                               "issue": {
                                 "type": [
                                   "string",
@@ -113223,6 +113891,7 @@
                                 "enum": [
                                   "no_delivery_terms",
                                   "emirate_not_served",
+                                  "supplier_vat_unconfirmed",
                                   null
                                 ]
                               }
@@ -113235,6 +113904,8 @@
                               "tax_fils",
                               "total_fils",
                               "delivery_days",
+                              "tax_bps",
+                              "tax_code",
                               "issue"
                             ]
                           }
@@ -113256,7 +113927,20 @@
                           "pattern": "^\\d{1,15}$"
                         },
                         "tax_bps": {
-                          "type": "integer"
+                          "type": [
+                            "integer",
+                            "null"
+                          ]
+                        },
+                        "tax_treatment": {
+                          "type": "string",
+                          "enum": [
+                            "provisional_standard",
+                            "supplier_status"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
                         },
                         "reservation_minutes": {
                           "type": "integer"
@@ -113276,6 +113960,8 @@
                         "tax_fils",
                         "total_fils",
                         "tax_bps",
+                        "tax_treatment",
+                        "tax_provisional",
                         "reservation_minutes",
                         "preview_hash",
                         "blocked"
@@ -116697,6 +117383,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -117088,6 +117787,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -117097,6 +117798,524 @@
                         "cancel_reason",
                         "events",
                         "fulfilment"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/buyer/workspaces/{ws}/orders/{id}/invoice-draft": {
+      "get": {
+        "summary": "Non-binding invoice draft (not a tax invoice)",
+        "description": "Requires: buyer.orders.read (any buyer workspace member).",
+        "tags": [
+          "Buyer orders and checkout"
+        ],
+        "security": [
+          {
+            "companySession": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "ws",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "order_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_number": {
+                          "type": "string"
+                        },
+                        "binding": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft_not_tax_invoice"
+                          ]
+                        },
+                        "tax_treatment": {
+                          "type": "string",
+                          "enum": [
+                            "provisional_standard",
+                            "supplier_status"
+                          ]
+                        },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_bps": {
+                          "type": "integer"
+                        },
+                        "provisional": {
+                          "type": "boolean"
+                        },
+                        "supplier": {
+                          "type": "object",
+                          "properties": {
+                            "legal_name": {
+                              "type": "string"
+                            },
+                            "trn": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "vat_status": {
+                              "type": "string",
+                              "enum": [
+                                "UNKNOWN",
+                                "REGISTERED",
+                                "NOT_REGISTERED"
+                              ]
+                            },
+                            "vat_confirmed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "legal_name",
+                            "trn",
+                            "vat_status",
+                            "vat_confirmed"
+                          ]
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "legal_name": {
+                              "type": "string"
+                            },
+                            "trn": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "legal_name",
+                            "trn"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "unit_price_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "line_total_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              }
+                            },
+                            "required": [
+                              "title",
+                              "quantity",
+                              "unit_price_fils",
+                              "line_total_fils"
+                            ]
+                          }
+                        },
+                        "merchandise_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "total_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "commission": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "commission_fils": {
+                              "type": "string",
+                              "pattern": "^\\d{1,15}$"
+                            },
+                            "commission_bps": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "vat": {
+                              "type": "string",
+                              "enum": [
+                                "pending_professional_advice"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "commission_fils",
+                            "commission_bps",
+                            "vat"
+                          ]
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "order_id",
+                        "order_number",
+                        "binding",
+                        "status",
+                        "tax_treatment",
+                        "tax_code",
+                        "tax_bps",
+                        "provisional",
+                        "supplier",
+                        "buyer",
+                        "lines",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
+                        "total_fils",
+                        "commission",
+                        "created_at"
                       ]
                     },
                     "meta": {
@@ -118072,6 +119291,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -118463,6 +119695,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -118472,6 +119706,524 @@
                         "cancel_reason",
                         "events",
                         "fulfilment"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/seller/workspaces/{ws}/orders/{id}/invoice-draft": {
+      "get": {
+        "summary": "Non-binding invoice draft with the commission draft (VAT pending advice)",
+        "description": "Requires: seller.orders.read (any seller workspace member).",
+        "tags": [
+          "Seller orders"
+        ],
+        "security": [
+          {
+            "companySession": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "ws",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "order_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_number": {
+                          "type": "string"
+                        },
+                        "binding": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft_not_tax_invoice"
+                          ]
+                        },
+                        "tax_treatment": {
+                          "type": "string",
+                          "enum": [
+                            "provisional_standard",
+                            "supplier_status"
+                          ]
+                        },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_bps": {
+                          "type": "integer"
+                        },
+                        "provisional": {
+                          "type": "boolean"
+                        },
+                        "supplier": {
+                          "type": "object",
+                          "properties": {
+                            "legal_name": {
+                              "type": "string"
+                            },
+                            "trn": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "vat_status": {
+                              "type": "string",
+                              "enum": [
+                                "UNKNOWN",
+                                "REGISTERED",
+                                "NOT_REGISTERED"
+                              ]
+                            },
+                            "vat_confirmed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "legal_name",
+                            "trn",
+                            "vat_status",
+                            "vat_confirmed"
+                          ]
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "legal_name": {
+                              "type": "string"
+                            },
+                            "trn": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "legal_name",
+                            "trn"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "unit_price_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "line_total_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              }
+                            },
+                            "required": [
+                              "title",
+                              "quantity",
+                              "unit_price_fils",
+                              "line_total_fils"
+                            ]
+                          }
+                        },
+                        "merchandise_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "total_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "commission": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "commission_fils": {
+                              "type": "string",
+                              "pattern": "^\\d{1,15}$"
+                            },
+                            "commission_bps": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "vat": {
+                              "type": "string",
+                              "enum": [
+                                "pending_professional_advice"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "commission_fils",
+                            "commission_bps",
+                            "vat"
+                          ]
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "order_id",
+                        "order_number",
+                        "binding",
+                        "status",
+                        "tax_treatment",
+                        "tax_code",
+                        "tax_bps",
+                        "provisional",
+                        "supplier",
+                        "buyer",
+                        "lines",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
+                        "total_fils",
+                        "commission",
+                        "created_at"
                       ]
                     },
                     "meta": {
@@ -120474,6 +122226,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -120865,6 +122630,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -120874,6 +122641,515 @@
                         "cancel_reason",
                         "events",
                         "fulfilment"
+                      ]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "next_cursor": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in (or admin MFA not completed: message_key admin.mfa_required)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden: missing capability, or CSRF check failed (common.csrf_origin / common.csrf_token)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not visible to the caller (cross-tenant access is always 404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: stale version/state, duplicate, or business rule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed; field_errors maps field -> code",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string",
+                          "enum": [
+                            "BAD_REQUEST",
+                            "UNAUTHENTICATED",
+                            "FORBIDDEN",
+                            "NOT_FOUND",
+                            "CONFLICT",
+                            "VALIDATION_FAILED",
+                            "RATE_LIMITED",
+                            "PROVIDER_UNAVAILABLE",
+                            "SERVICE_UNAVAILABLE",
+                            "INTERNAL_ERROR"
+                          ]
+                        },
+                        "message_key": {
+                          "type": "string"
+                        },
+                        "field_errors": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "request_id": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message_key",
+                        "request_id"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/orders/{id}/invoice-draft": {
+      "get": {
+        "summary": "Non-binding invoice draft",
+        "description": "Requires: admin.orders.read.",
+        "tags": [
+          "Admin orders and finance"
+        ],
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "order_id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "order_number": {
+                          "type": "string"
+                        },
+                        "binding": {
+                          "type": "boolean",
+                          "enum": [
+                            false
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "draft_not_tax_invoice"
+                          ]
+                        },
+                        "tax_treatment": {
+                          "type": "string",
+                          "enum": [
+                            "provisional_standard",
+                            "supplier_status"
+                          ]
+                        },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_bps": {
+                          "type": "integer"
+                        },
+                        "provisional": {
+                          "type": "boolean"
+                        },
+                        "supplier": {
+                          "type": "object",
+                          "properties": {
+                            "legal_name": {
+                              "type": "string"
+                            },
+                            "trn": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "vat_status": {
+                              "type": "string",
+                              "enum": [
+                                "UNKNOWN",
+                                "REGISTERED",
+                                "NOT_REGISTERED"
+                              ]
+                            },
+                            "vat_confirmed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "legal_name",
+                            "trn",
+                            "vat_status",
+                            "vat_confirmed"
+                          ]
+                        },
+                        "buyer": {
+                          "type": "object",
+                          "properties": {
+                            "legal_name": {
+                              "type": "string"
+                            },
+                            "trn": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "legal_name",
+                            "trn"
+                          ]
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string"
+                              },
+                              "quantity": {
+                                "type": "integer"
+                              },
+                              "unit_price_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              },
+                              "line_total_fils": {
+                                "type": "string",
+                                "pattern": "^\\d{1,15}$"
+                              }
+                            },
+                            "required": [
+                              "title",
+                              "quantity",
+                              "unit_price_fils",
+                              "line_total_fils"
+                            ]
+                          }
+                        },
+                        "merchandise_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "shipping_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "tax_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "total_fils": {
+                          "type": "string",
+                          "pattern": "^\\d{1,15}$"
+                        },
+                        "commission": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "commission_fils": {
+                              "type": "string",
+                              "pattern": "^\\d{1,15}$"
+                            },
+                            "commission_bps": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            },
+                            "vat": {
+                              "type": "string",
+                              "enum": [
+                                "pending_professional_advice"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "commission_fils",
+                            "commission_bps",
+                            "vat"
+                          ]
+                        },
+                        "created_at": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "order_id",
+                        "order_number",
+                        "binding",
+                        "status",
+                        "tax_treatment",
+                        "tax_code",
+                        "tax_bps",
+                        "provisional",
+                        "supplier",
+                        "buyer",
+                        "lines",
+                        "merchandise_fils",
+                        "shipping_fils",
+                        "tax_fils",
+                        "total_fils",
+                        "commission",
+                        "created_at"
                       ]
                     },
                     "meta": {
@@ -122576,6 +124852,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -122967,6 +125256,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -123527,6 +125818,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -123918,6 +126222,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -124470,6 +126776,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -124861,6 +127180,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -128885,6 +131206,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -129276,6 +131610,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
@@ -129832,6 +132168,19 @@
                         "tax_bps": {
                           "type": "integer"
                         },
+                        "tax_code": {
+                          "type": "string",
+                          "enum": [
+                            "PROVISIONAL_STANDARD",
+                            "STANDARD",
+                            "NO_VAT_NOT_REGISTERED",
+                            "ZERO_RATED",
+                            "EXEMPT"
+                          ]
+                        },
+                        "tax_provisional": {
+                          "type": "boolean"
+                        },
                         "commission_fils": {
                           "type": [
                             "string",
@@ -130223,6 +132572,8 @@
                         "shipping_fils",
                         "tax_fils",
                         "tax_bps",
+                        "tax_code",
+                        "tax_provisional",
                         "commission_fils",
                         "seller_payable_fils",
                         "address",
