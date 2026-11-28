@@ -19,3 +19,5 @@ overrides:
   postcss: '8.5.34'
   effect: '3.22.5'
   deepmerge-ts: '8.0.2'
+  # @vercel/blob > @vercel/oidc > @vercel/cli-config pins zod 4.1.11 (GHSA-mrhx-c7xc-m3w5).
+  '@vercel/cli-config>zod': '4.6.7'
