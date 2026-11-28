@@ -3,6 +3,7 @@ import type { AppEnv } from '@app/config';
 import {
   createPrismaClient,
   createSandboxPsp,
+  submitApprovedSettlements,
   expireCheckouts,
   pingDatabase,
   processPendingPaymentEvents,
@@ -33,6 +34,8 @@ import {
  * - checkout.expiry: asks the provider, then releases stock of unpaid checkouts past pay_by
  *   (every 30 s; T17).
  * - sandbox.webhooks: PAYMENT_MODE=mock only; posts signed sandbox PSP events to the API.
+ * - settlement.submit: sends dual-approved refunds and payouts to the provider adapter (every
+ *   2 s; idempotency key per refund/payout, so a retry never pays twice).
  */
 export const SYSTEM_QUEUE = 'system';
 export const HEARTBEAT_JOB = 'system.heartbeat';
@@ -43,6 +46,7 @@ export const RFQ_EXPIRY_JOB = 'rfq.expiry';
 export const PAYMENTS_JOB = 'payments.process';
 export const CHECKOUT_EXPIRY_JOB = 'checkout.expiry';
 export const SANDBOX_WEBHOOK_JOB = 'sandbox.webhooks';
+export const SETTLEMENT_SUBMIT_JOB = 'settlement.submit';
 const HEARTBEAT_EVERY_MS = 60_000;
 const HEARTBEAT_STALE_MS = 3 * HEARTBEAT_EVERY_MS;
 
@@ -135,6 +139,11 @@ export async function startWorker(
           if (res.expired || res.awaitingProvider) log.info(res, 'checkout expiry run');
           return res;
         }
+        case SETTLEMENT_SUBMIT_JOB: {
+          const res = await submitApprovedSettlements(prisma, psp);
+          if (res.refunds || res.payouts) log.info(res, 'settlements submitted');
+          return res;
+        }
         case SANDBOX_WEBHOOK_JOB:
           return { delivered: await deliverSandboxWebhooks(prisma, env, log) };
         default:
@@ -174,6 +183,11 @@ export async function startWorker(
     'checkout-expiry',
     { every: 30_000 },
     { name: CHECKOUT_EXPIRY_JOB, opts: oneShot },
+  );
+  await queue.upsertJobScheduler(
+    'settlement-submit',
+    { every: opts.outboxEveryMs ?? 2_000 },
+    { name: SETTLEMENT_SUBMIT_JOB, opts: oneShot },
   );
   if (psp)
     await queue.upsertJobScheduler(

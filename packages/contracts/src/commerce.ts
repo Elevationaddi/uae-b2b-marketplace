@@ -6,6 +6,7 @@
 import { z } from 'zod';
 import { filsString, QUANTITY_UNITS } from './catalog';
 import { emirate, isoDateTime, uuid } from './common';
+import { orderFulfilment } from './fulfilment';
 import { MAX_QUANTITY } from './money';
 
 export const CHECKOUT_STATES = [
@@ -25,13 +26,23 @@ export const ORDER_STATES = [
   'COMPLETED',
   'CANCELLED',
 ] as const;
-export const PAYMENT_STATES = ['CREATED', 'PENDING', 'CAPTURED', 'FAILED', 'CANCELLED'] as const;
+export const PAYMENT_STATES = [
+  'CREATED',
+  'PENDING',
+  'CAPTURED',
+  'FAILED',
+  'CANCELLED',
+  'PARTIALLY_REFUNDED',
+  'REFUNDED',
+] as const;
 export const PAYMENT_EVENT_STATUSES = ['RECEIVED', 'PROCESSED', 'IGNORED', 'QUARANTINED'] as const;
 export const RECONCILIATION_KINDS = [
   'LATE_CAPTURE',
   'AMOUNT_MISMATCH',
   'UNKNOWN_REFERENCE',
   'INVALID_SIGNATURE',
+  'REFUND_FAILED',
+  'PAYOUT_FAILED',
 ] as const;
 export const CART_ISSUES = [
   'unavailable',
@@ -241,6 +252,8 @@ export const orderDetail = orderSummary.extend({
   checkout_state: z.enum(CHECKOUT_STATES),
   cancel_reason: z.string().nullable(),
   events: z.array(orderEvent),
+  /** Phase 5: shipment, settlement, dispute, review and the caller's allowed actions. */
+  fulfilment: orderFulfilment,
 });
 export const checkoutResponse = z.object({
   id: uuid,

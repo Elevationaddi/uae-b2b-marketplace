@@ -70,6 +70,14 @@ import {
 } from './commerce/commerce.controller';
 import { OrderService } from './commerce/order.service';
 import { PaymentWebhookService } from './commerce/payment-webhook.service';
+import { DisputeService } from './fulfilment/dispute.service';
+import {
+  AdminFulfilmentController,
+  BuyerFulfilmentController,
+  SellerFulfilmentController,
+} from './fulfilment/fulfilment.controller';
+import { FulfilmentService } from './fulfilment/fulfilment.service';
+import { SettlementService } from './fulfilment/settlement.service';
 
 /** Paths redacted from every log line (docs/10-security.md: no credentials or tokens in logs). */
 export const LOG_REDACT_PATHS = [
@@ -136,6 +144,9 @@ export class AppModule implements NestModule {
         PaymentWebhookController,
         SandboxPspController,
         AdminCommerceController,
+        SellerFulfilmentController,
+        BuyerFulfilmentController,
+        AdminFulfilmentController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: ErrorEnvelopeFilter },
@@ -173,6 +184,9 @@ export class AppModule implements NestModule {
         CheckoutService,
         OrderService,
         PaymentWebhookService,
+        FulfilmentService,
+        DisputeService,
+        SettlementService,
       ],
     };
   }

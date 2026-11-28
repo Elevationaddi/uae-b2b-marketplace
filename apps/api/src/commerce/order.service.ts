@@ -11,7 +11,8 @@ import type { z } from 'zod';
 import { assertUuid, decodeOffset, encodeOffset } from '../catalog/access';
 import { ApiError } from '../common/api-error';
 import { PRISMA } from '../infra/tokens';
-import { loadWorkspaceContext, requireCap } from '../rfq/access';
+import { buildFulfilment, FULFILMENT_INCLUDE } from '../fulfilment/fulfilment-common';
+import { loadWorkspaceContext, requireCap, type WorkspaceContext } from '../rfq/access';
 import {
   CommerceConfig,
   companyNames,
@@ -54,14 +55,18 @@ export class OrderService {
     };
   }
 
-  private async detail(where: Prisma.OrderWhereInput, side: 'buyer' | 'seller' | 'admin') {
+  private async detail(
+    where: Prisma.OrderWhereInput,
+    side: 'buyer' | 'seller' | 'admin',
+    ctx: WorkspaceContext | null = null,
+  ) {
     const o = await this.prisma.order.findFirst({
       where,
-      include: { checkout: true, lines: true, events: true },
+      include: { checkout: true, lines: true, events: true, ...FULFILMENT_INCLUDE },
     });
     if (!o) throw new ApiError('NOT_FOUND', 'common.not_found');
     const names = await companyNames(this.prisma, [o.buyerCompanyId, o.sellerCompanyId]);
-    return mapOrderDetail(o, names, side);
+    return mapOrderDetail(o, names, side, buildFulfilment(o, side, ctx));
   }
 
   async buyerList(user: User, ws: string, q: ListQuery) {
@@ -74,7 +79,7 @@ export class OrderService {
     const ctx = await loadWorkspaceContext(this.prisma, user.id, ws, 'BUYER');
     requireCap(ctx, 'buyer.orders.read');
     assertUuid(id);
-    return this.detail({ id, buyerWorkspaceId: ctx.workspace.id }, 'buyer');
+    return this.detail({ id, buyerWorkspaceId: ctx.workspace.id }, 'buyer', ctx);
   }
 
   /** Sellers see orders once created (awaiting payment) so they can plan; no action before pay. */
@@ -88,7 +93,7 @@ export class OrderService {
     const ctx = await loadWorkspaceContext(this.prisma, user.id, ws, 'SELLER');
     requireCap(ctx, 'seller.orders.read');
     assertUuid(id);
-    return this.detail({ id, sellerWorkspaceId: ctx.workspace.id }, 'seller');
+    return this.detail({ id, sellerWorkspaceId: ctx.workspace.id }, 'seller', ctx);
   }
 
   // ---------------------------------------------------------------- admin (read-only)

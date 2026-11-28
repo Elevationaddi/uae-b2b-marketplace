@@ -10,3 +10,4 @@ export * from './money';
 export * from './catalog';
 export * from './rfq';
 export * from './commerce';
+export * from './fulfilment';
